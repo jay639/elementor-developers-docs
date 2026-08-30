@@ -1,0 +1,53 @@
+{
+  "expo": {
+    "name": "Ank Jyoti",
+    "slug": "ank-jyoti",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "ankjyoti",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#FBFAF7",
+    "primaryColor": "#12203F",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#12203F"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "bundleIdentifier": "app.ankjyoti.mobile",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "infoPlist": {
+        "CFBundleAllowMixedLocalizations": true,
+        "NSPhotoLibraryAddUsageDescription": "Used only when you choose to save a result card you have shared."
+      }
+    },
+    "android": {
+      "package": "app.ankjyoti.mobile",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#12203F"
+      },
+      "permissions": [],
+      "blockedPermissions": ["android.permission.RECORD_AUDIO"]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "locales": {
+      "en": "./src/i18n/store/en.json",
+      "hi": "./src/i18n/store/hi.json",
+      "mr": "./src/i18n/store/mr.json"
+    },
+    "plugins": ["expo-localization", "expo-secure-store"],
+    "extra": {
+      "eas": {
+        "projectId": "00000000-0000-0000-0000-000000000000"
+      }
+    }
+  }
+}
