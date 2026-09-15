@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 900" width="1920" height="900" role="img" aria-label="Outstation highway photo placeholder">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#232B38"/>
+      <stop offset="0.55" stop-color="#1A212C"/>
+      <stop offset="1" stop-color="#11161F"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.6">
+      <stop offset="0" stop-color="#C62828" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#C62828" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="72" height="72" patternUnits="userSpaceOnUse">
+      <path d="M72 0H0V72" fill="none" stroke="#FFFFFF" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1920" height="900" fill="url(#bg)"/>
+  <rect width="1920" height="900" fill="url(#grid)"/>
+  <rect width="1920" height="900" fill="url(#glow)"/>
+  <g transform="translate(888 313.20000000000005) scale(3.0000)">
+    <path d="M3 42L18 6h12l15 36z M24 12v5 M24 22v6 M24 33v6 M8 42h32" fill="none" stroke="#9AA4B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <rect x="919.68" y="479.20000000000005" width="80.64000000000001" height="2" rx="1" fill="#C62828"/>
+  <text x="960" y="540" text-anchor="middle" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif" font-size="32" font-weight="600" fill="#E5E7EB">Outstation highway</text>
+  <text x="960" y="584" text-anchor="middle" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif" font-size="22" font-weight="500" letter-spacing="3.52" fill="#6B7280">PHOTO SLOT · 1920 × 900</text>
+</svg>
