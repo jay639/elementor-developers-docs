@@ -1,0 +1,2 @@
+# The built site is committed so it can be opened without a build step.
+!dist/

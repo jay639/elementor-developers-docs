@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Sagar Tours and Travels photo placeholder">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#232B38"/>
+      <stop offset="0.55" stop-color="#1A212C"/>
+      <stop offset="1" stop-color="#11161F"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.42" r="0.6">
+      <stop offset="0" stop-color="#C62828" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#C62828" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+      <path d="M50 0H0V50" fill="none" stroke="#FFFFFF" stroke-opacity="0.035" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect width="1200" height="630" fill="url(#glow)"/>
+  <g transform="translate(549.5 219.05) scale(2.1042)">
+    <path d="M4 30l4-10a5 5 0 0 1 5-3h22a5 5 0 0 1 5 3l4 10v7a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2H12v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7z M8 30h32 M13 34h3 M32 34h3" fill="none" stroke="#9AA4B2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <rect x="571.72" y="336.05" width="56.56" height="2" rx="1" fill="#C62828"/>
+  <text x="600" y="379.75" text-anchor="middle" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif" font-size="23" font-weight="600" fill="#E5E7EB">Sagar Tours and Travels</text>
+  <text x="600" y="409.75" text-anchor="middle" font-family="Inter, Segoe UI, Helvetica, Arial, sans-serif" font-size="15" font-weight="500" letter-spacing="2.40" fill="#6B7280">PHOTO SLOT · 1200 × 630</text>
+</svg>

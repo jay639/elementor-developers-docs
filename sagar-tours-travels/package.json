@@ -1,0 +1,16 @@
+{
+  "name": "sagar-tours-travels",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Marketing website for Sagar Tours and Travels, a taxi and tour & travel service in Nagpur, Maharashtra.",
+  "type": "module",
+  "scripts": {
+    "images": "node tools/gen-placeholders.mjs",
+    "build": "npm run images && node build.mjs",
+    "serve": "node --run build && node tools/serve.mjs",
+    "start": "npm run build && node tools/serve.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
