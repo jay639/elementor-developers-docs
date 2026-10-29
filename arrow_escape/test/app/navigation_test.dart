@@ -1,0 +1,42 @@
+import 'package:arrow_escape/features/game/presentation/game_screen.dart';
+import 'package:arrow_escape/features/home/home_screen.dart';
+import 'package:arrow_escape/features/settings/presentation/settings_screen.dart';
+import 'package:arrow_escape/features/splash/splash_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import '../helpers.dart';
+
+void main() {
+  testWidgets('splash animates then lands on home', (tester) async {
+    await pumpApp(tester);
+    expect(find.byType(SplashScreen), findsOneWidget);
+    expect(find.text('Arrow Escape'), findsOneWidget);
+    await tester.pump(SplashScreen.duration);
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+    expect(find.text('Play  ·  Level 1'), findsOneWidget);
+  });
+
+  testWidgets('home opens level 1 and back returns home', (tester) async {
+    await pumpApp(tester);
+    await tester.pump(SplashScreen.duration);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('play')));
+    await tester.pumpAndSettle();
+    expect(find.byType(GameScreen), findsOneWidget);
+    expect(find.text('Level 1'), findsOneWidget);
+    await tester.tap(find.byTooltip('Back'));
+    await tester.pumpAndSettle();
+    expect(find.byType(HomeScreen), findsOneWidget);
+  });
+
+  testWidgets('home opens settings', (tester) async {
+    await pumpApp(tester);
+    await tester.pump(SplashScreen.duration);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsScreen), findsOneWidget);
+  });
+}

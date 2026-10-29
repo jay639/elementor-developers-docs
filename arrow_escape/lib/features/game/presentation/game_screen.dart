@@ -1,0 +1,206 @@
+import 'dart:async';
+
+import 'package:arrow_engine/arrow_engine.dart';
+import 'package:arrow_escape/app/routes.dart';
+import 'package:arrow_escape/core/services/sound.dart';
+import 'package:arrow_escape/features/game/application/game_controller.dart';
+import 'package:arrow_escape/features/game/application/game_state.dart';
+import 'package:arrow_escape/features/game/data/level_repository.dart';
+import 'package:arrow_escape/features/game/presentation/board_view.dart';
+import 'package:arrow_escape/features/game/presentation/widgets/game_toolbar.dart';
+import 'package:arrow_escape/features/game/presentation/widgets/hearts_bar.dart';
+import 'package:arrow_escape/features/game/presentation/widgets/result_overlay.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+/// Loads the level, then shows the board.
+class GameScreen extends ConsumerWidget {
+  const GameScreen({super.key, required this.levelNumber});
+
+  final int levelNumber;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final level = ref.watch(levelProvider(levelNumber));
+    return level.when(
+      data: (_) =>
+          _GameView(key: ValueKey(levelNumber), levelNumber: levelNumber),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (e, _) => Scaffold(
+        appBar: AppBar(),
+        body: Center(child: Text('Could not load level $levelNumber')),
+      ),
+    );
+  }
+}
+
+class _GameView extends ConsumerStatefulWidget {
+  const _GameView({super.key, required this.levelNumber});
+
+  final int levelNumber;
+
+  @override
+  ConsumerState<_GameView> createState() => _GameViewState();
+}
+
+class _GameViewState extends ConsumerState<_GameView> {
+  /// Lets the final exit (or bump) animation play before the result card.
+  static const _resultDelay = Duration(milliseconds: 550);
+
+  Timer? _resultTimer;
+  bool _showResult = false;
+
+  @override
+  void initState() {
+    super.initState();
+    ref.read(soundProvider).warmUp();
+  }
+
+  @override
+  void dispose() {
+    _resultTimer?.cancel();
+    super.dispose();
+  }
+
+  void _onStatus(SessionStatus? prev, SessionStatus next) {
+    _resultTimer?.cancel();
+    if (next == SessionStatus.playing) {
+      if (_showResult) setState(() => _showResult = false);
+      return;
+    }
+    _resultTimer = Timer(_resultDelay, () {
+      if (mounted) setState(() => _showResult = true);
+    });
+  }
+
+  void _goToLevel(int number) {
+    context.pushReplacement(Routes.game(number));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = gameControllerProvider(widget.levelNumber);
+    ref.listen(provider.select((s) => s.status), _onStatus);
+    final state = ref.watch(provider);
+    final controller = ref.read(provider.notifier);
+    final levelCount = ref.watch(levelRepositoryProvider).count;
+    final hasNext = widget.levelNumber < levelCount;
+
+    return Scaffold(
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Back',
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go(Routes.home),
+        ),
+        title: Text('Level ${widget.levelNumber}'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: HeartsBar(
+              hearts: state.session.hearts,
+              max: state.session.maxHearts,
+            ),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        top: false,
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                _MechanicBanner(state: state),
+                Expanded(child: BoardView(levelNumber: widget.levelNumber)),
+                GameToolbar(
+                  canUndo: state.session.canUndo,
+                  undosLeft: state.session.undosLeft,
+                  showPaths: state.showPaths,
+                  onUndo: controller.undo,
+                  onTogglePaths: controller.togglePaths,
+                  onRestart: controller.restart,
+                ),
+              ],
+            ),
+            if (_showResult && state.status == SessionStatus.won)
+              Positioned.fill(
+                child: ResultOverlay.win(
+                  levelNumber: widget.levelNumber,
+                  stars: state.session.stars,
+                  hasNext: hasNext,
+                  onPrimary: () => hasNext
+                      ? _goToLevel(widget.levelNumber + 1)
+                      : context.go(Routes.home),
+                  onHome: () => context.go(Routes.home),
+                ),
+              ),
+            if (_showResult && state.status == SessionStatus.lost)
+              Positioned.fill(
+                child: ResultOverlay.lose(
+                  levelNumber: widget.levelNumber,
+                  onPrimary: controller.restart,
+                  onHome: () => context.go(Routes.home),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One-line explainer when a level contains a special mechanic.
+class _MechanicBanner extends StatelessWidget {
+  const _MechanicBanner({required this.state});
+
+  final GameViewState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final level = state.level;
+    final String? text;
+    if (level.hasAmbulance) {
+      text = 'Ambulance first! Only cars in its lane may move before it.';
+    } else if (level.gates.isNotEmpty) {
+      text = 'One-way gates turn traffic in the arrow\'s direction.';
+    } else if (level.lights.isNotEmpty) {
+      text = 'Lights switch every time a car leaves. Red means wait.';
+    } else if (level.pieces.any((p) => p.kind == PieceKind.truck)) {
+      text = 'Trucks follow their cab. Only the front needs a clear road.';
+    } else {
+      text = null;
+    }
+    if (text == null) return const SizedBox(height: 8);
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            children: [
+              Icon(Icons.lightbulb_rounded, color: scheme.onSecondaryContainer),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  text,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSecondaryContainer,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
