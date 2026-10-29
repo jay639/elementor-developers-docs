@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$GameViewState {
 
- int get levelNumber; PlaySession get session; bool get showPaths;
+ LevelRef get levelRef; PlaySession get session; bool get showPaths;
 /// Create a copy of GameViewState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -27,20 +27,20 @@ $GameViewStateCopyWith<GameViewState> get copyWith => _$GameViewStateCopyWithImp
 @override
 bool operator ==(Object other) {
   final _this = this as GameViewState;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is GameViewState&&(identical(other.levelNumber, _this.levelNumber) || other.levelNumber == _this.levelNumber)&&(identical(other.session, _this.session) || other.session == _this.session)&&(identical(other.showPaths, _this.showPaths) || other.showPaths == _this.showPaths));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GameViewState&&(identical(other.levelRef, _this.levelRef) || other.levelRef == _this.levelRef)&&(identical(other.session, _this.session) || other.session == _this.session)&&(identical(other.showPaths, _this.showPaths) || other.showPaths == _this.showPaths));
 }
 
 
 @override
 int get hashCode {
   final _this = this as GameViewState;
-  return Object.hash(runtimeType,_this.levelNumber,_this.session,_this.showPaths);
+  return Object.hash(runtimeType,_this.levelRef,_this.session,_this.showPaths);
 }
 
 @override
 String toString() {
   final _this = this as GameViewState;
-  return 'GameViewState(levelNumber: ${_this.levelNumber}, session: ${_this.session}, showPaths: ${_this.showPaths})';
+  return 'GameViewState(levelRef: ${_this.levelRef}, session: ${_this.session}, showPaths: ${_this.showPaths})';
 }
 
 
@@ -51,11 +51,11 @@ abstract mixin class $GameViewStateCopyWith<$Res>  {
   factory $GameViewStateCopyWith(GameViewState value, $Res Function(GameViewState) _then) = _$GameViewStateCopyWithImpl;
 @useResult
 $Res call({
- int levelNumber, PlaySession session, bool showPaths
+ LevelRef levelRef, PlaySession session, bool showPaths
 });
 
 
-
+$LevelRefCopyWith<$Res> get levelRef;
 
 }
 /// @nodoc
@@ -68,15 +68,24 @@ class _$GameViewStateCopyWithImpl<$Res>
 
 /// Create a copy of GameViewState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? levelNumber = null,Object? session = null,Object? showPaths = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? levelRef = null,Object? session = null,Object? showPaths = null,}) {
   return _then(GameViewState(
-levelNumber: null == levelNumber ? _self.levelNumber : levelNumber // ignore: cast_nullable_to_non_nullable
-as int,session: null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
+levelRef: null == levelRef ? _self.levelRef : levelRef // ignore: cast_nullable_to_non_nullable
+as LevelRef,session: null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
 as PlaySession,showPaths: null == showPaths ? _self.showPaths : showPaths // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
-
+/// Create a copy of GameViewState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$LevelRefCopyWith<$Res> get levelRef {
+  
+  return $LevelRefCopyWith<$Res>(_self.levelRef, (value) {
+    return _then(_self.copyWith(levelRef: value));
+  });
+}
 }
 
 
@@ -158,10 +167,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int levelNumber,  PlaySession session,  bool showPaths)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LevelRef levelRef,  PlaySession session,  bool showPaths)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _GameViewState() when $default != null:
-return $default(_that.levelNumber,_that.session,_that.showPaths);case _:
+return $default(_that.levelRef,_that.session,_that.showPaths);case _:
   return orElse();
 
 }
@@ -179,10 +188,10 @@ return $default(_that.levelNumber,_that.session,_that.showPaths);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int levelNumber,  PlaySession session,  bool showPaths)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LevelRef levelRef,  PlaySession session,  bool showPaths)  $default,) {final _that = this;
 switch (_that) {
 case _GameViewState():
-return $default(_that.levelNumber,_that.session,_that.showPaths);case _:
+return $default(_that.levelRef,_that.session,_that.showPaths);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -199,10 +208,10 @@ return $default(_that.levelNumber,_that.session,_that.showPaths);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int levelNumber,  PlaySession session,  bool showPaths)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LevelRef levelRef,  PlaySession session,  bool showPaths)?  $default,) {final _that = this;
 switch (_that) {
 case _GameViewState() when $default != null:
-return $default(_that.levelNumber,_that.session,_that.showPaths);case _:
+return $default(_that.levelRef,_that.session,_that.showPaths);case _:
   return null;
 
 }
@@ -214,10 +223,10 @@ return $default(_that.levelNumber,_that.session,_that.showPaths);case _:
 
 
 class _GameViewState extends GameViewState {
-  const _GameViewState({required this.levelNumber, required this.session, this.showPaths = false}): super._();
+  const _GameViewState({required this.levelRef, required this.session, this.showPaths = false}): super._();
   
 
-@override final  int levelNumber;
+@override final  LevelRef levelRef;
 @override final  PlaySession session;
 @override@JsonKey() final  bool showPaths;
 
@@ -231,18 +240,18 @@ _$GameViewStateCopyWith<_GameViewState> get copyWith => __$GameViewStateCopyWith
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _GameViewState&&(identical(other.levelNumber, levelNumber) || other.levelNumber == levelNumber)&&(identical(other.session, session) || other.session == session)&&(identical(other.showPaths, showPaths) || other.showPaths == showPaths));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _GameViewState&&(identical(other.levelRef, levelRef) || other.levelRef == levelRef)&&(identical(other.session, session) || other.session == session)&&(identical(other.showPaths, showPaths) || other.showPaths == showPaths));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,levelNumber,session,showPaths);
+    return Object.hash(runtimeType,levelRef,session,showPaths);
 }
 
 @override
 String toString() {
-    return 'GameViewState(levelNumber: $levelNumber, session: $session, showPaths: $showPaths)';
+    return 'GameViewState(levelRef: $levelRef, session: $session, showPaths: $showPaths)';
 }
 
 
@@ -253,11 +262,11 @@ abstract mixin class _$GameViewStateCopyWith<$Res> implements $GameViewStateCopy
   factory _$GameViewStateCopyWith(_GameViewState value, $Res Function(_GameViewState) _then) = __$GameViewStateCopyWithImpl;
 @override @useResult
 $Res call({
- int levelNumber, PlaySession session, bool showPaths
+ LevelRef levelRef, PlaySession session, bool showPaths
 });
 
 
-
+@override $LevelRefCopyWith<$Res> get levelRef;
 
 }
 /// @nodoc
@@ -270,16 +279,25 @@ class __$GameViewStateCopyWithImpl<$Res>
 
 /// Create a copy of GameViewState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? levelNumber = null,Object? session = null,Object? showPaths = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? levelRef = null,Object? session = null,Object? showPaths = null,}) {
   return _then(_GameViewState(
-levelNumber: null == levelNumber ? _self.levelNumber : levelNumber // ignore: cast_nullable_to_non_nullable
-as int,session: null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
+levelRef: null == levelRef ? _self.levelRef : levelRef // ignore: cast_nullable_to_non_nullable
+as LevelRef,session: null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
 as PlaySession,showPaths: null == showPaths ? _self.showPaths : showPaths // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
 
-
+/// Create a copy of GameViewState
+/// with the given fields replaced by the non-null parameter values.
+@override
+@pragma('vm:prefer-inline')
+$LevelRefCopyWith<$Res> get levelRef {
+  
+  return $LevelRefCopyWith<$Res>(_self.levelRef, (value) {
+    return _then(_self.copyWith(levelRef: value));
+  });
+}
 }
 
 // dart format on

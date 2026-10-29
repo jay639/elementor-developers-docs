@@ -3,26 +3,24 @@ import 'package:arrow_escape/core/services/haptics.dart';
 import 'package:arrow_escape/core/services/sound.dart';
 import 'package:arrow_escape/features/game/application/game_state.dart';
 import 'package:arrow_escape/features/game/data/level_repository.dart';
+import 'package:arrow_escape/features/game/domain/level_ref.dart';
 import 'package:arrow_escape/features/progress/application/progress_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Game logic for one campaign level. Requires [levelProvider] for the same
-/// number to have loaded.
+/// Game logic for one level. Requires [levelProvider] for the same ref to
+/// have loaded.
 final gameControllerProvider = NotifierProvider.autoDispose
-    .family<GameController, GameViewState, int>(GameController.new);
+    .family<GameController, GameViewState, LevelRef>(GameController.new);
 
 class GameController extends Notifier<GameViewState> {
-  GameController(this.levelNumber);
+  GameController(this.levelRef);
 
-  final int levelNumber;
+  final LevelRef levelRef;
 
   @override
   GameViewState build() {
-    final level = ref.watch(levelProvider(levelNumber)).requireValue;
-    return GameViewState(
-      levelNumber: levelNumber,
-      session: PlaySession.start(level),
-    );
+    final level = ref.watch(levelProvider(levelRef)).requireValue;
+    return GameViewState(levelRef: levelRef, session: PlaySession.start(level));
   }
 
   /// Applies a tap and plays feedback. Returns the outcome so the view can
@@ -46,9 +44,14 @@ class GameController extends Notifier<GameViewState> {
 
     switch (result.session.status) {
       case SessionStatus.won:
-        ref
-            .read(progressProvider.notifier)
-            .completeLevel(levelNumber, result.session.stars);
+        final progress = ref.read(progressProvider.notifier);
+        final stars = result.session.stars;
+        switch (levelRef) {
+          case CampaignLevelRef(:final number):
+            progress.completeLevel(number, stars);
+          case DailyLevelRef(:final dateKey):
+            progress.completeDaily(dateKey, stars);
+        }
         haptics.play(HapticKind.win);
         sound.play(Sfx.win);
       case SessionStatus.lost:
@@ -80,7 +83,7 @@ class GameController extends Notifier<GameViewState> {
 
   void restart() {
     state = GameViewState(
-      levelNumber: levelNumber,
+      levelRef: levelRef,
       session: PlaySession.start(state.level, rules: state.session.rules),
       showPaths: state.showPaths,
     );

@@ -17,4 +17,9 @@ class ProgressController extends Notifier<Progress> {
       unlocked: level + 1 > state.unlocked ? level + 1 : state.unlocked,
     );
   }
+
+  void completeDaily(String dateKey, int stars) {
+    if (stars <= state.dailyStarsFor(dateKey)) return;
+    state = state.copyWith(dailyStars: {...state.dailyStars, dateKey: stars});
+  }
 }

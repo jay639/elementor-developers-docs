@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "count": 1500,
+  "packSize": 100,
+  "seed": 10973237,
+  "packs": [
+    "pack_01.json.gz",
+    "pack_02.json.gz",
+    "pack_03.json.gz",
+    "pack_04.json.gz",
+    "pack_05.json.gz",
+    "pack_06.json.gz",
+    "pack_07.json.gz",
+    "pack_08.json.gz",
+    "pack_09.json.gz",
+    "pack_10.json.gz",
+    "pack_11.json.gz",
+    "pack_12.json.gz",
+    "pack_13.json.gz",
+    "pack_14.json.gz",
+    "pack_15.json.gz"
+  ]
+}

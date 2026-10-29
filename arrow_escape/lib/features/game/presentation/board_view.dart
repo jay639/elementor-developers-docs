@@ -2,6 +2,7 @@ import 'package:arrow_engine/arrow_engine.dart';
 import 'package:arrow_escape/core/theme/board_style.dart';
 import 'package:arrow_escape/features/game/application/game_controller.dart';
 import 'package:arrow_escape/features/game/application/game_state.dart';
+import 'package:arrow_escape/features/game/domain/level_ref.dart';
 import 'package:arrow_escape/features/game/presentation/board_animations.dart';
 import 'package:arrow_escape/features/game/presentation/board_geometry.dart';
 import 'package:arrow_escape/features/game/presentation/board_painter.dart';
@@ -14,9 +15,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 /// The interactive board: pinch-zoom, pan, tap-to-move and all vehicle
 /// animations, painted with two [CustomPaint] layers.
 class BoardView extends ConsumerStatefulWidget {
-  const BoardView({super.key, required this.levelNumber});
+  const BoardView({super.key, required this.levelRef});
 
-  final int levelNumber;
+  final LevelRef levelRef;
 
   @override
   ConsumerState<BoardView> createState() => _BoardViewState();
@@ -94,7 +95,7 @@ class _BoardViewState extends ConsumerState<BoardView>
   bool get _fast => ref.read(settingsProvider).reduceMotion;
 
   void _handleTap(Offset position, Size size) {
-    final state = ref.read(gameControllerProvider(widget.levelNumber));
+    final state = ref.read(gameControllerProvider(widget.levelRef));
     if (state.session.isOver) return;
     final layout = BoardLayout(state.level, size);
     final board = state.session.board;
@@ -123,7 +124,7 @@ class _BoardViewState extends ConsumerState<BoardView>
     _lastTap[piece] = at;
 
     final outcome = ref
-        .read(gameControllerProvider(widget.levelNumber).notifier)
+        .read(gameControllerProvider(widget.levelRef).notifier)
         .tap(piece);
     if (outcome == null) return;
     _animate(state.level, outcome);
@@ -225,7 +226,7 @@ class _BoardViewState extends ConsumerState<BoardView>
 
   @override
   Widget build(BuildContext context) {
-    final provider = gameControllerProvider(widget.levelNumber);
+    final provider = gameControllerProvider(widget.levelRef);
     ref.listen(provider, _onStateChanged);
     final state = ref.watch(provider);
     final settings = ref.watch(settingsProvider);

@@ -6,7 +6,12 @@ void main() {
     test('json round trip keeps everything', () {
       final level = parseAsciiLevel(
         id: 42,
-        meta: const LevelMeta(shape: 'x', seed: 9, difficulty: 12.5, breather: true),
+        meta: const LevelMeta(
+          shape: 'x',
+          seed: 9,
+          difficulty: 12.5,
+          breather: true,
+        ),
         vehicles: [
           (kind: PieceKind.truck, dir: Dir.up, cells: [(0, 1), (0, 2)]),
         ],
@@ -57,7 +62,9 @@ void main() {
           width: 2,
           height: 1,
           mask: [true, false],
-          pieces: [PieceDef(kind: PieceKind.car, dir: Dir.up, cells: [1])],
+          pieces: [
+            PieceDef(kind: PieceKind.car, dir: Dir.up, cells: [1]),
+          ],
         ),
         throwsFormatException,
       );
@@ -69,7 +76,9 @@ void main() {
           id: 1,
           width: 3,
           height: 1,
-          pieces: [PieceDef(kind: PieceKind.truck, dir: Dir.up, cells: [0, 2])],
+          pieces: [
+            PieceDef(kind: PieceKind.truck, dir: Dir.up, cells: [0, 2]),
+          ],
         ),
         throwsFormatException,
       );
@@ -81,7 +90,9 @@ void main() {
           id: 1,
           width: 2,
           height: 1,
-          pieces: [PieceDef(kind: PieceKind.car, dir: Dir.up, cells: [0, 1])],
+          pieces: [
+            PieceDef(kind: PieceKind.car, dir: Dir.up, cells: [0, 1]),
+          ],
         ),
         throwsFormatException,
       );
@@ -93,7 +104,9 @@ void main() {
           id: 1,
           width: 1,
           height: 1,
-          pieces: [PieceDef(kind: PieceKind.car, dir: Dir.up, cells: [0])],
+          pieces: [
+            PieceDef(kind: PieceKind.car, dir: Dir.up, cells: [0]),
+          ],
           lights: [const TrafficLight(cell: 0, startsGreen: true)],
         ),
         throwsFormatException,

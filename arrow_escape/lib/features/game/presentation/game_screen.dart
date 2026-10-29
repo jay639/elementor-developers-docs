@@ -6,6 +6,7 @@ import 'package:arrow_escape/core/services/sound.dart';
 import 'package:arrow_escape/features/game/application/game_controller.dart';
 import 'package:arrow_escape/features/game/application/game_state.dart';
 import 'package:arrow_escape/features/game/data/level_repository.dart';
+import 'package:arrow_escape/features/game/domain/level_ref.dart';
 import 'package:arrow_escape/features/game/presentation/board_view.dart';
 import 'package:arrow_escape/features/game/presentation/widgets/game_toolbar.dart';
 import 'package:arrow_escape/features/game/presentation/widgets/hearts_bar.dart';
@@ -14,32 +15,60 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Loads the level, then shows the board.
+/// Loads the level (campaign pack or generated daily), then shows the board.
 class GameScreen extends ConsumerWidget {
-  const GameScreen({super.key, required this.levelNumber});
+  const GameScreen({super.key, required this.levelRef});
 
-  final int levelNumber;
+  final LevelRef levelRef;
+
+  /// App bar title for [ref].
+  static String titleFor(LevelRef ref) => switch (ref) {
+    CampaignLevelRef(:final number) => 'Level $number',
+    DailyLevelRef(:final dateKey) => 'Daily · ${_shortDate(dateKey)}',
+  };
+
+  static String _shortDate(String key) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', //
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    final d = DailyChallenge.parseKey(key);
+    return '${months[d.month - 1]} ${d.day}';
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final level = ref.watch(levelProvider(levelNumber));
+    final level = ref.watch(levelProvider(levelRef));
     return level.when(
-      data: (_) =>
-          _GameView(key: ValueKey(levelNumber), levelNumber: levelNumber),
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      data: (_) => _GameView(key: ValueKey(levelRef), levelRef: levelRef),
+      loading: () => Scaffold(
+        appBar: AppBar(title: Text(titleFor(levelRef))),
+        body: const Center(child: CircularProgressIndicator()),
+      ),
       error: (e, _) => Scaffold(
-        appBar: AppBar(),
-        body: Center(child: Text('Could not load level $levelNumber')),
+        appBar: AppBar(title: Text(titleFor(levelRef))),
+        body: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Could not load this level.'),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: () => ref.invalidate(levelProvider(levelRef)),
+                child: const Text('Retry'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
 class _GameView extends ConsumerStatefulWidget {
-  const _GameView({super.key, required this.levelNumber});
+  const _GameView({super.key, required this.levelRef});
 
-  final int levelNumber;
+  final LevelRef levelRef;
 
   @override
   ConsumerState<_GameView> createState() => _GameViewState();
@@ -81,12 +110,16 @@ class _GameViewState extends ConsumerState<_GameView> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = gameControllerProvider(widget.levelNumber);
+    final levelRef = widget.levelRef;
+    final provider = gameControllerProvider(levelRef);
     ref.listen(provider.select((s) => s.status), _onStatus);
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
     final levelCount = ref.watch(levelRepositoryProvider).count;
-    final hasNext = widget.levelNumber < levelCount;
+    final next = switch (levelRef) {
+      CampaignLevelRef(:final number) when number < levelCount => number + 1,
+      _ => null,
+    };
 
     return Scaffold(
       appBar: AppBar(
@@ -96,7 +129,7 @@ class _GameViewState extends ConsumerState<_GameView> {
           onPressed: () =>
               context.canPop() ? context.pop() : context.go(Routes.home),
         ),
-        title: Text('Level ${widget.levelNumber}'),
+        title: Text(GameScreen.titleFor(levelRef)),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
@@ -114,7 +147,7 @@ class _GameViewState extends ConsumerState<_GameView> {
             Column(
               children: [
                 _MechanicBanner(state: state),
-                Expanded(child: BoardView(levelNumber: widget.levelNumber)),
+                Expanded(child: BoardView(levelRef: levelRef)),
                 GameToolbar(
                   canUndo: state.session.canUndo,
                   undosLeft: state.session.undosLeft,
@@ -128,19 +161,22 @@ class _GameViewState extends ConsumerState<_GameView> {
             if (_showResult && state.status == SessionStatus.won)
               Positioned.fill(
                 child: ResultOverlay.win(
-                  levelNumber: widget.levelNumber,
+                  title: levelRef.isDaily
+                      ? 'Daily challenge done!'
+                      : '${GameScreen.titleFor(levelRef)} cleared!',
                   stars: state.session.stars,
-                  hasNext: hasNext,
-                  onPrimary: () => hasNext
-                      ? _goToLevel(widget.levelNumber + 1)
-                      : context.go(Routes.home),
+                  hasNext: next != null,
+                  onPrimary: () => next != null
+                      ? _goToLevel(next)
+                      : context.go(
+                          levelRef.isDaily ? Routes.daily : Routes.home,
+                        ),
                   onHome: () => context.go(Routes.home),
                 ),
               ),
             if (_showResult && state.status == SessionStatus.lost)
               Positioned.fill(
                 child: ResultOverlay.lose(
-                  levelNumber: widget.levelNumber,
                   onPrimary: controller.restart,
                   onHome: () => context.go(Routes.home),
                 ),

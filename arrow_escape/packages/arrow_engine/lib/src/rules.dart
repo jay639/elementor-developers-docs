@@ -1,6 +1,7 @@
 import 'board_state.dart';
 import 'dir.dart';
 import 'level.dart';
+import 'path_tracer.dart';
 
 /// Why a tap did not let a vehicle leave.
 enum BlockReason {
@@ -207,37 +208,25 @@ class Rules {
 
   _Path _tracePath(int piece) {
     final def = level.pieces[piece];
-    final own = def.cells.toSet();
-    final cells = <int>[];
+    final trace = tracePath(
+      width: level.width,
+      height: level.height,
+      gateAt: _gateAt,
+      head: def.head,
+      dir: def.dir,
+      isOwn: def.cells.contains,
+    );
     final obstacles = <_Obstacle>[];
-    final seen = <int>{};
-    var dir = def.dir;
-    var cell = def.head;
-    while (true) {
-      final next = level.step(cell, dir);
-      if (next == -1) return _Path(cells, obstacles);
-      if (own.contains(next)) {
-        return _Path(cells, obstacles, BlockReason.noExit, next);
-      }
-      final gate = _gateAt[next];
-      if (gate != null && gate == dir.opposite) {
-        return _Path(cells, obstacles, BlockReason.wrongWay, next);
-      }
-      // A loop through gates revisits a gate.
-      if (gate != null && !seen.add(next)) {
-        return _Path(cells, obstacles, BlockReason.noExit, next);
-      }
-      final step = cells.length;
-      cells.add(next);
-      final occupant = _occupant[next];
+    for (var step = 0; step < trace.cells.length; step++) {
+      final cell = trace.cells[step];
+      final occupant = _occupant[cell];
       if (occupant >= 0) {
-        obstacles.add(_Obstacle(step, next, piece: occupant));
+        obstacles.add(_Obstacle(step, cell, piece: occupant));
       }
-      final light = _lightAt[next];
-      if (light >= 0) obstacles.add(_Obstacle(step, next, light: light));
-      if (gate != null) dir = gate;
-      cell = next;
+      final light = _lightAt[cell];
+      if (light >= 0) obstacles.add(_Obstacle(step, cell, light: light));
     }
+    return _Path(trace.cells, obstacles, trace.terminal, trace.terminalCell);
   }
 }
 

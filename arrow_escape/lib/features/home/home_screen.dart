@@ -1,5 +1,7 @@
+import 'package:arrow_engine/arrow_engine.dart';
 import 'package:arrow_escape/app/routes.dart';
 import 'package:arrow_escape/core/theme/palette.dart';
+import 'package:arrow_escape/core/utils/clock.dart';
 import 'package:arrow_escape/core/widgets/arrow_logo.dart';
 import 'package:arrow_escape/features/game/data/level_repository.dart';
 import 'package:arrow_escape/features/progress/application/progress_controller.dart';
@@ -16,6 +18,8 @@ class HomeScreen extends ConsumerWidget {
     final progress = ref.watch(progressProvider);
     final count = ref.watch(levelRepositoryProvider).count;
     final next = progress.unlocked.clamp(1, count);
+    final today = DailyChallenge.keyFor(ref.watch(clockProvider)());
+    final dailyDone = progress.dailyStarsFor(today) > 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -67,6 +71,23 @@ class HomeScreen extends ConsumerWidget {
                   onPressed: () => context.push(Routes.game(next)),
                   icon: const Icon(Icons.play_arrow_rounded, size: 30),
                   label: Text('Play  ·  Level $next'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: const Key('daily'),
+                  onPressed: () => context.push(Routes.daily),
+                  icon: Icon(
+                    dailyDone
+                        ? Icons.check_circle_rounded
+                        : Icons.calendar_today_rounded,
+                    color: dailyDone ? Palette.success : null,
+                  ),
+                  label: Text(
+                    dailyDone ? 'Daily challenge done' : 'Daily challenge',
+                  ),
                 ),
               ),
               const SizedBox(height: 40),

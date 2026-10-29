@@ -31,7 +31,11 @@ class BoardState {
     assert(isOnBoard(piece), 'piece $piece already exited');
     final words = List<int>.of(_words);
     words[piece ~/ _bits] &= ~(1 << (piece % _bits));
-    return BoardState._(List.unmodifiable(words), exits + 1, remainingCount - 1);
+    return BoardState._(
+      List.unmodifiable(words),
+      exits + 1,
+      remainingCount - 1,
+    );
   }
 
   Iterable<int> get remaining sync* {

@@ -14,6 +14,9 @@ abstract class Progress with _$Progress {
 
     /// Best star rating per completed level, keyed by level number.
     @Default(<int, int>{}) Map<int, int> stars,
+
+    /// Best stars per completed daily challenge, keyed by `yyyy-mm-dd`.
+    @Default(<String, int>{}) Map<String, int> dailyStars,
   }) = _Progress;
 
   factory Progress.fromJson(Map<String, Object?> json) =>
@@ -22,4 +25,6 @@ abstract class Progress with _$Progress {
   int starsFor(int level) => stars[level] ?? 0;
 
   int get totalStars => stars.values.fold(0, (a, b) => a + b);
+
+  int dailyStarsFor(String dateKey) => dailyStars[dateKey] ?? 0;
 }

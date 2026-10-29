@@ -122,6 +122,13 @@ class LevelMeta {
     this.breather = false,
   });
 
+  LevelMeta copyWith({double? difficulty, bool? breather}) => LevelMeta(
+    shape: shape,
+    seed: seed,
+    difficulty: difficulty ?? this.difficulty,
+    breather: breather ?? this.breather,
+  );
+
   final String shape;
   final int seed;
 
@@ -186,6 +193,19 @@ class Level {
   bool inBounds(int x, int y) => x >= 0 && y >= 0 && x < width && y < height;
 
   bool get hasAmbulance => pieces.any((p) => p.kind == PieceKind.ambulance);
+
+  bool get hasTrucks => pieces.any((p) => p.kind == PieceKind.truck);
+
+  Level copyWith({int? id, LevelMeta? meta}) => Level(
+    id: id ?? this.id,
+    width: width,
+    height: height,
+    mask: mask,
+    pieces: pieces,
+    lights: lights,
+    gates: gates,
+    meta: meta ?? this.meta,
+  );
 
   /// Cell reached by stepping once from [cell] in [dir], or -1 if that
   /// leaves the board.
@@ -269,10 +289,12 @@ class Level {
       mask: m == null ? null : [for (final ch in m.split('')) ch == '1'],
       pieces: [for (final p in json['p'] as List) PieceDef.fromJson(p)],
       lights: [
-        for (final l in (json['l'] as List?) ?? const []) TrafficLight.fromJson(l),
+        for (final l in (json['l'] as List?) ?? const [])
+          TrafficLight.fromJson(l),
       ],
       gates: [
-        for (final g in (json['g'] as List?) ?? const []) OneWayGate.fromJson(g),
+        for (final g in (json['g'] as List?) ?? const [])
+          OneWayGate.fromJson(g),
       ],
       meta: LevelMeta.fromJson(json['meta']),
     );

@@ -11,7 +11,11 @@ scope, rules and conventions. Update it when a decision changes.
   flutter analyze
   flutter test
   (cd packages/arrow_engine && dart analyze && dart test)
+  (cd tool && dart analyze && dart test && dart run bin/verify_levels.dart)
   ```
+- Levels: `cd tool && dart run bin/generate_levels.dart` regenerates
+  `assets/levels/` (deterministic, ~20 s, verifies at the end). Inspect one
+  with `dart run bin/show_level.dart 42` or `--daily 2026-10-29`.
 - Codegen (freezed / json_serializable):
   `dart run build_runner build --delete-conflicting-outputs`. Generated
   `*.freezed.dart` / `*.g.dart` files are committed.
@@ -158,10 +162,29 @@ arrow_escape/
 - Phase 1 done: engine (`packages/arrow_engine`), theme, game screen,
   splash/home/settings, Android `dev`/`prod` productFlavors. Settings and
   progress are in-memory until phase 3 adds the encrypted Hive store.
-- Hand-made sample levels (`samples.dart`) stand in for the campaign until
-  phase 2's generated packs.
-- The engine has a basic DFS solver already (used for tests and hints);
-  phase 2 adds difficulty scoring.
+- Phase 2 done: generator, analyzer, campaign plan, daily challenge,
+  `tool/` CLI, 1500 levels in 15 gzip packs (~160 KB), daily screen.
+- Campaign: levels 1–3 and the first level of each mechanic (20, 40, 70,
+  100) are hand-made (`samples.dart`); the rest are generated to a target
+  curve (`Campaign.targetDifficulty`, ~15 → ~68) with every 5th level a
+  breather at 60% of the curve. A new mechanic appears in each of the 4
+  levels after its introduction, then in a share of later levels.
+- Generator: reverse placement (solvable by construction). Each gate is
+  placed with a "feeder" car that turns through it, so no gate is
+  decorative; unused ones are dropped. The ambulance gets an empty lane
+  reserved; only cars placed after it, in that lane, leave before it.
+  Lights and ambulance levels are re-verified with the solver.
+- Difficulty (0–100) = f(log pieces, blocker-chain depth, share initially
+  blocked by cars/lights, blockers per path, solver dead ends, mechanics).
+  `generateForTarget` adapts board size/density after each candidate.
+  Min moves always equals the vehicle count (each leaves once).
+- Determinism: generation uses `Rng` (own xorshift) and `detLn` (log from
+  basic IEEE ops) instead of `dart:math` Random/log/pow, so the daily is
+  bit-identical on every device. Golden hashes in
+  `packages/arrow_engine/test/generator_test.dart` catch accidental
+  changes; bump `DailyChallenge.version` when a change is intended.
+- Daily: local calendar day, target by weekday (Mon 34 → Sun 62),
+  generated on a background isolate. Progress stores best stars per day.
 - iOS schemes for flavors need Xcode and are set up in phase 7.
 - Double-tap protection: a vehicle that is bumping/returning ignores taps,
   repeat taps on one vehicle within 280 ms count once, and taps on the cell

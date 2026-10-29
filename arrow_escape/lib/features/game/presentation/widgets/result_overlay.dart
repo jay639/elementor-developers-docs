@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class ResultOverlay extends StatelessWidget {
   const ResultOverlay.win({
     super.key,
-    required this.levelNumber,
+    required String this.title,
     required int this.stars,
     required this.onPrimary,
     required this.onHome,
@@ -14,15 +14,15 @@ class ResultOverlay extends StatelessWidget {
 
   const ResultOverlay.lose({
     super.key,
-    required this.levelNumber,
     required this.onPrimary,
     required this.onHome,
   }) : won = false,
+       title = null,
        stars = null,
        hasNext = false;
 
   final bool won;
-  final int levelNumber;
+  final String? title;
   final int? stars;
   final bool hasNext;
 
@@ -51,7 +51,7 @@ class ResultOverlay extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    won ? 'Level $levelNumber cleared!' : 'Out of hearts',
+                    won ? title! : 'Out of hearts',
                     style: theme.textTheme.headlineSmall,
                     textAlign: TextAlign.center,
                   ),

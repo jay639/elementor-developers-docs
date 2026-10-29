@@ -3,11 +3,14 @@ import 'package:arrow_escape/core/services/haptics.dart';
 import 'package:arrow_escape/core/services/sound.dart';
 import 'package:arrow_escape/features/game/application/game_controller.dart';
 import 'package:arrow_escape/features/game/data/level_repository.dart';
+import 'package:arrow_escape/features/game/domain/level_ref.dart';
 import 'package:arrow_escape/features/progress/application/progress_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../helpers.dart';
+
+const one = LevelRef.campaign(1);
 
 void main() {
   late ProviderContainer container;
@@ -27,14 +30,14 @@ void main() {
       ),
     );
     addTearDown(container.dispose);
-    await container.read(levelProvider(1).future);
+    await container.read(levelProvider(one).future);
   });
 
   GameController controller() =>
-      container.read(gameControllerProvider(1).notifier);
+      container.read(gameControllerProvider(one).notifier);
 
   // autoDispose: keep the provider alive for the duration of a test.
-  void keepAlive() => container.listen(gameControllerProvider(1), (_, _) {});
+  void keepAlive() => container.listen(gameControllerProvider(one), (_, _) {});
 
   test('exit plays swoosh + light haptic', () {
     keepAlive();
@@ -46,7 +49,7 @@ void main() {
   test('bump costs a heart and plays bump feedback', () {
     keepAlive();
     expect(controller().tap(1), isA<BlockedMove>());
-    expect(container.read(gameControllerProvider(1)).session.hearts, 2);
+    expect(container.read(gameControllerProvider(one)).session.hearts, 2);
     expect(sound.played, [Sfx.bump]);
     expect(haptics.played, [HapticKind.bump]);
   });
@@ -66,7 +69,7 @@ void main() {
       ..tap(1) // mistake
       ..tap(2)
       ..tap(1);
-    final state = container.read(gameControllerProvider(1));
+    final state = container.read(gameControllerProvider(one));
     expect(state.status, SessionStatus.won);
     final progress = container.read(progressProvider);
     expect(progress.starsFor(1), 2);
@@ -89,7 +92,7 @@ void main() {
       ..tap(1)
       ..tap(1);
     expect(
-      container.read(gameControllerProvider(1)).status,
+      container.read(gameControllerProvider(one)).status,
       SessionStatus.lost,
     );
     expect(sound.played.last, Sfx.lose);
@@ -111,9 +114,33 @@ void main() {
       ..tap(0)
       ..tap(1)
       ..restart();
-    final state = container.read(gameControllerProvider(1));
+    final state = container.read(gameControllerProvider(one));
     expect(state.session.hearts, 3);
     expect(state.session.board.remainingCount, 3);
     expect(state.showPaths, isTrue);
+  });
+
+  test('winning a daily records daily stars, not campaign progress', () async {
+    const daily = LevelRef.daily('2026-10-29');
+    await container.read(levelProvider(daily).future);
+    container.listen(gameControllerProvider(daily), (_, _) {});
+    final c = container.read(gameControllerProvider(daily).notifier);
+    for (final p in [0, 2, 1]) {
+      c.tap(p);
+    }
+    expect(
+      container.read(gameControllerProvider(daily)).status,
+      SessionStatus.won,
+    );
+    final progress = container.read(progressProvider);
+    expect(progress.dailyStarsFor('2026-10-29'), 3);
+    expect(progress.unlocked, 1);
+  });
+
+  test('daily stars keep the best result', () {
+    container.read(progressProvider.notifier)
+      ..completeDaily('2026-10-29', 3)
+      ..completeDaily('2026-10-29', 1);
+    expect(container.read(progressProvider).dailyStarsFor('2026-10-29'), 3);
   });
 }
