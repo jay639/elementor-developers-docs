@@ -127,4 +127,5 @@ jobs:
           path: |
             logcat.txt
             screenshot.png
+            ui.xml
           retention-days: 14

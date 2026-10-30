@@ -21,10 +21,22 @@ adb logcat -d > logcat.txt
 echo "===== crash / error lines ====="
 grep -E "FATAL|AndroidRuntime|E flutter|Exception|Error|libc  |DEBUG   :|ActivityManager: Process .* has died|ActivityManager: Force" logcat.txt | grep -v "GoogleApiManager\|ConnectionResult" | head -200
 
+echo "===== app log ====="
+grep -E " (I|W|E) flutter" logcat.txt | head -80
+
 if [ "$alive" = 1 ]; then
   echo "App stayed up for 30s."
   adb exec-out screencap -p > screenshot.png
-  exit 0
+  # The UI tree proves the app got past the splash and rendered home.
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+  adb pull /sdcard/ui.xml ui.xml >/dev/null 2>&1
+  if grep -q "Play" ui.xml; then
+    echo "Home screen rendered (found the Play button)."
+    exit 0
+  fi
+  echo "::error::App is running but the home screen did not render"
+  grep -o 'content-desc="[^"]*"\|text="[^"]*"' ui.xml | sort -u | head -40
+  exit 1
 fi
 echo "::error::App process died after launch"
 exit 1
