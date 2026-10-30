@@ -22,7 +22,13 @@ class BoardStyle {
     required this.symbols,
   });
 
-  factory BoardStyle.of(ThemeData theme, AppSettings settings) {
+  /// [skinColors] come from the selected vehicle skin; accessibility modes
+  /// override them.
+  factory BoardStyle.of(
+    ThemeData theme,
+    AppSettings settings, {
+    List<Color>? skinColors,
+  }) {
     final dark = theme.brightness == Brightness.dark;
     final hc = settings.highContrast;
     final List<Color> vehicles;
@@ -31,7 +37,8 @@ class BoardStyle {
     } else if (hc) {
       vehicles = Palette.vehiclesHighContrast;
     } else {
-      vehicles = dark ? Palette.vehiclesDark : Palette.vehiclesLight;
+      vehicles =
+          skinColors ?? (dark ? Palette.vehiclesDark : Palette.vehiclesLight);
     }
     return BoardStyle(
       tile: hc

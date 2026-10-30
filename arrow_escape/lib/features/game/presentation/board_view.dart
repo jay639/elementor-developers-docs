@@ -7,7 +7,9 @@ import 'package:arrow_escape/features/game/presentation/board_animations.dart';
 import 'package:arrow_escape/features/game/presentation/board_geometry.dart';
 import 'package:arrow_escape/features/game/presentation/board_painter.dart';
 import 'package:arrow_escape/features/game/presentation/track.dart';
+import 'package:arrow_escape/features/save/application/save_controller.dart';
 import 'package:arrow_escape/features/settings/application/settings_controller.dart';
+import 'package:arrow_escape/features/skins/skins.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -114,6 +116,13 @@ class _BoardViewState extends ConsumerState<BoardView>
 
     final piece = layout.pieceAt(position, board.isOnBoard);
     if (piece == null) return;
+    _tapPiece(piece);
+  }
+
+  /// Moves [piece] (from a touch, or a screen reader's activate action).
+  void _tapPiece(int piece) {
+    final state = ref.read(gameControllerProvider(widget.levelRef));
+    if (state.session.isOver || !state.session.board.isOnBoard(piece)) return;
 
     // Double-tap protection: a vehicle mid-bump or mid-return ignores taps,
     // and rapid repeat taps on one vehicle count once.
@@ -230,7 +239,15 @@ class _BoardViewState extends ConsumerState<BoardView>
     ref.listen(provider, _onStateChanged);
     final state = ref.watch(provider);
     final settings = ref.watch(settingsProvider);
-    final style = BoardStyle.of(Theme.of(context), settings);
+    final theme = Theme.of(context);
+    final skin = Skins.byId(
+      ref.watch(saveProvider.select((s) => s.selectedSkin)),
+    );
+    final style = BoardStyle.of(
+      theme,
+      settings,
+      skinColors: skin.colors(theme.brightness),
+    );
     final level = state.level;
     final remaining = state.session.board.remainingCount;
 
@@ -267,9 +284,11 @@ class _BoardViewState extends ConsumerState<BoardView>
                           board: state.session.board,
                           style: style,
                           showPaths: state.showPaths,
+                          hintPiece: state.hintPiece,
                           animations: _animations,
                           flashes: _flashes,
                           now: () => _now,
+                          onActivate: _tapPiece,
                           repaint: _frame,
                         ),
                       ),

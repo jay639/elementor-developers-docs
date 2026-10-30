@@ -46,3 +46,13 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Secrets: never commit these (see README "Release setup")
+/android/key.properties
+*.jks
+*.keystore
+google-services.json
+GoogleService-Info.plist
+/ios/Flutter/Secrets.xcconfig
+.env*
+/build/symbols/

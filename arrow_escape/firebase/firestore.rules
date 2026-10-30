@@ -1,0 +1,22 @@
+rules_version = '2';
+
+// Each player owns exactly one document: users/{uid}, written by the app's
+// cloud save. Nobody can read or write anyone else's, and nothing else in
+// the database is reachable from clients.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['save', 'updatedAt'])
+        && request.resource.data.save is map
+        // Keep documents small (a save is a few KB).
+        && request.resource.size() < 64 * 1024;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

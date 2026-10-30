@@ -1,7 +1,31 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Release signing and per-environment ids live in android/key.properties,
+// which is git-ignored (see README). Environment variables work too (CI).
+val keyProperties = Properties().apply {
+    val f = rootProject.file("key.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+fun secret(name: String): String? = keyProperties.getProperty(name) ?: System.getenv(name)
+
+// Google's public test app id; real ids come from key.properties / env.
+val testAdmobAppId = "ca-app-pub-3940256099942544~3347511713"
+
+// Firebase is optional: without google-services.json the app runs offline.
+val hasGoogleServices = listOf(
+    "google-services.json",
+    "src/dev/google-services.json",
+    "src/prod/google-services.json",
+).any { file(it).exists() }
+if (hasGoogleServices) {
+    apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.crashlytics")
 }
 
 android {
@@ -16,17 +40,27 @@ android {
 
     defaultConfig {
         applicationId = "com.arrowescape.arrow_escape"
-        minSdk = flutter.minSdkVersion
+        // Firebase, Google Mobile Ads and the mediation adapters need 23+.
+        minSdk = maxOf(flutter.minSdkVersion, 24)
         targetSdk = flutter.targetSdkVersion
-        // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
-        // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
-        // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
-        // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["admobAppId"] = testAdmobAppId
     }
 
-    // Run with: flutter run --flavor dev -t lib/main_dev.dart
+    signingConfigs {
+        create("release") {
+            val storeFilePath = secret("ANDROID_KEYSTORE_PATH")
+            if (storeFilePath != null) {
+                storeFile = file(storeFilePath)
+                storePassword = secret("ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = secret("ANDROID_KEY_ALIAS")
+                keyPassword = secret("ANDROID_KEY_PASSWORD")
+            }
+        }
+    }
+
+    // flutter run --flavor dev -t lib/main_dev.dart
     flavorDimensions += "env"
     productFlavors {
         create("dev") {
@@ -38,13 +72,26 @@ android {
         create("prod") {
             dimension = "env"
             resValue("string", "app_name", "Arrow Escape")
+            manifestPlaceholders["admobAppId"] =
+                secret("ADMOB_APP_ID_ANDROID") ?: testAdmobAppId
         }
     }
 
     buildTypes {
         release {
-            // Real release signing and R8 rules arrive in phase 7.
-            signingConfig = signingConfigs.getByName("debug")
+            // Falls back to debug signing so `flutter build apk` works on a
+            // fresh checkout; store builds must provide key.properties.
+            signingConfig = if (secret("ANDROID_KEYSTORE_PATH") != null) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

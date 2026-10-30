@@ -3,6 +3,9 @@ import 'package:arrow_escape/features/daily/daily_screen.dart';
 import 'package:arrow_escape/features/game/domain/level_ref.dart';
 import 'package:arrow_escape/features/game/presentation/game_screen.dart';
 import 'package:arrow_escape/features/home/home_screen.dart';
+import 'package:arrow_escape/features/level_map/level_map_screen.dart';
+import 'package:arrow_escape/features/shop/shop_screen.dart';
+import 'package:arrow_escape/features/skins/skins_screen.dart';
 import 'package:arrow_escape/features/settings/presentation/settings_screen.dart';
 import 'package:arrow_escape/features/splash/splash_screen.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +23,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.home,
         builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: Routes.map,
+        builder: (context, state) => const LevelMapScreen(),
+      ),
+      GoRoute(
+        path: Routes.skins,
+        builder: (context, state) => const SkinsScreen(),
+      ),
+      GoRoute(
+        path: Routes.shop,
+        builder: (context, state) => const ShopScreen(),
       ),
       GoRoute(
         path: Routes.settings,

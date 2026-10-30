@@ -7,6 +7,7 @@ import 'package:arrow_escape/features/game/presentation/board_animations.dart';
 import 'package:arrow_escape/features/game/presentation/board_geometry.dart';
 import 'package:arrow_escape/features/game/presentation/track.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 /// Static layer: board tiles and one-way gates. Repaints only when the level,
 /// size or style changes.
@@ -81,11 +82,16 @@ class BoardPiecesPainter extends CustomPainter {
     required this.board,
     required this.style,
     required this.showPaths,
+    this.hintPiece,
     required this.animations,
     required this.flashes,
     required this.now,
+    this.onActivate,
     super.repaint,
   });
+
+  /// Screen-reader activation of a vehicle.
+  final void Function(int piece)? onActivate;
 
   final Rules rules;
 
@@ -94,6 +100,9 @@ class BoardPiecesPainter extends CustomPainter {
   final BoardState board;
   final BoardStyle style;
   final bool showPaths;
+
+  /// Vehicle to highlight (rewarded hint).
+  final int? hintPiece;
   final Map<int, PieceAnimation> animations;
   final List<FlashAnimation> flashes;
   final Duration Function() now;
@@ -106,6 +115,12 @@ class BoardPiecesPainter extends CustomPainter {
     final t = now();
 
     if (showPaths) _paintPaths(canvas, layout);
+    final hint = hintPiece;
+    if (hint != null &&
+        board.isOnBoard(hint) &&
+        !animations.containsKey(hint)) {
+      _paintHint(canvas, layout, hint);
+    }
     _paintLights(canvas, layout);
 
     // Resting vehicles first, then moving ones on top.
@@ -293,6 +308,30 @@ class BoardPiecesPainter extends CustomPainter {
     }
   }
 
+  void _paintHint(Canvas canvas, BoardLayout layout, int piece) {
+    final cell = layout.cell;
+    final glow = Paint()
+      ..color = style.pathClear.withValues(alpha: 0.35)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = cell * 0.16
+      ..strokeCap = StrokeCap.round;
+    for (final c in level.pieces[piece].cells) {
+      canvas.drawCircle(layout.centerOf(c), cell * 0.46, glow);
+    }
+    final pts = [
+      layout.centerOf(level.pieces[piece].head),
+      for (final c in rules.pathOf(piece)) layout.centerOf(c),
+    ];
+    canvas.drawPoints(
+      ui.PointMode.polygon,
+      pts,
+      Paint()
+        ..color = style.pathClear
+        ..strokeWidth = math.max(3, cell * 0.09)
+        ..strokeCap = StrokeCap.round,
+    );
+  }
+
   void _paintCellFlashes(Canvas canvas, BoardLayout layout, Duration t) {
     for (final f in flashes) {
       final cell = f.cell;
@@ -346,11 +385,74 @@ class BoardPiecesPainter extends CustomPainter {
     }
   }
 
+  /// One accessible node per vehicle, so TalkBack / VoiceOver users can
+  /// explore the board and move vehicles with a double tap. Whether a road
+  /// is clear is only announced with "show paths" on, like for everyone.
+  @override
+  SemanticsBuilderCallback get semanticsBuilder => (size) {
+    final layout = BoardLayout(level, size);
+    final nodes = <CustomPainterSemantics>[];
+    for (var i = 0; i < level.pieces.length; i++) {
+      if (!board.isOnBoard(i)) continue;
+      final def = level.pieces[i];
+      var rect = layout.cellRect(def.cells.first);
+      for (final c in def.cells.skip(1)) {
+        rect = rect.expandToInclude(layout.cellRect(c));
+      }
+      final kind = switch (def.kind) {
+        PieceKind.car => 'Car',
+        PieceKind.truck => 'Truck, ${def.length} long,',
+        PieceKind.ambulance => 'Ambulance',
+      };
+      final x = level.xOf(def.head) + 1;
+      final y = level.yOf(def.head) + 1;
+      final road = showPaths
+          ? (rules.canExit(board, i) ? ', road clear' : ', blocked')
+          : '';
+      final activate = onActivate;
+      nodes.add(
+        CustomPainterSemantics(
+          key: ValueKey('piece-$i'),
+          rect: rect,
+          properties: SemanticsProperties(
+            button: true,
+            label: '$kind facing ${def.dir.name}, row $y, column $x$road',
+            hint: 'Drive out',
+            onTap: activate == null ? null : () => activate(i),
+            textDirection: TextDirection.ltr,
+          ),
+        ),
+      );
+    }
+    for (var i = 0; i < level.lights.length; i++) {
+      final cell = level.lights[i].cell;
+      nodes.add(
+        CustomPainterSemantics(
+          key: ValueKey('light-$i'),
+          rect: layout.cellRect(cell),
+          properties: SemanticsProperties(
+            label:
+                'Traffic light, ${rules.isGreen(i, board) ? 'green' : 'red'}',
+            textDirection: TextDirection.ltr,
+          ),
+        ),
+      );
+    }
+    return nodes;
+  };
+
+  @override
+  bool shouldRebuildSemantics(BoardPiecesPainter oldDelegate) =>
+      oldDelegate.board != board ||
+      oldDelegate.showPaths != showPaths ||
+      oldDelegate.rules != rules;
+
   @override
   bool shouldRepaint(BoardPiecesPainter old) =>
       old.board != board ||
       old.style != style ||
       old.showPaths != showPaths ||
+      old.hintPiece != hintPiece ||
       old.rules != rules ||
       old.animations != animations ||
       old.flashes != flashes;

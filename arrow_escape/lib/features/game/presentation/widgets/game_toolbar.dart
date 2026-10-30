@@ -10,6 +10,7 @@ class GameToolbar extends StatelessWidget {
     required this.onUndo,
     required this.onTogglePaths,
     required this.onRestart,
+    required this.onHint,
   });
 
   final bool canUndo;
@@ -18,6 +19,9 @@ class GameToolbar extends StatelessWidget {
   final VoidCallback onUndo;
   final VoidCallback onTogglePaths;
   final VoidCallback onRestart;
+
+  /// Rewarded hint; null hides the button.
+  final VoidCallback? onHint;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +45,15 @@ class GameToolbar extends StatelessWidget {
             selected: showPaths,
             onPressed: onTogglePaths,
           ),
+          if (onHint != null)
+            _ToolButton(
+              key: const Key('hint'),
+              icon: Icons.lightbulb_rounded,
+              label: 'Hint',
+              semanticLabel: 'Hint, watch a video',
+              badge: '▶',
+              onPressed: onHint,
+            ),
           _ToolButton(
             key: const Key('restart'),
             icon: Icons.refresh_rounded,

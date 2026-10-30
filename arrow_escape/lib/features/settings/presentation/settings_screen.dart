@@ -1,6 +1,9 @@
+import 'package:arrow_escape/app/routes.dart';
+import 'package:arrow_escape/features/ads/data/ad_service.dart';
 import 'package:arrow_escape/features/settings/application/settings_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -111,6 +114,28 @@ class SettingsScreen extends ConsumerWidget {
             'Gentle haptics on moves and bumps.',
             s.haptics,
             c.setHaptics,
+          ),
+          header('Account'),
+          ListTile(
+            key: const Key('open-shop'),
+            leading: const Icon(Icons.restore_rounded),
+            title: const Text('Shop & restore purchases'),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+            onTap: () => context.push(Routes.shop),
+          ),
+          FutureBuilder<bool>(
+            future: ref.read(adServiceProvider).privacyOptionsRequired(),
+            builder: (context, snap) => snap.data == true
+                ? ListTile(
+                    key: const Key('privacy-options'),
+                    leading: const Icon(Icons.privacy_tip_rounded),
+                    title: const Text('Privacy options'),
+                    subtitle: const Text('Change your ad consent choices.'),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                    onTap: () =>
+                        ref.read(adServiceProvider).showPrivacyOptions(),
+                  )
+                : const SizedBox.shrink(),
           ),
         ],
       ),

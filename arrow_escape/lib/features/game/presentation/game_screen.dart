@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:arrow_engine/arrow_engine.dart';
 import 'package:arrow_escape/app/routes.dart';
+import 'package:arrow_escape/features/ads/data/ad_service.dart';
+import 'package:arrow_escape/features/ads/presentation/rewarded.dart';
 import 'package:arrow_escape/core/services/sound.dart';
 import 'package:arrow_escape/features/game/application/game_controller.dart';
 import 'package:arrow_escape/features/game/application/game_state.dart';
@@ -99,9 +101,42 @@ class _GameViewState extends ConsumerState<_GameView> {
       if (_showResult) setState(() => _showResult = false);
       return;
     }
-    _resultTimer = Timer(_resultDelay, () {
+    _resultTimer = Timer(_resultDelay, () async {
+      final levelRef = widget.levelRef;
+      // Interstitials only ever follow a finished campaign level (the
+      // frequency policy decides), never precede one.
+      if (next == SessionStatus.won && levelRef is CampaignLevelRef) {
+        await ref.read(adServiceProvider).onLevelCompleted(levelRef.number);
+      }
       if (mounted) setState(() => _showResult = true);
     });
+  }
+
+  Future<void> _hint() async {
+    final controller = ref.read(
+      gameControllerProvider(widget.levelRef).notifier,
+    );
+    if (await watchRewarded(context, ref, RewardKind.hint)) {
+      controller.showHint();
+    }
+  }
+
+  Future<void> _extraHeart() async {
+    final controller = ref.read(
+      gameControllerProvider(widget.levelRef).notifier,
+    );
+    if (await watchRewarded(context, ref, RewardKind.extraHeart)) {
+      controller.addHeart();
+    }
+  }
+
+  Future<void> _doubleCoins() async {
+    final controller = ref.read(
+      gameControllerProvider(widget.levelRef).notifier,
+    );
+    if (await watchRewarded(context, ref, RewardKind.doubleCoins)) {
+      controller.doubleCoins();
+    }
   }
 
   void _goToLevel(int number) {
@@ -155,6 +190,7 @@ class _GameViewState extends ConsumerState<_GameView> {
                   onUndo: controller.undo,
                   onTogglePaths: controller.togglePaths,
                   onRestart: controller.restart,
+                  onHint: state.session.isOver ? null : _hint,
                 ),
               ],
             ),
@@ -165,6 +201,10 @@ class _GameViewState extends ConsumerState<_GameView> {
                       ? 'Daily challenge done!'
                       : '${GameScreen.titleFor(levelRef)} cleared!',
                   stars: state.session.stars,
+                  coins: state.coinsEarned,
+                  onDoubleCoins: state.coinsDoubled || state.coinsEarned == 0
+                      ? null
+                      : _doubleCoins,
                   hasNext: next != null,
                   onPrimary: () => next != null
                       ? _goToLevel(next)
@@ -177,6 +217,7 @@ class _GameViewState extends ConsumerState<_GameView> {
             if (_showResult && state.status == SessionStatus.lost)
               Positioned.fill(
                 child: ResultOverlay.lose(
+                  onExtraHeart: _extraHeart,
                   onPrimary: controller.restart,
                   onHome: () => context.go(Routes.home),
                 ),

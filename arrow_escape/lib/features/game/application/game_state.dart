@@ -12,6 +12,15 @@ abstract class GameViewState with _$GameViewState {
     required LevelRef levelRef,
     required PlaySession session,
     @Default(false) bool showPaths,
+
+    /// Coins awarded for the win (0 until won).
+    @Default(0) int coinsEarned,
+
+    /// Whether the win reward was already doubled by a rewarded ad.
+    @Default(false) bool coinsDoubled,
+
+    /// Vehicle highlighted by a hint until the next move.
+    int? hintPiece,
   }) = _GameViewState;
 
   Level get level => session.level;

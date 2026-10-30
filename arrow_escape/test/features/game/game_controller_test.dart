@@ -5,6 +5,7 @@ import 'package:arrow_escape/features/game/application/game_controller.dart';
 import 'package:arrow_escape/features/game/data/level_repository.dart';
 import 'package:arrow_escape/features/game/domain/level_ref.dart';
 import 'package:arrow_escape/features/progress/application/progress_controller.dart';
+import 'package:arrow_escape/features/save/application/save_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -16,17 +17,20 @@ void main() {
   late ProviderContainer container;
   late RecordingHaptics haptics;
   late RecordingSound sound;
+  late RecordingAnalytics analytics;
   // Three cars; piece 1 waits for piece 2.
   final level = parseAsciiLevel('^>.^');
 
   setUp(() async {
     haptics = RecordingHaptics();
     sound = RecordingSound();
+    analytics = RecordingAnalytics();
     container = ProviderContainer(
       overrides: testOverrides(
         haptics: haptics,
         sound: sound,
         levels: [level, level],
+        analytics: analytics,
       ),
     );
     addTearDown(container.dispose);
@@ -78,9 +82,9 @@ void main() {
   });
 
   test('best stars are kept on replay', () {
-    container.read(progressProvider.notifier)
-      ..completeLevel(1, 3)
-      ..completeLevel(1, 1);
+    container.read(saveProvider.notifier)
+      ..winLevel(1, 3)
+      ..winLevel(1, 1);
     expect(container.read(progressProvider).starsFor(1), 3);
     expect(container.read(progressProvider).unlocked, 2);
   });
@@ -138,9 +142,78 @@ void main() {
   });
 
   test('daily stars keep the best result', () {
-    container.read(progressProvider.notifier)
-      ..completeDaily('2026-10-29', 3)
-      ..completeDaily('2026-10-29', 1);
+    container.read(saveProvider.notifier)
+      ..winDaily('2026-10-29', 3)
+      ..winDaily('2026-10-29', 1);
     expect(container.read(progressProvider).dailyStarsFor('2026-10-29'), 3);
+  });
+
+  test('a win awards coins and they show in the game state', () {
+    keepAlive();
+    controller()
+      ..tap(0)
+      ..tap(2)
+      ..tap(1);
+    final state = container.read(gameControllerProvider(one));
+    expect(state.coinsEarned, 25); // first clear, 3 stars
+    expect(container.read(saveProvider).coins, 25);
+  });
+
+  test('double coins pays the win reward again, once', () {
+    keepAlive();
+    controller()
+      ..tap(0)
+      ..tap(2)
+      ..tap(1)
+      ..doubleCoins()
+      ..doubleCoins();
+    expect(container.read(gameControllerProvider(one)).coinsEarned, 50);
+    expect(container.read(saveProvider).coins, 50);
+  });
+
+  test('hint picks a vehicle that can leave and clears on the next move', () {
+    keepAlive();
+    expect(controller().showHint(), isTrue);
+    final hint = container.read(gameControllerProvider(one)).hintPiece;
+    expect(hint, isNotNull);
+    final rules = container.read(gameControllerProvider(one)).session.rules;
+    expect(rules.canExit(rules.initialState, hint!), isTrue);
+    controller().tap(hint);
+    expect(container.read(gameControllerProvider(one)).hintPiece, isNull);
+  });
+
+  test('extra heart continues a lost level', () {
+    keepAlive();
+    controller()
+      ..tap(1)
+      ..tap(1)
+      ..tap(1);
+    expect(
+      container.read(gameControllerProvider(one)).status,
+      SessionStatus.lost,
+    );
+    controller().addHeart();
+    expect(
+      container.read(gameControllerProvider(one)).status,
+      SessionStatus.playing,
+    );
+  });
+
+  test('analytics: start, complete and fail events', () {
+    keepAlive();
+    expect(analytics.events.first.name, 'level_start');
+    controller()
+      ..tap(1)
+      ..tap(1)
+      ..tap(1);
+    expect(analytics.events.last.name, 'level_fail');
+    controller()
+      ..restart()
+      ..tap(0)
+      ..tap(2)
+      ..tap(1);
+    final done = analytics.events.last;
+    expect(done.name, 'level_complete');
+    expect(done.params['stars'], 3);
   });
 }
