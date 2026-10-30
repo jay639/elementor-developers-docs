@@ -53,9 +53,12 @@ jobs:
         working-directory: arrow_escape/tool
         run: dart pub get && dart analyze && dart test && dart run bin/verify_levels.dart
 
+      # 64-bit only: current phones refuse 32-bit apps, and Play serves
+      # 32-bit devices from the app bundle anyway.
       - name: Build release APKs (dev flavor, Google test ads)
         run: >
           flutter build apk --release --flavor dev -t lib/main_dev.dart
+          --target-platform android-arm64,android-x64
           --split-per-abi --obfuscate --split-debug-info=build/symbols
 
       - name: Size budget (< 40 MB per APK)
@@ -78,6 +81,50 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
+          name: x64-apk-for-smoke-test
+          path: arrow_escape/build/app/outputs/flutter-apk/app-x86_64-dev-release.apk
+          retention-days: 3
+
+      - uses: actions/upload-artifact@v4
+        with:
           name: arrow-escape-debug-symbols
           path: arrow_escape/build/symbols
           retention-days: 30
+
+  # Launches the release APK on an emulator and fails if it crashes.
+  smoke-test:
+    needs: check-and-build
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: x64-apk-for-smoke-test
+          path: apk
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Launch on emulator (API 34, google_apis)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: bash arrow_escape/scripts/smoke_test_android.sh apk/app-x86_64-dev-release.apk com.arrowescape.arrow_escape.dev
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-test-logcat
+          path: |
+            logcat.txt
+            screenshot.png
+          retention-days: 14
