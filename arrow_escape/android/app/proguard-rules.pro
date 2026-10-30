@@ -28,3 +28,13 @@
 # Keep crash stack traces readable after de-obfuscation (Crashlytics)
 -keepattributes SourceFile,LineNumberTable
 -keep public class * extends java.lang.Exception
+
+# WorkManager (pulled in by the ad SDKs) creates its Room database by
+# reflection at app start; stripping it crashes the app before Flutter runs.
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
+-keep class androidx.work.impl.WorkDatabase_Impl { *; }
+-keep class * extends androidx.work.ListenableWorker {
+    public <init>(android.content.Context, androidx.work.WorkerParameters);
+}
+-keep class androidx.startup.** { *; }
+-keep class * implements androidx.startup.Initializer { <init>(); }
