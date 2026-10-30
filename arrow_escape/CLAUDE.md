@@ -191,6 +191,32 @@ arrow_escape/
   of a vehicle that is driving away are swallowed (so the tap tolerance
   can't hand them to a neighbour).
 
+- Phases 3–8 done:
+  - Save: one `SaveData` document (progress, coins, skins, streak, daily
+    reward, settings, claimed bundles, revision/updatedAt). Economy rules
+    are pure functions in `features/save/domain/economy.dart`.
+    `SaveController` stamps revisions and persists every change.
+  - Coins: first clear 10 + 5/star, replay 2; daily 50 + 10/star; daily
+    reward ladder 20/30/40/50/60/80/150 (resets after a missed day).
+    Streak = consecutive days with a win.
+  - Ads: `AdService` (AdMob impl, `NoAdService` fallback). Interstitials
+    only after finished campaign levels, governed by `InterstitialPolicy`
+    + Remote Config. Banner only on the map. Test ids unless release ids
+    are dart-defined; a prod build without ids has ads off.
+  - IAP: `PurchaseService` (RevenueCat impl, unavailable fallback).
+    Entitlements `no_ads`, `starter` from CustomerInfo only.
+  - Firebase is optional at runtime (`initFirebase` returns false without
+    config → offline services). Cloud save merges monotone progress and
+    takes balances from the newer copy (`mergeSaves`).
+  - Security: encrypted Hive + HMAC (`SaveCodec`), keys in secure storage,
+    App Check, `firebase/firestore.rules`, R8, obfuscated release script.
+  - Accessibility: each vehicle/light is a semantics node (activate to
+    move); guideline tests in `test/a11y`.
+  - CI: `.github/workflows/arrow_escape.yml` runs every check and builds
+    split-per-ABI release APKs (dev flavor) with a 40 MB budget.
+- This dev container cannot reach dl.google.com (Android SDK), so APKs are
+  built in CI, not locally.
+
 ## Phases
 
 1. Scaffold + theme + core engine + game screen

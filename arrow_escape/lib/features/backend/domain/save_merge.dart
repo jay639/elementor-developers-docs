@@ -9,9 +9,19 @@ import 'package:arrow_escape/features/save/domain/save_data.dart';
 /// unlock, best stars). Owned things are unioned. Everything that can go
 /// down as well as up (coins, selected skin, streaks, settings) comes from
 /// whichever copy changed last.
+///
+/// Exception: a local save that has never been synced (fresh install) must
+/// not win just because the player tapped faster than sign-in finished. It
+/// adopts the cloud balances and adds the coins it earned since install
+/// (a fresh save starts at 0).
 SaveData mergeSaves(SaveData local, SaveData remote) {
   if (local == remote) return local;
-  final newer = remote.updatedAt > local.updatedAt ? remote : local;
+  final freshInstall = !local.cloudSynced;
+  final newer = freshInstall
+      ? remote.copyWith(coins: remote.coins + local.coins)
+      : remote.updatedAt > local.updatedAt
+      ? remote
+      : local;
 
   Map<K, int> best<K>(Map<K, int> a, Map<K, int> b) => {
     ...a,

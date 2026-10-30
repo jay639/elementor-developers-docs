@@ -47,9 +47,9 @@ class _LogoPainter extends CustomPainter {
     canvas.save();
     canvas.clipRRect(tile);
     const arrows = [
-      (Palette.secondary, 0.30, -math.pi / 2, 0.0),
+      (Palette.secondary, 0.22, -math.pi / 2, 0.0),
       (Palette.primary, 0.50, 0.0, 0.15),
-      (Palette.tertiary, 0.70, math.pi / 2, 0.3),
+      (Palette.tertiary, 0.78, math.pi / 2, 0.3),
     ];
     for (final (color, at, angle, delay) in arrows) {
       final t = ((progress - delay) / 0.7).clamp(0.0, 1.0);
@@ -63,7 +63,7 @@ class _LogoPainter extends CustomPainter {
         ..strokeWidth = s * 0.11
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
-      canvas.drawLine(Offset(-s * 0.12, 0), Offset(s * 0.04, 0), paint);
+      canvas.drawLine(Offset(-s * 0.10, 0), Offset(s * 0.04, 0), paint);
       canvas.drawPath(
         Path()
           ..moveTo(s * 0.14, 0)

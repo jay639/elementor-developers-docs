@@ -27,7 +27,8 @@ class CloudSync {
   Future<void> start() async {
     final remote = await cloud.fetch(uid);
     final local = controller.current;
-    final merged = remote == null ? local : mergeSaves(local, remote);
+    final merged = (remote == null ? local : mergeSaves(local, remote))
+        .copyWith(cloudSynced: true);
     if (merged != local) controller.replace(merged);
     if (merged != remote) await _push(merged);
     _sub = controller.changes.listen((save) {

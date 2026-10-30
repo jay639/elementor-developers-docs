@@ -34,6 +34,9 @@ abstract class SaveData with _$SaveData {
     /// granted, so restores on a new device don't grant them twice.
     @Default(<String>[]) List<String> claimedBundles,
 
+    /// Set once this install's save has been merged with the cloud copy.
+    @Default(false) bool cloudSynced,
+
     /// Bumped on every change; used when merging with the cloud copy.
     @Default(0) int revision,
 

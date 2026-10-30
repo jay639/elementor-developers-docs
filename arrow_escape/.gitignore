@@ -54,5 +54,7 @@ app.*.map.json
 google-services.json
 GoogleService-Info.plist
 /ios/Flutter/Secrets.xcconfig
-.env*
+.env
+.env.*
+!.env.example
 /build/symbols/

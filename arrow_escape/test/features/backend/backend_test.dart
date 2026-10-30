@@ -27,6 +27,7 @@ class MemoryCloud implements CloudSaveService {
 void main() {
   group('mergeSaves', () {
     const local = SaveData(
+      cloudSynced: true,
       progress: Progress(
         unlocked: 30,
         stars: {1: 3, 2: 1},
@@ -51,6 +52,17 @@ void main() {
       revision: 9,
       claimedBundles: ['starter_bundle'],
     );
+
+    test('a fresh install adopts cloud balances plus what it earned', () {
+      final fresh = local.copyWith(
+        cloudSynced: false,
+        coins: 25,
+        updatedAt: 9999,
+      );
+      final m = mergeSaves(fresh, remote);
+      expect(m.coins, 65, reason: 'cloud 40 + 25 earned since install');
+      expect(m.selectedSkin, 'gold');
+    });
 
     test('progress grows to the best of both', () {
       final m = mergeSaves(local, remote);
@@ -123,6 +135,7 @@ void main() {
       await sync.start();
       expect(c.read(saveProvider).progress.unlocked, 90);
       expect(c.read(saveProvider).coins, 300);
+      expect(c.read(saveProvider).cloudSynced, isTrue);
       await sync.dispose();
     });
 

@@ -104,12 +104,35 @@ class HiveSaveRepository implements SaveRepository {
     FlutterSecureStorage storage = const FlutterSecureStorage(),
   }) async {
     await Hive.initFlutter();
-    final boxKey = await _secret(storage, _boxKey);
-    final hmacKey = await _secret(storage, _hmacKey);
-    final box = await Hive.openBox<String>(
-      _boxName,
-      encryptionCipher: HiveAesCipher(boxKey),
-    );
+    List<int> boxKey;
+    List<int> hmacKey;
+    try {
+      boxKey = await _secret(storage, _boxKey);
+      hmacKey = await _secret(storage, _hmacKey);
+    } catch (e) {
+      // Some Android keystores fail after a restore or OS update. Start
+      // over with new keys rather than silently stop saving; the cloud
+      // save restores progress.
+      debugPrint('Secure storage unreadable, resetting keys: $e');
+      await storage.deleteAll();
+      await Hive.deleteBoxFromDisk(_boxName);
+      boxKey = await _secret(storage, _boxKey);
+      hmacKey = await _secret(storage, _hmacKey);
+    }
+    Box<String> box;
+    try {
+      box = await Hive.openBox<String>(
+        _boxName,
+        encryptionCipher: HiveAesCipher(boxKey),
+      );
+    } catch (e) {
+      debugPrint('Save box unreadable, starting fresh: $e');
+      await Hive.deleteBoxFromDisk(_boxName);
+      box = await Hive.openBox<String>(
+        _boxName,
+        encryptionCipher: HiveAesCipher(boxKey),
+      );
+    }
     return HiveSaveRepository._(box, SaveCodec(hmacKey));
   }
 
