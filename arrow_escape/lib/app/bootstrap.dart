@@ -37,9 +37,14 @@ Future<void> bootstrap(FlavorConfig flavor) async {
   final AnalyticsService analytics = firebase
       ? FirebaseAnalyticsService()
       : DebugAnalytics();
-  final RemoteConfigService remoteConfig = firebase
-      ? await FirebaseRemoteConfigService.create()
-      : const DefaultRemoteConfig();
+  RemoteConfigService remoteConfig = const DefaultRemoteConfig();
+  if (firebase) {
+    try {
+      remoteConfig = await FirebaseRemoteConfigService.create();
+    } catch (e) {
+      debugPrint('Remote Config unavailable, using defaults: $e');
+    }
+  }
   unawaited(remoteConfig.refresh());
 
   SaveRepository repository;
