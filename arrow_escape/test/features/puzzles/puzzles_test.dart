@@ -16,52 +16,52 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../helpers.dart';
 
 void main() {
-  final mountain = ShapePuzzles.byId('mountain');
-  final onion = ShapePuzzles.byId('onion');
+  final leaf = ShapePuzzles.byId('leaf');
+  final flower = ShapePuzzles.byId('flower');
 
   group('unlock rules', () {
     test('points count campaign, daily and puzzle stars', () {
       const p = Progress(
         stars: {1: 3, 2: 2},
         dailyStars: {'2026-10-29': 3},
-        puzzleStars: {'mountain/1': 1},
+        puzzleStars: {'leaf/1': 1},
       );
       expect(p.points, 9);
     });
 
     test('pictures open at their star count; layers in order', () {
       const none = Progress();
-      expect(none.puzzleUnlocked(mountain), isFalse);
+      expect(none.puzzleUnlocked(leaf), isFalse);
       final p = Progress(
         stars: {for (var i = 1; i <= 5; i++) i: 3},
-        puzzleStars: const {'mountain/1': 2},
+        puzzleStars: const {'leaf/1': 2},
       );
-      expect(p.puzzleUnlocked(mountain), isTrue);
-      expect(p.puzzleUnlocked(onion), isFalse);
-      expect(p.layerOpen(mountain, 1), isTrue);
-      expect(p.layerOpen(mountain, 2), isTrue);
-      expect(p.layerOpen(mountain, 3), isFalse);
-      expect(p.layersDone(mountain), 1);
-      expect(nextLockedPuzzle(p), onion);
+      expect(p.puzzleUnlocked(leaf), isTrue);
+      expect(p.puzzleUnlocked(flower), isFalse);
+      expect(p.layerOpen(leaf, 1), isTrue);
+      expect(p.layerOpen(leaf, 2), isTrue);
+      expect(p.layerOpen(leaf, 3), isFalse);
+      expect(p.layersDone(leaf), 1);
+      expect(nextLockedPuzzle(p), flower);
     });
 
     test('thresholds rise and crossing one is reported', () {
       final goals = [for (final s in ShapePuzzles.all) s.starsToUnlock];
       expect(goals, [...goals]..sort());
       expect(goals.toSet().length, goals.length);
-      expect(puzzlesOpenedBetween(14, 15), [mountain]);
+      expect(puzzlesOpenedBetween(14, 15), [leaf]);
       expect(puzzlesOpenedBetween(15, 39), isEmpty);
     });
   });
 
   test('a puzzle win pays more for deeper layers and keeps best stars', () {
     final now = DateTime(2026, 10, 29);
-    var r = Economy.winPuzzle(const SaveData(), 'mountain/2', 2, 2, now);
+    var r = Economy.winPuzzle(const SaveData(), 'leaf/2', 2, 2, now);
     expect(r.coins, 20 + 40 + 20);
-    expect(r.save.progress.puzzleStarsFor('mountain/2'), 2);
-    r = Economy.winPuzzle(r.save, 'mountain/2', 2, 1, now);
+    expect(r.save.progress.puzzleStarsFor('leaf/2'), 2);
+    r = Economy.winPuzzle(r.save, 'leaf/2', 2, 1, now);
     expect(r.coins, 3);
-    expect(r.save.progress.puzzleStarsFor('mountain/2'), 2);
+    expect(r.save.progress.puzzleStarsFor('leaf/2'), 2);
   });
 
   test(
@@ -72,14 +72,14 @@ void main() {
       final container = ProviderContainer(
         overrides: testOverrides(
           levels: [level],
-          // 14 points: the next star opens the Mountain.
+          // 14 points: the next star opens the Leaf.
           save: SaveData(
             progress: Progress(stars: {for (var i = 1; i <= 7; i++) i: 2}),
           ),
         ),
       );
       addTearDown(container.dispose);
-      const ref = LevelRef.puzzle('onion', 1);
+      const ref = LevelRef.puzzle('flower', 1);
       await container.read(levelProvider(ref).future);
       container.listen(gameControllerProvider(ref), (_, _) {});
       container.read(gameControllerProvider(ref).notifier)
@@ -88,10 +88,10 @@ void main() {
       final state = container.read(gameControllerProvider(ref));
       expect(state.status, SessionStatus.won);
       expect(
-        container.read(saveProvider).progress.puzzleStarsFor('onion/1'),
+        container.read(saveProvider).progress.puzzleStarsFor('flower/1'),
         3,
       );
-      expect(state.unlockedPuzzles, ['mountain']);
+      expect(state.unlockedPuzzles, ['leaf']);
     },
   );
 
@@ -109,15 +109,15 @@ void main() {
     container.read(routerProvider).go(Routes.collection);
     await tester.pumpAndSettle();
     expect(find.text('30 stars'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('picture-mountain')));
+    await tester.tap(find.byKey(const Key('picture-leaf')));
     await tester.pumpAndSettle();
     // Layer 2 is still closed.
-    await tester.tap(find.byKey(const Key('layer-mountain-2')));
+    await tester.tap(find.byKey(const Key('layer-leaf-2')));
     await tester.pumpAndSettle();
-    expect(find.text('Mountain · Layer 2'), findsNothing);
-    await tester.tap(find.byKey(const Key('layer-mountain-1')));
+    expect(find.text('Leaf · Layer 2'), findsNothing);
+    await tester.tap(find.byKey(const Key('layer-leaf-1')));
     await tester.pumpAndSettle();
-    expect(find.text('Mountain · Layer 1'), findsOneWidget);
+    expect(find.text('Leaf · Layer 1'), findsOneWidget);
   });
 
   testWidgets('locked pictures do nothing when tapped', (tester) async {
@@ -127,8 +127,8 @@ void main() {
     );
     container.read(routerProvider).go(Routes.collection);
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('picture-mountain')));
+    await tester.tap(find.byKey(const Key('picture-leaf')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('layer-mountain-1')), findsNothing);
+    expect(find.byKey(const Key('layer-leaf-1')), findsNothing);
   });
 }

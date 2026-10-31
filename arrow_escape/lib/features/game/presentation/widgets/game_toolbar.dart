@@ -9,7 +9,11 @@ class GameToolbar extends StatelessWidget {
     required this.onTogglePaths,
     required this.onRestart,
     required this.onHint,
+    this.onSkip,
   });
+
+  /// Pay coins to skip the level; null hides the button.
+  final VoidCallback? onSkip;
 
   final bool showPaths;
   final VoidCallback onTogglePaths;
@@ -41,6 +45,15 @@ class GameToolbar extends StatelessWidget {
               semanticLabel: 'Hint, watch a video',
               videoBadge: true,
               onPressed: onHint,
+            ),
+          if (onSkip != null)
+            _ToolButton(
+              key: const Key('skip'),
+              icon: Icons.skip_next_rounded,
+              color: Palette.tertiary,
+              label: 'Skip',
+              semanticLabel: 'Skip level for coins',
+              onPressed: onSkip,
             ),
           _ToolButton(
             key: const Key('restart'),

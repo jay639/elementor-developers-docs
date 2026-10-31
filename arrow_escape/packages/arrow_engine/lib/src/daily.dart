@@ -8,17 +8,17 @@ import 'shapes.dart';
 abstract final class DailyChallenge {
   /// Part of the seed. Bump when generator changes would alter past dailies
   /// anyway, so the change is deliberate.
-  static const version = 3;
+  static const version = 4;
 
   /// Easier early in the week, hardest on Sunday.
   static const weekdayTargets = {
-    DateTime.monday: 55.0,
-    DateTime.tuesday: 59.0,
-    DateTime.wednesday: 63.0,
+    DateTime.monday: 58.0,
+    DateTime.tuesday: 61.0,
+    DateTime.wednesday: 64.0,
     DateTime.thursday: 67.0,
-    DateTime.friday: 71.0,
-    DateTime.saturday: 76.0,
-    DateTime.sunday: 82.0,
+    DateTime.friday: 70.0,
+    DateTime.saturday: 74.0,
+    DateTime.sunday: 78.0,
   };
 
   /// `yyyy-mm-dd` of the player's local calendar day.
@@ -65,7 +65,9 @@ abstract final class DailyChallenge {
         // Fall back to fewer constraints if a combination is too tight.
         shape: attempt < 3 ? shape : ShapeMask.rect(14, 18),
         mechanics: attempt < 4 ? mechanics : const MechanicSet(),
-        candidates: 10,
+        candidates: 14,
+        // Bigger boards later in the week.
+        minCells: 100 + day.weekday * 12,
       );
       if (level != null) return level;
     }

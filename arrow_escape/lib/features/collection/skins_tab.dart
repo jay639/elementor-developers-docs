@@ -3,6 +3,7 @@ import 'package:arrow_escape/core/widgets/ui.dart';
 import 'package:arrow_escape/features/ads/data/ad_service.dart';
 import 'package:arrow_escape/features/ads/presentation/rewarded.dart';
 import 'package:arrow_escape/features/save/application/save_controller.dart';
+import 'package:arrow_escape/features/skins/skin_paint.dart';
 import 'package:arrow_escape/features/skins/skins.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,7 +21,7 @@ class SkinsTab extends ConsumerWidget {
         maxCrossAxisExtent: 220,
         mainAxisSpacing: 14,
         crossAxisSpacing: 14,
-        childAspectRatio: 0.7,
+        mainAxisExtent: 330,
       ),
       itemCount: Skins.all.length,
       itemBuilder: (context, i) {
@@ -73,22 +74,33 @@ class _SkinCard extends ConsumerWidget {
       child: SoftCard(
         padding: const EdgeInsets.all(12),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
+            AspectRatio(
+              aspectRatio: 1.15,
               child: ExcludeSemantics(
                 child: CustomPaint(
                   size: Size.infinite,
                   painter: _SkinPreviewPainter(
                     skin.colors(theme.brightness),
                     theme.brightness == Brightness.dark
-                        ? Palette.tileDark
+                        ? const Color(0xFF0B0B10)
                         : Palette.tileLight,
+                    skin.effect,
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 8),
             Text(skin.name, style: theme.textTheme.titleMedium),
+            Text(
+              skin.tagline,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 6),
             SizedBox(
               width: double.infinity,
@@ -119,7 +131,7 @@ class _SkinCard extends ConsumerWidget {
                 key: Key('skin-${skin.id}-ad'),
                 onPressed: () => _unlockWithAd(context, ref),
                 icon: const Icon(Icons.smart_display_rounded, size: 18),
-                label: const Text('Free with video'),
+                label: const Text('Free'),
               ),
           ],
         ),
@@ -128,12 +140,13 @@ class _SkinCard extends ConsumerWidget {
   }
 }
 
-/// Three little arrows in the skin's colours.
+/// A few bent arrows drawn exactly as the board draws this skin.
 class _SkinPreviewPainter extends CustomPainter {
-  _SkinPreviewPainter(this.colors, this.tile);
+  _SkinPreviewPainter(this.colors, this.tile, this.effect);
 
   final List<Color> colors;
   final Color tile;
+  final SkinEffect effect;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -141,32 +154,47 @@ class _SkinPreviewPainter extends CustomPainter {
       RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(16)),
       Paint()..color = tile,
     );
-    final s = size.shortestSide;
-    for (var i = 0; i < 3; i++) {
-      final c = colors[i % colors.length];
-      final y = size.height * (0.25 + i * 0.25);
-      final x0 = size.width * 0.2 + (i.isOdd ? s * 0.1 : 0);
-      final x1 = size.width * 0.68 + (i.isOdd ? s * 0.1 : 0);
-      canvas.drawLine(
-        Offset(x0, y),
-        Offset(x1, y),
-        Paint()
-          ..color = c
-          ..strokeWidth = s * 0.11
-          ..strokeCap = StrokeCap.round,
-      );
-      canvas.drawPath(
-        Path()
-          ..moveTo(x1 + s * 0.12, y)
-          ..lineTo(x1, y - s * 0.09)
-          ..lineTo(x1, y + s * 0.09)
-          ..close(),
-        Paint()..color = c,
+    final u = size.shortestSide / 6;
+    final o = Offset((size.width - u * 6) / 2, (size.height - u * 6) / 2);
+    Offset p(double x, double y) => o + Offset(x * u, y * u);
+    final arrows = <List<Offset>>[
+      [p(1, 1), p(4, 1), p(4, 2.5)],
+      [p(1, 2.5), p(1, 4), p(3, 4), p(3, 2.5)],
+      [p(5, 5), p(2, 5)],
+      [p(5, 1.2), p(5, 4)],
+    ];
+    final stroke = u * 0.22;
+    for (var i = 0; i < arrows.length; i++) {
+      final pts = arrows[i];
+      final body = Path()..moveTo(pts.first.dx, pts.first.dy);
+      for (final q in pts.skip(1)) {
+        body.lineTo(q.dx, q.dy);
+      }
+      final end = pts.last;
+      final dir = end - pts[pts.length - 2];
+      final t = dir / dir.distance;
+      final n = Offset(-t.dy, t.dx);
+      final len = stroke * 3.2;
+      final tip = end + t * len;
+      final head = Path()
+        ..moveTo(tip.dx, tip.dy)
+        ..lineTo(end.dx + n.dx * len * 0.52, end.dy + n.dy * len * 0.52)
+        ..lineTo(end.dx - n.dx * len * 0.52, end.dy - n.dy * len * 0.52)
+        ..close();
+      paintArrow(
+        canvas,
+        body: body,
+        head: head,
+        tail: pts.first,
+        tip: tip,
+        color: colors[i % colors.length],
+        stroke: stroke,
+        effect: effect,
       );
     }
   }
 
   @override
   bool shouldRepaint(_SkinPreviewPainter old) =>
-      old.colors != colors || old.tile != tile;
+      old.colors != colors || old.tile != tile || old.effect != effect;
 }

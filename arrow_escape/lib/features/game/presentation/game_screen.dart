@@ -14,6 +14,7 @@ import 'package:arrow_escape/core/services/analytics.dart';
 import 'package:arrow_escape/features/game/presentation/board_view.dart';
 import 'package:arrow_escape/features/onboarding/tips.dart';
 import 'package:arrow_escape/features/save/application/save_controller.dart';
+import 'package:arrow_escape/features/save/domain/economy.dart';
 import 'package:arrow_escape/features/game/presentation/widgets/game_toolbar.dart';
 import 'package:arrow_escape/features/game/presentation/widgets/hearts_bar.dart';
 import 'package:arrow_escape/features/game/presentation/widgets/result_overlay.dart';
@@ -186,6 +187,51 @@ class _GameViewState extends ConsumerState<_GameView> {
 
   void _goTo(String route) => context.pushReplacement(route);
 
+  Future<void> _skip(String nextRoute) async {
+    final coins = ref.read(saveProvider).coins;
+    const cost = Economy.skipCost;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.skip_next_rounded, size: 40),
+        title: const Text('Skip this level?'),
+        content: Text(
+          coins >= cost
+              ? 'Pay $cost coins to open the next level. You won\'t get '
+                    'stars for this one, but you can come back any time.'
+              : 'Skipping costs $cost coins and you have $coins. '
+                    'Win levels or visit the shop for more.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep playing'),
+          ),
+          if (coins >= cost)
+            FilledButton.icon(
+              key: const Key('confirm-skip'),
+              onPressed: () => Navigator.pop(context, true),
+              icon: const Icon(Icons.monetization_on_rounded),
+              label: const Text('$cost'),
+            )
+          else
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context, false);
+                context.push(Routes.shop);
+              },
+              child: const Text('Shop'),
+            ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    final skipped = ref
+        .read(gameControllerProvider(widget.levelRef).notifier)
+        .skip();
+    if (skipped) _goTo(nextRoute);
+  }
+
   @override
   Widget build(BuildContext context) {
     final levelRef = widget.levelRef;
@@ -261,6 +307,13 @@ class _GameViewState extends ConsumerState<_GameView> {
                     onTogglePaths: controller.togglePaths,
                     onRestart: controller.restart,
                     onHint: state.session.isOver ? null : _hint,
+                    onSkip:
+                        levelRef is CampaignLevelRef &&
+                            next != null &&
+                            !state.session.isOver &&
+                            state.tutorial == TutorialStep.none
+                        ? () => _skip(next)
+                        : null,
                   ),
                 ],
               ),

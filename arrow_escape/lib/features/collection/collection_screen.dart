@@ -16,22 +16,23 @@ class CollectionScreen extends StatelessWidget {
     return DefaultTabController(
       length: 2,
       initialIndex: initialTab,
-      child: Scaffold(
-        body: Backdrop(
-          child: NestedScrollView(
-            headerSliverBuilder: (context, _) => [
-              const SliverAppBar(
-                pinned: true,
-                backgroundColor: Colors.transparent,
-                title: Text('Collection'),
-                actions: [CoinChip(), SizedBox(width: 12)],
-                bottom: PreferredSize(
-                  preferredSize: Size.fromHeight(60),
-                  child: _Tabs(),
+      child: Backdrop(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: const Text('Collection'),
+            actions: const [CoinChip(), SizedBox(width: 12)],
+          ),
+          // The tabs stay put; only the content below them scrolls.
+          body: const Column(
+            children: [
+              _Tabs(),
+              Expanded(
+                child: ClipRect(
+                  child: TabBarView(children: [PicturesTab(), SkinsTab()]),
                 ),
               ),
             ],
-            body: const TabBarView(children: [PicturesTab(), SkinsTab()]),
           ),
         ),
       ),
@@ -70,7 +71,7 @@ class _Tabs extends StatelessWidget {
             fontSize: 16,
           ),
           tabs: const [
-            Tab(key: Key('tab-pictures'), icon: null, text: 'Pictures'),
+            Tab(key: Key('tab-pictures'), icon: null, text: 'Wonders'),
             Tab(key: Key('tab-skins'), text: 'Arrow skins'),
           ],
         ),

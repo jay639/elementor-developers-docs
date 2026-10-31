@@ -232,6 +232,17 @@ class GameController extends Notifier<GameViewState> {
     return outcome;
   }
 
+  /// Skips this campaign level for coins. Returns false (and changes
+  /// nothing) for other modes or when the player can't afford it.
+  bool skip() {
+    final ref0 = levelRef;
+    if (ref0 is! CampaignLevelRef || state.session.isOver) return false;
+    if (!ref.read(saveProvider.notifier).skipLevel(ref0.number)) return false;
+    // A skip ends the attempt; it is logged as level_skip, not a quit.
+    _ended = true;
+    return true;
+  }
+
   void togglePaths() {
     state = state.copyWith(showPaths: !state.showPaths);
     ref.read(hapticsProvider).play(HapticKind.tap);

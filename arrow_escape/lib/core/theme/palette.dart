@@ -11,19 +11,19 @@ abstract final class Palette {
   static const sky = Color(0xFF3FA9FF);
   static const sun = Color(0xFFFFB627);
 
-  // Light surfaces: a lilac-to-peach wash behind white cards.
-  static const cream = Color(0xFFF7F3FF);
-  static const washTop = Color(0xFFEDE6FF);
-  static const washBottom = Color(0xFFFFF0E6);
+  // Light surfaces: a soft lilac-to-white wash behind white cards.
+  static const cream = Color(0xFFF8F6FF);
+  static const washTop = Color(0xFFEFEAFF);
+  static const washBottom = Color(0xFFFDFCFF);
   static const tileLight = Color(0xFFF2EEFC);
   static const tileLightEdge = Color(0xFFCFC5EE);
 
-  // Dark surfaces
-  static const night = Color(0xFF141026);
-  static const nightTop = Color(0xFF231A4A);
-  static const nightBottom = Color(0xFF0E0B1A);
-  static const tileDark = Color(0xFF221D3A);
-  static const tileDarkEdge = Color(0xFF3D3563);
+  // Dark surfaces: true black (OLED friendly) with charcoal cards.
+  static const night = Color(0xFF000000);
+  static const nightTop = Color(0xFF000000);
+  static const nightBottom = Color(0xFF000000);
+  static const tileDark = Color(0xFF17171C);
+  static const tileDarkEdge = Color(0xFF34343F);
 
   /// Hero gradients for big buttons and headers.
   static const heroGradient = [Color(0xFF7B5CFF), Color(0xFFB04DFF)];

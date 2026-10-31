@@ -18,6 +18,11 @@ Future<void> main(List<String> args) async {
       help: 'Parallel isolates.',
     )
     ..addFlag('verify', defaultsTo: true, help: 'Verify after generating.')
+    ..addFlag(
+      'campaign',
+      defaultsTo: true,
+      help: 'Regenerate the campaign (off: picture puzzles only).',
+    )
     ..addFlag('help', abbr: 'h', negatable: false);
   final opts = parser.parse(args);
   if (opts.flag('help')) {
@@ -28,41 +33,13 @@ Future<void> main(List<String> args) async {
   final jobs = int.parse(opts.option('jobs')!).clamp(1, 64);
   final out = Directory(opts.option('out')!);
 
-  final sw = Stopwatch()..start();
-  final chunk = (count / jobs).ceil();
-  final parts = await Future.wait([
-    for (var start = 1; start <= count; start += chunk)
-      Isolate.run(() {
-        final end = (start + chunk - 1).clamp(1, count);
-        return [for (var n = start; n <= end; n++) Campaign.build(n).toJson()];
-      }),
-  ]);
-  final levels = [
-    for (final part in parts)
-      for (final json in part) Level.fromJson(json),
-  ];
-  stdout.writeln(
-    'Generated ${levels.length} levels in ${sw.elapsed.inSeconds}s '
-    'with $jobs isolates.',
-  );
-
-  writePacks(out, levels, packSize: Campaign.packSize);
-  final bytes = out.listSync().whereType<File>().fold<int>(
-    0,
-    (a, f) => a + f.lengthSync(),
-  );
-  stdout
-    ..writeln('Wrote ${out.path} (${(bytes / 1024).toStringAsFixed(0)} KB)')
-    ..writeln()
-    ..writeln(campaignReport(levels));
+  if (opts.flag('campaign')) await _campaign(out, count, jobs);
 
   final puzzleJson = await Future.wait([
     for (final shape in ShapePuzzles.all)
       Isolate.run(
         () => [
-          for (final l in ShapePuzzles.buildLayers(
-            ShapePuzzles.byId(shape.id),
-          ))
+          for (final l in ShapePuzzles.buildLayers(ShapePuzzles.byId(shape.id)))
             l.toJson(),
         ],
       ),
@@ -97,4 +74,34 @@ Future<void> main(List<String> args) async {
       exitCode = 1;
     }
   }
+}
+
+Future<void> _campaign(Directory out, int count, int jobs) async {
+  final sw = Stopwatch()..start();
+  final chunk = (count / jobs).ceil();
+  final parts = await Future.wait([
+    for (var start = 1; start <= count; start += chunk)
+      Isolate.run(() {
+        final end = (start + chunk - 1).clamp(1, count);
+        return [for (var n = start; n <= end; n++) Campaign.build(n).toJson()];
+      }),
+  ]);
+  final levels = [
+    for (final part in parts)
+      for (final json in part) Level.fromJson(json),
+  ];
+  stdout.writeln(
+    'Generated ${levels.length} levels in ${sw.elapsed.inSeconds}s '
+    'with $jobs isolates.',
+  );
+
+  writePacks(out, levels, packSize: Campaign.packSize);
+  final bytes = out.listSync().whereType<File>().fold<int>(
+    0,
+    (a, f) => a + f.lengthSync(),
+  );
+  stdout
+    ..writeln('Wrote ${out.path} (${(bytes / 1024).toStringAsFixed(0)} KB)')
+    ..writeln()
+    ..writeln(campaignReport(levels));
 }

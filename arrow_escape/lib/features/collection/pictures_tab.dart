@@ -35,7 +35,7 @@ const _pictureColors = <List<Color>>[
 List<Color> pictureColors(PuzzleShape s) =>
     _pictureColors[ShapePuzzles.all.indexOf(s) % _pictureColors.length];
 
-/// Picture puzzles: each opens at a star count and has three layers that
+/// Wonders (picture puzzles): each opens at a star count and has three layers that
 /// get harder. Cleared layers colour the picture in.
 class PicturesTab extends ConsumerWidget {
   const PicturesTab({super.key});
@@ -52,28 +52,86 @@ class PicturesTab extends ConsumerWidget {
             child: _PointsHeader(points: progress.points, next: next),
           ),
         ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-          sliver: SliverGrid.builder(
-            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-              maxCrossAxisExtent: 200,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 14,
-              childAspectRatio: 0.78,
-            ),
-            itemCount: ShapePuzzles.all.length,
-            itemBuilder: (context, i) {
-              final shape = ShapePuzzles.all[i];
-              return _PictureCard(
-                shape: shape,
-                unlocked: progress.puzzleUnlocked(shape),
-                layersDone: progress.layersDone(shape),
-                stars: progress.puzzleStarsOf(shape),
-              );
-            },
+        for (final (chapter, shapes) in _chapters()) ...[
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+            sliver: SliverToBoxAdapter(child: _ChapterTitle(chapter)),
           ),
-        ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: SliverGrid.builder(
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 200,
+                mainAxisSpacing: 14,
+                crossAxisSpacing: 14,
+                childAspectRatio: 0.78,
+              ),
+              itemCount: shapes.length,
+              itemBuilder: (context, i) {
+                final shape = shapes[i];
+                return _PictureCard(
+                  shape: shape,
+                  unlocked: progress.puzzleUnlocked(shape),
+                  layersDone: progress.layersDone(shape),
+                  stars: progress.puzzleStarsOf(shape),
+                );
+              },
+            ),
+          ),
+        ],
+        const SliverToBoxAdapter(child: SizedBox(height: 32)),
       ],
+    );
+  }
+}
+
+/// Wonders grouped by chapter, in unlock order.
+List<(String, List<PuzzleShape>)> _chapters() {
+  final out = <(String, List<PuzzleShape>)>[];
+  for (final s in ShapePuzzles.all) {
+    if (out.isEmpty || out.last.$1 != s.chapter) out.add((s.chapter, []));
+    out.last.$2.add(s);
+  }
+  return out;
+}
+
+const _chapterInfo = {
+  'Garden': (Icons.local_florist_rounded, 'Tiny wonders close to home'),
+  'Land': (Icons.terrain_rounded, 'Trees and mountains'),
+  'Sky': (Icons.cloud_rounded, 'Weather and light'),
+  'Space': (Icons.public_rounded, 'Planets, stars and beyond'),
+};
+
+class _ChapterTitle extends StatelessWidget {
+  const _ChapterTitle(this.chapter);
+
+  final String chapter;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final (icon, blurb) =
+        _chapterInfo[chapter] ?? (Icons.auto_awesome_rounded, '');
+    return Semantics(
+      header: true,
+      child: Row(
+        children: [
+          Icon(icon, color: Palette.primary),
+          const SizedBox(width: 8),
+          Text(chapter, style: theme.textTheme.titleLarge),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              blurb,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -105,7 +163,7 @@ class _PointsHeader extends StatelessWidget {
     return Semantics(
       container: true,
       label: next == null
-          ? '$points stars. Every picture is open.'
+          ? '$points stars. Every wonder is open.'
           : '$points stars. ${next.name} opens at ${next.starsToUnlock}.',
       excludeSemantics: true,
       child: SoftCard(
@@ -128,7 +186,7 @@ class _PointsHeader extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     next == null
-                        ? 'Every picture is open. Master their layers!'
+                        ? 'Every wonder is open. Master their layers!'
                         : '${next.name} opens at ${next.starsToUnlock} stars',
                     style: white.copyWith(fontSize: 14),
                   ),

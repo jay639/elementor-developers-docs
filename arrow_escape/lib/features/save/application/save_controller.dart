@@ -125,6 +125,17 @@ class SaveController extends Notifier<SaveData> {
     return coins;
   }
 
+  /// Pays to skip campaign [level]; false when coins are short.
+  bool skipLevel(int level) {
+    final next = Economy.skipLevel(state, level);
+    if (next == null) return false;
+    apply((_) => next);
+    _analytics
+      ..spendCoins(Economy.skipCost, 'skip_level')
+      ..log('level_skip', {'level': '$level'});
+    return true;
+  }
+
   int claimDailyReward({int multiplier = 1}) {
     var coins = 0;
     apply((s) {

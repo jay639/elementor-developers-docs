@@ -39,21 +39,30 @@ class MechanicSet {
 /// difficulty comes from size and how greedily arrows block each other,
 /// never from empty space. Plain arithmetic only: the daily challenge must
 /// be bit-identical on every platform.
-({int cells, int greed, double fill, int maxLength}) _shapeFor(
-  double s,
-  double target,
-) => (
-  // Size follows the target, so every level is a big crowded board; the
+({
+  int cells,
+  int greed,
+  double fill,
+  int maxLength,
+  double longShare,
+  double turnChance,
+})
+_shapeFor(double s, double target) => (
+  // Size follows the target, so every level is a crowded board; the
   // search scale only nudges it.
-  cells: (40 + (0.5 * target + 0.5 * s) * 4.0).round().clamp(36, 460),
-  greed: (2 + s / 8).round().clamp(2, 14),
-  fill: 1.0,
-  maxLength: (3 + s / 22).round().clamp(3, 7),
+  cells: (30 + (0.3 * target + 0.7 * s) * 2.4).round().clamp(30, 300),
+  greed: (2 + s / 7).round().clamp(2, 20),
+  fill: 0.9,
+  // Longer, more winding snakes as levels go up (up to 30 cells).
+  maxLength: (6 + s / 4).round().clamp(6, 30),
+  longShare: (s / 700).clamp(0.02, 0.14),
+  turnChance: (0.25 + s / 400).clamp(0.25, 0.5),
 );
 
-/// Largest board the campaign uses (cells stay ~20 dp wide on a phone).
-const maxBoardWidth = 18;
-const maxBoardHeight = 26;
+/// Largest board the campaign uses (cells stay ~24 dp wide on a phone, so
+/// boards fit the screen without zooming).
+const maxBoardWidth = 15;
+const maxBoardHeight = 20;
 
 /// Generates candidates of varying size and density and keeps the one
 /// whose solver-measured difficulty is closest to [target].
@@ -65,7 +74,7 @@ Level? generateForTarget({
   MechanicSet mechanics = const MechanicSet(),
   bool breather = false,
   LevelTier tier = LevelTier.normal,
-  int candidates = 10,
+  int candidates = 14,
   int minCells = 0,
 }) {
   final rng = Rng(seed);
@@ -93,6 +102,8 @@ Level? generateForTarget({
         greed: p.greed,
         minLength: 2,
         maxLength: p.maxLength,
+        longShare: p.longShare,
+        turnChance: p.turnChance,
         lights: mechanics.lights,
         gates: mechanics.gates,
         ambulance: mechanics.ambulance,
@@ -174,16 +185,20 @@ abstract final class Campaign {
   /// spike and breathers dip (still packed, just smaller). Only used by the
   /// offline tool, so platform `exp`/`sin` are fine here.
   static double targetDifficulty(int n) {
-    if (n <= 2) return 40;
+    if (n <= 2) return 48;
     final rise = 1 - math.exp(-(n - 3) / 380);
-    final base = 52 + 42 * rise + 2.0 * math.sin(n * 0.9);
-    if (isBreather(n)) return base * 0.8;
+    final base = 64 + 22 * rise + 2.0 * math.sin(n * 0.9);
+    if (isBreather(n)) return base * 0.72;
     return switch (tierFor(n)) {
       LevelTier.normal => base,
-      LevelTier.hard => math.min(95, base + 8),
-      LevelTier.superHard => math.min(98, base + 13),
+      LevelTier.hard => math.min(98, base + 6),
+      LevelTier.superHard => math.min(99, base + 9),
     };
   }
+
+  /// Smallest board for level [n]: ~110 cells early, ~230 late.
+  static int minCellsFor(int n) =>
+      isBreather(n) ? 50 : (110 + 120 * (1 - math.exp(-n / 300))).round();
 
   static LevelSpec spec(int n) {
     final rng = Rng(seed ^ stableHash('campaign-$n'));
@@ -211,17 +226,23 @@ abstract final class Campaign {
         n == MechanicUnlocks.gates ||
         n == MechanicUnlocks.ambulance;
     final target = isIntro ? targetDifficulty(n) * 0.6 : targetDifficulty(n);
-    // Letters need ~60 cells to read, too big for easy levels.
-    final pool = [
-      for (final s in Shapes.all)
-        if (!Shapes.isLetter(s) || target >= 35) s,
+    // Mostly plain rectangles of varied proportions (they read cleanly and
+    // every edge cell is playable); sometimes a compact picture shape.
+    final shapes = [
+      for (final s in [...Shapes.basics, ...Shapes.animals, ...Shapes.symbols])
+        if (s.name != 'rect') s,
     ];
+    final aspects = [(10, 12), (12, 12), (11, 14), (12, 15), (13, 13)];
+    final (aw, ah) = rng.pick(aspects);
+    final shape = rng.nextBool(0.65)
+        ? ShapeMask.rect(aw, ah)
+        : rng.pick(shapes);
     return LevelSpec(
       number: n,
       target: target,
       breather: breather,
       tier: tierFor(n),
-      shape: rng.pick(pool),
+      shape: shape,
       mechanics: MechanicSet(
         lights: lights,
         gates: gates,
@@ -259,6 +280,10 @@ abstract final class Campaign {
         mechanics: attempt < 6 ? s.mechanics : const MechanicSet(),
         breather: s.breather,
         tier: s.tier,
+        // Boards grow with the level rather than staying small and dense.
+        minCells: minCellsFor(n),
+        // Breathers must land below the curve: search harder.
+        candidates: s.breather ? 28 : 14,
       );
       if (level != null) return level;
     }

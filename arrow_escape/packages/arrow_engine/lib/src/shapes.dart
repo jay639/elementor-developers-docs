@@ -68,10 +68,13 @@ class ShapeMask {
     int maxHeight = 14,
   }) {
     final box = targetCells / fillRatio;
-    var w = math.sqrt(box * aspect).round().clamp(minSide, maxWidth);
-    final h = (box / w).round().clamp(minSide, maxHeight);
-    // Keep the aspect if the height clamp bit.
-    w = (h * aspect).round().clamp(minSide, maxWidth);
+    final w0 = math.sqrt(box * aspect);
+    final h0 = w0 / aspect;
+    // Shrink both sides together when either bound bites, so the picture
+    // keeps its proportions.
+    final scale = math.min(1.0, math.min(maxWidth / w0, maxHeight / h0));
+    final w = (w0 * scale).round().clamp(minSide, maxWidth);
+    final h = (h0 * scale).round().clamp(minSide, maxHeight);
     final result = resample(w, h);
     return result.area >= 4 ? result : ShapeMask.rect(w, h);
   }

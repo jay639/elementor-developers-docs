@@ -11,15 +11,71 @@ import 'package:arrow_escape/features/game/data/level_repository.dart';
 import 'package:arrow_escape/features/save/application/save_controller.dart';
 import 'package:arrow_escape/features/puzzles/puzzle_progress.dart';
 import 'package:arrow_escape/features/save/domain/economy.dart';
+import 'package:arrow_escape/features/save/domain/save_data.dart';
+import 'package:arrow_escape/features/onboarding/product_tour.dart';
+import 'package:arrow_escape/features/onboarding/tips.dart';
+import 'package:arrow_escape/core/services/analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final _streakKey = GlobalKey();
+  final _starsKey = GlobalKey();
+  final _coinsKey = GlobalKey();
+  final _collectionKey = GlobalKey();
+
+  void _endTour(bool finished) {
+    ref.read(saveProvider.notifier).markSeen(Tips.homeTour);
+    ref.read(analyticsProvider).log(finished ? 'tour_complete' : 'tour_skip');
+  }
+
+  List<TourStep> get _tour => [
+    TourStep(
+      target: _streakKey,
+      icon: Icons.local_fire_department_rounded,
+      color: Palette.secondary,
+      title: 'Daily streak',
+      body:
+          'Win at least one puzzle every day to grow your streak. '
+          'Miss a day and it starts again.',
+    ),
+    TourStep(
+      target: _starsKey,
+      icon: Icons.star_rounded,
+      color: Palette.sun,
+      title: 'Stars',
+      body:
+          'Earn up to 3 stars per level by losing fewer hearts. '
+          'Stars unlock new Wonders in your Collection.',
+    ),
+    TourStep(
+      target: _coinsKey,
+      icon: Icons.monetization_on_rounded,
+      color: Palette.sun,
+      title: 'Coins',
+      body:
+          'Spend coins on arrow skins, or to skip a level that has you '
+          'stuck. Tap here to get more.',
+    ),
+    TourStep(
+      target: _collectionKey,
+      icon: Icons.auto_awesome_rounded,
+      color: Palette.pink,
+      title: 'Collection',
+      body: 'Your Wonders (from a leaf to a galaxy) and arrow skins live here.',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final save = ref.watch(saveProvider);
     final now = ref.watch(clockProvider)();
@@ -35,151 +91,192 @@ class HomeScreen extends ConsumerWidget {
     ].length;
     final nextPuzzle = nextLockedPuzzle(save.progress);
 
+    final showTour =
+        save.hasSeen(Tips.tutorial) && !save.hasSeen(Tips.homeTour);
     return Scaffold(
-      body: Backdrop(
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Semantics(
-                            label: '$streak day streak',
-                            excludeSemantics: true,
-                            child: StatPill(
-                              key: const Key('streak'),
-                              icon: Icons.local_fire_department_rounded,
-                              iconColor: streak > 0
-                                  ? Palette.secondary
-                                  : theme.disabledColor,
-                              value: Text('$streak'),
-                            ),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: _homeBody(
+              context,
+              save,
+              now,
+              next,
+              dailyDone,
+              streak,
+              points,
+              opened,
+              nextPuzzle,
+              theme,
+            ),
+          ),
+          if (showTour)
+            Positioned.fill(
+              child: ProductTour(steps: _tour, onDone: _endTour),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _homeBody(
+    BuildContext context,
+    SaveData save,
+    DateTime now,
+    int next,
+    bool dailyDone,
+    int streak,
+    int points,
+    int opened,
+    PuzzleShape? nextPuzzle,
+    ThemeData theme,
+  ) {
+    return Backdrop(
+      child: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) => SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Semantics(
+                          key: _streakKey,
+                          label: '$streak day streak',
+                          excludeSemantics: true,
+                          child: StatPill(
+                            key: const Key('streak'),
+                            icon: Icons.local_fire_department_rounded,
+                            iconColor: streak > 0
+                                ? Palette.secondary
+                                : theme.disabledColor,
+                            value: Text('$streak'),
                           ),
-                          const SizedBox(width: 8),
-                          Semantics(
-                            label: '$points stars collected',
-                            excludeSemantics: true,
-                            child: StatPill(
-                              icon: Icons.star_rounded,
-                              iconColor: Palette.star,
-                              value: Text('$points'),
-                            ),
-                          ),
-                          const Spacer(),
-                          const CoinChip(),
-                          IconButton(
-                            tooltip: 'Settings',
-                            icon: const Icon(Icons.settings_rounded),
-                            onPressed: () => context.push(Routes.settings),
-                          ),
-                        ],
-                      ),
-                      const Spacer(),
-                      const SizedBox(height: 12),
-                      const ArrowLogo(size: 120),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Arrow Escape',
-                        style: theme.textTheme.displaySmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: theme.brightness == Brightness.dark
-                              ? Colors.white
-                              : Palette.primaryDeep,
                         ),
-                      ),
-                      Text(
-                        'TRAFFIC PUZZLE',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          letterSpacing: 4,
-                          color: theme.brightness == Brightness.dark
-                              ? Palette.secondary
-                              : const Color(0xFFC0391B),
-                          fontWeight: FontWeight.w600,
+                        const SizedBox(width: 8),
+                        Semantics(
+                          key: _starsKey,
+                          label: '$points stars collected',
+                          excludeSemantics: true,
+                          child: StatPill(
+                            icon: Icons.star_rounded,
+                            iconColor: Palette.star,
+                            value: Text('$points'),
+                          ),
                         ),
-                      ),
-                      const Spacer(),
-                      const SizedBox(height: 16),
-                      if (Economy.canClaimDailyReward(save, now)) ...[
-                        const _DailyRewardCard(),
-                        const SizedBox(height: 16),
+                        const Spacer(),
+                        CoinChip(key: _coinsKey),
+                        IconButton(
+                          tooltip: 'Settings',
+                          icon: const Icon(Icons.settings_rounded),
+                          onPressed: () => context.push(Routes.settings),
+                        ),
                       ],
-                      CandyButton(
-                        key: const Key('play'),
-                        icon: Icons.play_arrow_rounded,
-                        label: 'Play  ·  Level $next',
-                        onPressed: () => context.push(Routes.game(next)),
+                    ),
+                    const Spacer(),
+                    const SizedBox(height: 12),
+                    const ArrowLogo(size: 120),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Arrow Escape',
+                      style: theme.textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.white
+                            : Palette.primaryDeep,
                       ),
+                    ),
+                    Text(
+                      'TRAFFIC PUZZLE',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        letterSpacing: 4,
+                        color: theme.brightness == Brightness.dark
+                            ? Palette.secondary
+                            : const Color(0xFFC0391B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(),
+                    const SizedBox(height: 16),
+                    if (Economy.canClaimDailyReward(save, now)) ...[
+                      const _DailyRewardCard(),
                       const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _HomeTile(
-                              key: const Key('daily'),
-                              icon: dailyDone
-                                  ? Icons.check_rounded
-                                  : Icons.calendar_today_rounded,
-                              colors: dailyDone
-                                  ? const [Color(0xFF3FE0B0), Palette.tertiary]
-                                  : const [Color(0xFFFFD25E), Palette.sun],
-                              label: 'Daily',
-                              detail: dailyDone ? 'Done today' : 'New puzzle',
-                              onTap: () => context.push(Routes.daily),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _HomeTile(
-                              key: const Key('collection'),
-                              icon: Icons.auto_awesome_rounded,
-                              colors: const [Palette.pink, Palette.primary],
-                              label: 'Collection',
-                              detail: nextPuzzle == null
-                                  ? 'All $opened open'
-                                  : '$opened / ${ShapePuzzles.all.length} '
-                                        'open',
-                              onTap: () => context.push(Routes.collection),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _HomeTile(
-                              key: const Key('map'),
-                              icon: Icons.location_city_rounded,
-                              colors: const [Color(0xFF7CC8FF), Palette.sky],
-                              label: 'City',
-                              detail: 'Your map',
-                              onTap: () => context.push(Routes.map),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _HomeTile(
-                              key: const Key('shop'),
-                              icon: Icons.storefront_rounded,
-                              colors: const [
-                                Color(0xFFFF9A7A),
-                                Palette.secondary,
-                              ],
-                              label: 'Shop',
-                              detail: 'Coins & more',
-                              onTap: () => context.push(Routes.shop),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 24),
                     ],
-                  ),
+                    CandyButton(
+                      key: const Key('play'),
+                      icon: Icons.play_arrow_rounded,
+                      label: 'Play  ·  Level $next',
+                      onPressed: () => context.push(Routes.game(next)),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _HomeTile(
+                            key: const Key('daily'),
+                            icon: dailyDone
+                                ? Icons.check_rounded
+                                : Icons.calendar_today_rounded,
+                            colors: dailyDone
+                                ? const [Color(0xFF3FE0B0), Palette.tertiary]
+                                : const [Color(0xFFFFD25E), Palette.sun],
+                            label: 'Daily',
+                            detail: dailyDone ? 'Done today' : 'New puzzle',
+                            onTap: () => context.push(Routes.daily),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          key: _collectionKey,
+                          child: _HomeTile(
+                            key: const Key('collection'),
+                            icon: Icons.auto_awesome_rounded,
+                            colors: const [Palette.pink, Palette.primary],
+                            label: 'Collection',
+                            detail: nextPuzzle == null
+                                ? 'All $opened open'
+                                : '$opened / ${ShapePuzzles.all.length} '
+                                      'open',
+                            onTap: () => context.push(Routes.collection),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _HomeTile(
+                            key: const Key('map'),
+                            icon: Icons.location_city_rounded,
+                            colors: const [Color(0xFF7CC8FF), Palette.sky],
+                            label: 'City',
+                            detail: 'Your map',
+                            onTap: () => context.push(Routes.map),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _HomeTile(
+                            key: const Key('shop'),
+                            icon: Icons.storefront_rounded,
+                            colors: const [
+                              Color(0xFFFF9A7A),
+                              Palette.secondary,
+                            ],
+                            label: 'Shop',
+                            detail: 'Coins & more',
+                            onTap: () => context.push(Routes.shop),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
             ),

@@ -1,5 +1,6 @@
 import 'package:arrow_escape/core/theme/palette.dart';
 import 'package:arrow_escape/features/settings/domain/app_settings.dart';
+import 'package:arrow_escape/features/skins/skin_paint.dart';
 import 'package:flutter/material.dart';
 
 /// Everything the board painters need to know about colours and strokes.
@@ -21,6 +22,7 @@ class BoardStyle {
     required this.strokeFactor,
     required this.maxStroke,
     required this.symbols,
+    this.effect = SkinEffect.plain,
   });
 
   /// [skinColors] come from the selected vehicle skin; accessibility modes
@@ -29,6 +31,7 @@ class BoardStyle {
     ThemeData theme,
     AppSettings settings, {
     List<Color>? skinColors,
+    SkinEffect skinEffect = SkinEffect.plain,
   }) {
     final dark = theme.brightness == Brightness.dark;
     final hc = settings.highContrast;
@@ -64,10 +67,12 @@ class BoardStyle {
           : Palette.lightGreen,
       ambulance: Palette.ambulance,
       ambulanceCross: Palette.ambulanceCross,
-      strokeFactor: settings.thickArrows ? 0.17 : 0.1,
-      maxStroke: settings.thickArrows ? 5.0 : 3.0,
+      strokeFactor: settings.thickArrows ? 0.17 : 0.11,
+      maxStroke: settings.thickArrows ? 6.0 : 4.0,
       // Colorblind and high-contrast modes add shape cues to colour cues.
       symbols: settings.colorblind || hc,
+      // Accessibility palettes are drawn plain.
+      effect: settings.colorblind || hc ? SkinEffect.plain : skinEffect,
     );
   }
 
@@ -95,6 +100,9 @@ class BoardStyle {
   /// Draw symbols (stop bar, go circle, blocked cross) besides colours.
   final bool symbols;
 
+  /// Skin effect for arrow lines.
+  final SkinEffect effect;
+
   Color vehicleColor(int piece) => vehicles[piece % vehicles.length];
 
   @override
@@ -112,7 +120,8 @@ class BoardStyle {
       other.lightGreen == lightGreen &&
       other.strokeFactor == strokeFactor &&
       other.maxStroke == maxStroke &&
-      other.symbols == symbols;
+      other.symbols == symbols &&
+      other.effect == effect;
 
   @override
   int get hashCode => Object.hash(
@@ -129,5 +138,6 @@ class BoardStyle {
     strokeFactor,
     maxStroke,
     symbols,
+    effect,
   );
 }

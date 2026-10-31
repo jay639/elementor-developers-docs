@@ -140,7 +140,7 @@ class ResultOverlay extends StatelessWidget {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                'New picture unlocked: $name!',
+                                'New wonder unlocked: $name!',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w600,

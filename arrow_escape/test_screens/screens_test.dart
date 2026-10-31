@@ -64,6 +64,7 @@ void main() {
     String name,
     String route, {
     Brightness brightness = Brightness.light,
+    Future<void> Function(WidgetTester)? then,
   }) async {
     tester.platformDispatcher.platformBrightnessTestValue = brightness;
     addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
@@ -74,6 +75,12 @@ void main() {
     container.read(routerProvider).go(route);
     for (var i = 0; i < 30; i++) {
       await tester.pump(const Duration(milliseconds: 100));
+    }
+    if (then != null) {
+      await then(tester);
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
     }
     await expectLater(
       find.byType(MaterialApp),
@@ -89,6 +96,23 @@ void main() {
   testWidgets('game 9', (t) => shot(t, 'game_9', Routes.game(9)));
   testWidgets('map', (t) => shot(t, 'map', Routes.map));
   testWidgets('collection', (t) => shot(t, 'collection', Routes.collection));
+  testWidgets('skins', (t) {
+    return shot(
+      t,
+      'skins',
+      Routes.collection,
+      then: (t) => t.tap(find.byKey(const Key('tab-skins'))),
+    );
+  });
+  testWidgets('skins dark', (t) {
+    return shot(
+      t,
+      'skins_dark',
+      Routes.collection,
+      brightness: Brightness.dark,
+      then: (t) => t.tap(find.byKey(const Key('tab-skins'))),
+    );
+  });
   testWidgets('daily', (t) => shot(t, 'daily', Routes.daily));
   testWidgets('puzzle', (t) => shot(t, 'puzzle', Routes.puzzleGame('mountain', 1)));
   testWidgets('settings', (t) => shot(t, 'settings', Routes.settings));

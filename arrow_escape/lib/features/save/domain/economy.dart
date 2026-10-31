@@ -81,6 +81,22 @@ abstract final class Economy {
     return (save: _recordWinDay(next, now), coins: coins);
   }
 
+  /// Coins to skip a campaign level.
+  static const skipCost = 150;
+
+  /// Skips campaign [level] for [skipCost] coins: the next level opens but
+  /// no stars are given. Null when the player can't afford it.
+  static SaveData? skipLevel(SaveData s, int level) {
+    if (s.coins < skipCost) return null;
+    final p = s.progress;
+    return s.copyWith(
+      coins: s.coins - skipCost,
+      progress: p.copyWith(
+        unlocked: level + 1 > p.unlocked ? level + 1 : p.unlocked,
+      ),
+    );
+  }
+
   /// Coins for a picture-puzzle layer: more for deeper layers.
   static int puzzleCoins({
     required bool firstClear,

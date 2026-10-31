@@ -1,4 +1,5 @@
 import 'package:arrow_escape/core/theme/palette.dart';
+import 'package:arrow_escape/features/skins/skin_paint.dart';
 import 'package:flutter/material.dart';
 
 /// A vehicle colour theme. Colorblind / high-contrast modes take precedence
@@ -12,7 +13,15 @@ class VehicleSkin {
     required this.light,
     required this.dark,
     this.adUnlock = false,
+    this.effect = SkinEffect.plain,
+    this.tagline = '',
   });
+
+  /// How arrows are drawn: plain, gradient, neon glow or gold.
+  final SkinEffect effect;
+
+  /// One line for the shop card.
+  final String tagline;
 
   final String id;
   final String name;
@@ -29,53 +38,47 @@ class VehicleSkin {
 }
 
 abstract final class Skins {
+  /// Free: plain ink lines, like a pen sketch. Everything else is an
+  /// upgrade you can see: colour, then gradients, neon glow and gold.
   static const classic = VehicleSkin(
     id: 'classic',
-    name: 'Pastel',
+    name: 'Ink',
     price: 0,
-    light: Palette.vehiclesLight,
-    dark: Palette.vehiclesDark,
+    tagline: 'Clean pen lines',
+    light: [Color(0xFF1E2340)],
+    dark: [Color(0xFFE9E9F2)],
   );
 
   static const all = <VehicleSkin>[
     classic,
     VehicleSkin(
       id: 'candy',
-      name: 'Candy',
+      name: 'Rainbow',
       price: 300,
       adUnlock: true,
-      light: [
-        Color(0xFFFF9EC7),
-        Color(0xFFFFC6A8),
-        Color(0xFFB8E0FF),
-        Color(0xFFC9B6FF),
-        Color(0xFFFFE08A),
-      ],
-      dark: [
-        Color(0xFFFF86B8),
-        Color(0xFFFFB38D),
-        Color(0xFF9CD2FF),
-        Color(0xFFB39CFF),
-        Color(0xFFFFD461),
-      ],
+      tagline: 'Every arrow its own colour',
+      light: Palette.vehiclesLight,
+      dark: Palette.vehiclesDark,
     ),
     VehicleSkin(
       id: 'ocean',
       name: 'Ocean',
       price: 500,
+      effect: SkinEffect.gradient,
+      tagline: 'Blues that fade like waves',
       light: [
-        Color(0xFF6EC6E8),
-        Color(0xFF4FA3D1),
-        Color(0xFF7FDCCB),
-        Color(0xFF9FB8F2),
-        Color(0xFF3E8FB0),
+        Color(0xFF0E7FC0),
+        Color(0xFF1565C0),
+        Color(0xFF00897B),
+        Color(0xFF3949AB),
+        Color(0xFF0277BD),
       ],
       dark: [
-        Color(0xFF5BB8DE),
-        Color(0xFF4E9ED0),
-        Color(0xFF63D2BE),
-        Color(0xFF8CA8F0),
-        Color(0xFF52A6C8),
+        Color(0xFF4FC3F7),
+        Color(0xFF64B5F6),
+        Color(0xFF4DD0B8),
+        Color(0xFF8C9EFF),
+        Color(0xFF40C4FF),
       ],
     ),
     VehicleSkin(
@@ -83,67 +86,56 @@ abstract final class Skins {
       name: 'Forest',
       price: 500,
       adUnlock: true,
+      effect: SkinEffect.gradient,
+      tagline: 'Leafy greens and bark',
       light: [
-        Color(0xFF8BC48A),
-        Color(0xFFB5D88A),
-        Color(0xFF6FA88E),
-        Color(0xFFD9C27A),
-        Color(0xFFA58D6F),
+        Color(0xFF2E7D32),
+        Color(0xFF558B2F),
+        Color(0xFF00796B),
+        Color(0xFF8D6E00),
+        Color(0xFF6D4C41),
       ],
       dark: [
-        Color(0xFF7DBA7C),
-        Color(0xFFA7D073),
-        Color(0xFF5FA584),
-        Color(0xFFD6BC62),
-        Color(0xFFB79E7E),
+        Color(0xFF81C784),
+        Color(0xFFAED581),
+        Color(0xFF4DB6AC),
+        Color(0xFFFFD54F),
+        Color(0xFFBCAAA4),
       ],
     ),
     VehicleSkin(
       id: 'sunset',
       name: 'Sunset',
       price: 800,
+      effect: SkinEffect.gradient,
+      tagline: 'Warm evening fades',
       light: [
+        Color(0xFFE64A19),
+        Color(0xFFF57C00),
+        Color(0xFFD81B60),
+        Color(0xFF8E24AA),
+        Color(0xFFF9A825),
+      ],
+      dark: [
         Color(0xFFFF8A65),
         Color(0xFFFFB74D),
         Color(0xFFF06292),
-        Color(0xFFBA68C8),
+        Color(0xFFCE93D8),
         Color(0xFFFFD54F),
-      ],
-      dark: [
-        Color(0xFFFF7B54),
-        Color(0xFFFFAA33),
-        Color(0xFFEE5487),
-        Color(0xFFB05CC2),
-        Color(0xFFFFCC33),
-      ],
-    ),
-    VehicleSkin(
-      id: 'mono',
-      name: 'Ink',
-      price: 400,
-      light: [
-        Color(0xFF5C5470),
-        Color(0xFF7D7590),
-        Color(0xFF9D96AE),
-        Color(0xFF443C58),
-      ],
-      dark: [
-        Color(0xFFD9D4E7),
-        Color(0xFFBEB7D1),
-        Color(0xFFA39BBB),
-        Color(0xFFEDE9F7),
       ],
     ),
     VehicleSkin(
       id: 'neon',
       name: 'Neon',
-      price: 1200,
+      price: 1500,
+      effect: SkinEffect.glow,
+      tagline: 'Glowing light tubes',
       light: [
-        Color(0xFF00C2A8),
-        Color(0xFFFF3D7F),
+        Color(0xFF00BFA5),
+        Color(0xFFFF1F70),
         Color(0xFF7C4DFF),
-        Color(0xFFFFB300),
-        Color(0xFF00B0FF),
+        Color(0xFFFF9100),
+        Color(0xFF00A8FF),
       ],
       dark: [
         Color(0xFF1DE9B6),
@@ -157,18 +149,10 @@ abstract final class Skins {
       id: 'gold',
       name: 'Gold',
       price: 2500,
-      light: [
-        Color(0xFFE0B341),
-        Color(0xFFCF9B2E),
-        Color(0xFFF2CF6B),
-        Color(0xFFB8862A),
-      ],
-      dark: [
-        Color(0xFFF2C94C),
-        Color(0xFFE0B341),
-        Color(0xFFFFE08A),
-        Color(0xFFD4A537),
-      ],
+      effect: SkinEffect.metallic,
+      tagline: 'Polished solid gold',
+      light: [Color(0xFFC8901E)],
+      dark: [Color(0xFFE0B341)],
     ),
   ];
 

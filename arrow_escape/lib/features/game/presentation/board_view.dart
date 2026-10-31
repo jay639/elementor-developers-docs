@@ -237,6 +237,7 @@ class _BoardViewState extends ConsumerState<BoardView>
       theme,
       settings,
       skinColors: skin.colors(theme.brightness),
+      skinEffect: skin.effect,
     );
     final level = state.level;
     final remaining = state.session.board.remainingCount;

@@ -13,6 +13,7 @@ class PuzzleShape {
     required this.id,
     required this.name,
     required this.starsToUnlock,
+    required this.chapter,
     required this.aspect,
     required this.inside,
   });
@@ -22,6 +23,10 @@ class PuzzleShape {
 
   /// Total stars (campaign + daily + puzzles) needed to open it.
   final int starsToUnlock;
+
+  /// Group in the gallery: Garden, Land, Sky, Space — from small things
+  /// to the cosmos. New wonders slot into a chapter; Galaxy stays last.
+  final String chapter;
 
   /// Width / height of the picture.
   final double aspect;
@@ -81,7 +86,7 @@ abstract final class ShapePuzzles {
     final rng = Rng(seed ^ stableHash(key(shape.id, layer)));
     final mask = shape.mask;
     Level? fallback;
-    for (var attempt = 0; attempt < 12; attempt++) {
+    for (var attempt = 0; attempt < 24; attempt++) {
       final level = generateForTarget(
         id: 0,
         // Aim higher after a too-easy attempt.
@@ -121,22 +126,51 @@ abstract final class ShapePuzzles {
 
   static final all = <PuzzleShape>[
     PuzzleShape(
-      id: 'mountain',
-      name: 'Mountain',
+      id: 'leaf',
+      name: 'Leaf',
       starsToUnlock: 15,
-      aspect: 1.3,
+      chapter: 'Garden',
+      aspect: 1,
       inside: (x, y) {
-        final height = math.max(
-          0.95 - 1.45 * (x + 0.25).abs(),
-          0.72 - 1.3 * (x - 0.5).abs(),
-        );
-        return (1 - y) / 2 <= height + 0.04;
+        // A lens along the diagonal, with a short stem.
+        final u = (x + y) / math.sqrt2;
+        final v = (x - y) / math.sqrt2;
+        final lens = _sq(v) + _sq(u.abs() + 0.55) <= 1.6 && u.abs() < 0.98;
+        final stem = v.abs() < 0.07 && u > 0.9 && u < 1.3;
+        return lens || stem;
+      },
+    ),
+    PuzzleShape(
+      id: 'flower',
+      name: 'Flower',
+      starsToUnlock: 40,
+      chapter: 'Garden',
+      aspect: 1,
+      inside: (x, y) {
+        final r = math.sqrt(_sq(x) + _sq(y));
+        final a = math.atan2(y, x);
+        return r < 0.42 + 0.56 * math.cos(a * 2.5).abs();
+      },
+    ),
+    PuzzleShape(
+      id: 'butterfly',
+      name: 'Butterfly',
+      starsToUnlock: 70,
+      chapter: 'Garden',
+      aspect: 1.25,
+      inside: (x, y) {
+        final ax = x.abs();
+        final upper = _sq((ax - 0.5) / 0.48) + _sq((y + 0.3) / 0.62) <= 1;
+        final lower = _sq((ax - 0.4) / 0.38) + _sq((y - 0.5) / 0.45) <= 1;
+        final body = ax < 0.09 && y.abs() < 0.85;
+        return upper || lower || body;
       },
     ),
     PuzzleShape(
       id: 'onion',
       name: 'Onion',
-      starsToUnlock: 40,
+      starsToUnlock: 110,
+      chapter: 'Garden',
       aspect: 0.8,
       inside: (x, y) {
         final bulb = _sq(x / 0.85) + _sq((y - 0.3) / 0.68) <= 1;
@@ -147,29 +181,10 @@ abstract final class ShapePuzzles {
       },
     ),
     PuzzleShape(
-      id: 'moon',
-      name: 'Moon',
-      starsToUnlock: 70,
-      aspect: 1,
-      inside: (x, y) =>
-          _sq(x) + _sq(y) <= 0.95 &&
-          _sq(x - 0.45) + _sq(y + 0.2) > 0.6,
-    ),
-    PuzzleShape(
-      id: 'sun',
-      name: 'Sun',
-      starsToUnlock: 110,
-      aspect: 1,
-      inside: (x, y) {
-        final r = math.sqrt(_sq(x) + _sq(y));
-        final a = math.atan2(y, x);
-        return r < 0.55 || (r < 0.98 && math.cos(a * 12) > 0.35);
-      },
-    ),
-    PuzzleShape(
       id: 'tree',
       name: 'Pine tree',
       starsToUnlock: 160,
+      chapter: 'Land',
       aspect: 0.75,
       inside: (x, y) {
         bool tier(double top, double bottom, double width) =>
@@ -184,70 +199,24 @@ abstract final class ShapePuzzles {
       },
     ),
     PuzzleShape(
-      id: 'flower',
-      name: 'Flower',
+      id: 'mountain',
+      name: 'Mountain',
       starsToUnlock: 220,
-      aspect: 1,
+      chapter: 'Land',
+      aspect: 1.3,
       inside: (x, y) {
-        final r = math.sqrt(_sq(x) + _sq(y));
-        final a = math.atan2(y, x);
-        return r < 0.42 + 0.56 * math.cos(a * 2.5).abs();
-      },
-    ),
-    PuzzleShape(
-      id: 'cloud',
-      name: 'Cloud',
-      starsToUnlock: 290,
-      aspect: 1.6,
-      inside: (x, y) =>
-          _sq((x + 0.5) / 0.42) + _sq((y - 0.2) / 0.6) <= 1 ||
-          _sq((x - 0.05) / 0.5) + _sq((y + 0.15) / 0.85) <= 1 ||
-          _sq((x - 0.55) / 0.42) + _sq((y - 0.15) / 0.7) <= 1 ||
-          (y > 0.1 && y < 0.8 && x.abs() < 0.85),
-    ),
-    PuzzleShape(
-      id: 'butterfly',
-      name: 'Butterfly',
-      starsToUnlock: 370,
-      aspect: 1.25,
-      inside: (x, y) {
-        final ax = x.abs();
-        final upper = _sq((ax - 0.5) / 0.48) + _sq((y + 0.3) / 0.62) <= 1;
-        final lower = _sq((ax - 0.4) / 0.38) + _sq((y - 0.5) / 0.45) <= 1;
-        final body = ax < 0.09 && y.abs() < 0.85;
-        return upper || lower || body;
-      },
-    ),
-    PuzzleShape(
-      id: 'crown',
-      name: 'Crown',
-      starsToUnlock: 460,
-      aspect: 1.35,
-      inside: (x, y) {
-        final band = y > 0.25 && y < 0.9 && x.abs() < 0.92;
-        var spike = false;
-        for (final px in const [-0.72, 0.0, 0.72]) {
-          final half = 0.3 * (y + 0.95) / 1.2;
-          if (y > -0.95 && y <= 0.3 && (x - px).abs() <= half) spike = true;
-        }
-        return band || spike;
-      },
-    ),
-    PuzzleShape(
-      id: 'gem',
-      name: 'Gem',
-      starsToUnlock: 560,
-      aspect: 1.2,
-      inside: (x, y) {
-        if (y < -0.75) return false;
-        if (y < -0.25) return x.abs() <= 0.55 + (y + 0.75) * 0.85;
-        return x.abs() <= 0.98 * (0.95 - y) / 1.2;
+        final height = math.max(
+          0.95 - 1.45 * (x + 0.25).abs(),
+          0.72 - 1.3 * (x - 0.5).abs(),
+        );
+        return (1 - y) / 2 <= height + 0.04;
       },
     ),
     PuzzleShape(
       id: 'snowflake',
       name: 'Snowflake',
-      starsToUnlock: 680,
+      starsToUnlock: 290,
+      chapter: 'Sky',
       aspect: 1,
       inside: (x, y) {
         final r = math.sqrt(_sq(x) + _sq(y));
@@ -269,9 +238,22 @@ abstract final class ShapePuzzles {
       },
     ),
     PuzzleShape(
+      id: 'cloud',
+      name: 'Cloud',
+      starsToUnlock: 370,
+      chapter: 'Sky',
+      aspect: 1.6,
+      inside: (x, y) =>
+          _sq((x + 0.5) / 0.42) + _sq((y - 0.2) / 0.6) <= 1 ||
+          _sq((x - 0.05) / 0.5) + _sq((y + 0.15) / 0.85) <= 1 ||
+          _sq((x - 0.55) / 0.42) + _sq((y - 0.15) / 0.7) <= 1 ||
+          (y > 0.1 && y < 0.8 && x.abs() < 0.85),
+    ),
+    PuzzleShape(
       id: 'bolt',
       name: 'Lightning',
-      starsToUnlock: 820,
+      starsToUnlock: 460,
+      chapter: 'Sky',
       aspect: 0.7,
       inside: (x, y) => _inPolygon(x, y, const [
         (0.25, -1.0),
@@ -284,24 +266,62 @@ abstract final class ShapePuzzles {
       ]),
     ),
     PuzzleShape(
-      id: 'umbrella',
-      name: 'Umbrella',
-      starsToUnlock: 980,
-      aspect: 1.15,
+      id: 'rainbow',
+      name: 'Rainbow',
+      starsToUnlock: 560,
+      chapter: 'Sky',
+      aspect: 1.1,
       inside: (x, y) {
-        final canopy = y <= 0.05 && _sq(x) + _sq((y - 0.05) / 0.95) <= 1;
-        final shaft = x.abs() < 0.07 && y > 0 && y < 0.8;
-        final hook =
-            y > 0.6 &&
-            _sq(x + 0.18) + _sq(y - 0.75) < 0.05 &&
-            _sq(x + 0.18) + _sq(y - 0.75) > 0.01;
-        return canopy || shaft || hook;
+        // Two wide bands of a tall arch, with a gap between them.
+        final r = math.sqrt(_sq(x) + _sq((y - 1) / 2));
+        return (r > 0.25 && r < 0.58) || (r > 0.66 && r < 1.0);
       },
     ),
     PuzzleShape(
-      id: 'planet',
-      name: 'Planet',
+      id: 'earth',
+      name: 'Earth',
+      starsToUnlock: 680,
+      chapter: 'Space',
+      aspect: 1,
+      inside: (x, y) {
+        if (_sq(x) + _sq(y) > 0.97) return false;
+        // Oceans between the continents are left open.
+        final america = _sq((x + 0.42) / 0.3) + _sq((y + 0.1) / 0.62) <= 1;
+        final eurasia = _sq((x - 0.35) / 0.42) + _sq((y + 0.35) / 0.28) <= 1;
+        final africa = _sq((x - 0.25) / 0.22) + _sq((y - 0.3) / 0.36) <= 1;
+        return america || eurasia || africa || _sq(x) + _sq(y) > 0.62;
+      },
+    ),
+    PuzzleShape(
+      id: 'moon',
+      name: 'Moon',
+      starsToUnlock: 820,
+      chapter: 'Space',
+      aspect: 1,
+      inside: (x, y) =>
+          _sq(x) + _sq(y) <= 0.95 &&
+          _sq(x - 0.45) + _sq(y + 0.2) > 0.6,
+    ),
+    PuzzleShape(
+      id: 'mars',
+      name: 'Mars',
+      starsToUnlock: 980,
+      chapter: 'Space',
+      aspect: 1,
+      inside: (x, y) {
+        if (_sq(x) + _sq(y) > 0.97) return false;
+        // Craters.
+        if (_sq(x + 0.35) + _sq(y + 0.3) < 0.05) return false;
+        if (_sq(x - 0.4) + _sq(y - 0.15) < 0.035) return false;
+        if (_sq(x + 0.05) + _sq(y - 0.5) < 0.03) return false;
+        return true;
+      },
+    ),
+    PuzzleShape(
+      id: 'saturn',
+      name: 'Saturn',
       starsToUnlock: 1160,
+      chapter: 'Space',
       aspect: 1.5,
       inside: (x, y) {
         final body = _sq(x / 0.55) + _sq(y / 0.82) <= 1;
@@ -313,23 +333,22 @@ abstract final class ShapePuzzles {
       },
     ),
     PuzzleShape(
-      id: 'leaf',
-      name: 'Leaf',
+      id: 'sun',
+      name: 'Sun',
       starsToUnlock: 1360,
+      chapter: 'Space',
       aspect: 1,
       inside: (x, y) {
-        // A lens along the diagonal, with a short stem.
-        final u = (x + y) / math.sqrt2;
-        final v = (x - y) / math.sqrt2;
-        final lens = _sq(v) + _sq(u.abs() + 0.55) <= 1.6 && u.abs() < 0.98;
-        final stem = v.abs() < 0.07 && u > 0.9 && u < 1.3;
-        return lens || stem;
+        final r = math.sqrt(_sq(x) + _sq(y));
+        final a = math.atan2(y, x);
+        return r < 0.55 || (r < 0.98 && math.cos(a * 12) > 0.35);
       },
     ),
     PuzzleShape(
       id: 'galaxy',
       name: 'Galaxy',
       starsToUnlock: 1600,
+      chapter: 'Space',
       aspect: 1,
       inside: (x, y) {
         final r = math.sqrt(_sq(x) + _sq(y));

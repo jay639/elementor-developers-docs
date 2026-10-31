@@ -6,6 +6,7 @@ import 'package:arrow_escape/core/theme/board_style.dart';
 import 'package:arrow_escape/features/game/presentation/board_animations.dart';
 import 'package:arrow_escape/features/game/presentation/board_geometry.dart';
 import 'package:arrow_escape/features/game/presentation/track.dart';
+import 'package:arrow_escape/features/skins/skin_paint.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
@@ -158,12 +159,14 @@ class BoardPiecesPainter extends CustomPainter {
     // Thin lines whatever the cell size: big cells (small boards) would
     // otherwise get bulky arrows.
     final stroke =
-        (cell * style.strokeFactor).clamp(1.6, style.maxStroke) *
+        (cell * style.strokeFactor).clamp(2.2, style.maxStroke) *
         (def.kind == PieceKind.ambulance ? 1.7 : 1);
     // Thin line from just behind the tail to the head; the arrowhead sits
     // past the head centre so a 1-cell arrow still reads as an arrow.
     final from = track.tailArc - 0.18 + offset;
-    final to = track.headArc + 0.04 + offset;
+    // The line stops at the base of the head; the head reaches toward the
+    // next cell, so the point is clearly visible.
+    final to = track.headArc - 0.12 + offset;
     final pts = [for (final p in track.slice(from, to)) layout.toPixels(p)];
 
     final body = Path()..moveTo(pts.first.dx, pts.first.dy);
@@ -172,8 +175,10 @@ class BoardPiecesPainter extends CustomPainter {
     }
     final tangent = track.tangentAt(to);
     final base = layout.toPixels(track.pointAt(to));
-    final halfWidth = math.max(stroke * 1.5, cell * 0.15).clamp(3.0, 7.5);
-    final tip = base + tangent * (cell * 0.26).clamp(4.0, 10.0);
+    // A sharp, clearly pointed head: longer than it is wide.
+    final headLength = math.max(stroke * 3.2, cell * 0.34).clamp(8.0, 15.0);
+    final halfWidth = headLength * 0.52;
+    final tip = base + tangent * headLength;
     final normal = Offset(-tangent.dy, tangent.dx) * halfWidth;
     final head = Path()
       ..moveTo(tip.dx, tip.dy)
@@ -220,8 +225,21 @@ class BoardPiecesPainter extends CustomPainter {
       canvas.drawPath(head, rimLine(rim, w * 2));
       canvas.drawPath(head, fill(rim));
     }
-    canvas.drawPath(body, line(color, stroke));
-    canvas.drawPath(head, fill(color));
+    if (isAmbulance) {
+      canvas.drawPath(body, line(color, stroke));
+      canvas.drawPath(head, fill(color));
+    } else {
+      paintArrow(
+        canvas,
+        body: body,
+        head: head,
+        tail: pts.first,
+        tip: tip,
+        color: color,
+        stroke: stroke,
+        effect: style.effect,
+      );
+    }
 
     if (isAmbulance) {
       // Red cross on the roof, between tail and head.
