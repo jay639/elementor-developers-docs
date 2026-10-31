@@ -71,6 +71,19 @@ class BoardBackgroundPainter extends CustomPainter {
 
 /// Everything that moves or changes: vehicles, lights, path previews and
 /// feedback flashes. Driven by [repaint] every animation frame.
+/// Where an arrow's head sits and which way it points. The direction is
+/// taken just *past* the head, along the road it drives out on: an arrow
+/// whose body turns at the head cell must still point its own way, not
+/// along its last body segment.
+({Offset base, Offset tangent}) headPose(
+  Track track,
+  double offset,
+  BoardLayout layout,
+) => (
+  base: layout.toPixels(track.pointAt(track.headArc + offset)),
+  tangent: track.tangentAt(track.headArc + offset + 0.05),
+);
+
 class BoardPiecesPainter extends CustomPainter {
   BoardPiecesPainter({
     required this.rules,
@@ -164,17 +177,15 @@ class BoardPiecesPainter extends CustomPainter {
     // Thin line from just behind the tail to the head; the arrowhead sits
     // past the head centre so a 1-cell arrow still reads as an arrow.
     final from = track.tailArc - 0.18 + offset;
-    // The line stops at the base of the head; the head reaches toward the
-    // next cell, so the point is clearly visible.
-    final to = track.headArc - 0.12 + offset;
+    // The line ends at the head cell's centre, where the head starts.
+    final to = track.headArc + offset;
     final pts = [for (final p in track.slice(from, to)) layout.toPixels(p)];
 
     final body = Path()..moveTo(pts.first.dx, pts.first.dy);
     for (final p in pts.skip(1)) {
       body.lineTo(p.dx, p.dy);
     }
-    final tangent = track.tangentAt(to);
-    final base = layout.toPixels(track.pointAt(to));
+    final (:base, :tangent) = headPose(track, offset, layout);
     // A sharp, clearly pointed head: longer than it is wide.
     final headLength = math.max(stroke * 3.2, cell * 0.34).clamp(8.0, 15.0);
     final halfWidth = headLength * 0.52;

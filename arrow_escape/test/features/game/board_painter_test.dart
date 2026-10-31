@@ -4,6 +4,7 @@ import 'package:arrow_engine/arrow_engine.dart';
 import 'package:arrow_escape/core/theme/app_theme.dart';
 import 'package:arrow_escape/core/theme/board_style.dart';
 import 'package:arrow_escape/features/game/presentation/board_animations.dart';
+import 'package:arrow_escape/features/game/presentation/board_geometry.dart';
 import 'package:arrow_escape/features/game/presentation/board_painter.dart';
 import 'package:arrow_escape/features/game/presentation/track.dart';
 import 'package:arrow_escape/features/settings/domain/app_settings.dart';
@@ -26,6 +27,28 @@ void main() {
           settings,
         ),
   ];
+
+  test('heads point the arrow\'s own way even when the body turns there', () {
+    // Head at (1,0) facing up; the body comes in from the left, so the
+    // last body segment points right.
+    final level = Level(
+      id: 1,
+      width: 3,
+      height: 2,
+      mask: List.filled(6, true),
+      pieces: [
+        PieceDef(kind: PieceKind.car, dir: Dir.up, cells: const [1, 0, 3]),
+      ],
+      meta: const LevelMeta(shape: 'rect'),
+    );
+    final layout = BoardLayout(level, size);
+    for (final offset in [0.0, 0.5]) {
+      final track = Track.forPiece(level, 0, const []);
+      final pose = headPose(track, offset, layout);
+      expect(pose.tangent.dx, closeTo(0, 1e-9), reason: 'offset $offset');
+      expect(pose.tangent.dy, closeTo(-1, 1e-9), reason: 'offset $offset');
+    }
+  });
 
   test('paints every sample level in every style, mid-animation', () {
     for (final level in sampleLevels) {
