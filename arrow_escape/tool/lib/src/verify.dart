@@ -6,8 +6,8 @@ import 'package:arrow_engine/arrow_engine.dart';
 /// human-readable problems; empty means pass.
 List<String> verifyCampaign(
   List<Level> levels, {
-  int maxWidth = 16,
-  int maxHeight = 22,
+  int maxWidth = maxBoardWidth,
+  int maxHeight = maxBoardHeight,
   double targetTolerance = 15,
   double maxOutlierShare = 0.05,
 }) {

@@ -35,14 +35,25 @@ class MechanicSet {
 }
 
 /// Board and arrow parameters for a given search `scale` (roughly the
-/// difficulty the board itself must provide). Plain arithmetic only: the
-/// daily challenge must be bit-identical on every platform.
-({int cells, int greed, double fill, int maxLength}) _shapeFor(double s) => (
-  cells: (10 + s * 2.2).round(),
-  greed: (1 + s / 10).round().clamp(1, 12),
-  fill: (0.62 + s / 400).clamp(0.6, 0.9),
-  maxLength: (3 + s / 7).round().clamp(3, 16),
+/// difficulty the board itself must provide). Boards are always packed:
+/// difficulty comes from size and how greedily arrows block each other,
+/// never from empty space. Plain arithmetic only: the daily challenge must
+/// be bit-identical on every platform.
+({int cells, int greed, double fill, int maxLength}) _shapeFor(
+  double s,
+  double target,
+) => (
+  // Size follows the target, so every level is a big crowded board; the
+  // search scale only nudges it.
+  cells: (40 + (0.5 * target + 0.5 * s) * 4.0).round().clamp(36, 460),
+  greed: (2 + s / 8).round().clamp(2, 14),
+  fill: 1.0,
+  maxLength: (3 + s / 22).round().clamp(3, 7),
 );
+
+/// Largest board the campaign uses (cells stay ~20 dp wide on a phone).
+const maxBoardWidth = 18;
+const maxBoardHeight = 26;
 
 /// Generates candidates of varying size and density and keeps the one
 /// whose solver-measured difficulty is closest to [target].
@@ -66,11 +77,11 @@ Level? generateForTarget({
   var bestError = double.infinity;
   for (var i = 0; i < candidates; i++) {
     final jitter = 0.92 + 0.16 * rng.nextDouble();
-    final p = _shapeFor(scale * jitter);
+    final p = _shapeFor(scale * jitter, target);
     final fitted = shape.fitTo(
       math.max(p.cells, minCells),
-      maxWidth: 16,
-      maxHeight: 22,
+      maxWidth: maxBoardWidth,
+      maxHeight: maxBoardHeight,
     );
     final level = LevelGenerator.generate(
       GeneratorConfig(
@@ -102,7 +113,7 @@ Level? generateForTarget({
       if (error < 1.5) break;
     }
     final ratio = target / math.max(1.0, stats.difficulty);
-    scale = (scale * ratio * ratio).clamp(2.0, 320.0);
+    scale = (scale * ratio * ratio).clamp(2.0, 140.0);
   }
   return best;
 }
@@ -145,9 +156,9 @@ abstract final class Campaign {
   static bool isBreather(int n) => n % 5 == 0;
 
   /// Levels ending in 9 are Hard and every 50th (49, 99, …) Super Hard,
-  /// each followed by a breather. Tiers start once the basics are learned.
+  /// each followed by a breather.
   static LevelTier tierFor(int n) {
-    if (n < 12) return LevelTier.normal;
+    if (n < 9) return LevelTier.normal;
     if (n % 50 == 49) return LevelTier.superHard;
     if (n % 10 == 9) return LevelTier.hard;
     return LevelTier.normal;
@@ -157,17 +168,19 @@ abstract final class Campaign {
   /// generated levels so the art style stays consistent.
   static final Map<int, Level> handmade = {1: tutorialLevel};
 
-  /// Steep early rise that levels off, a gentle wave for variety, tier
-  /// spikes and breather dips. Only used by the offline tool, so platform
-  /// `exp`/`sin` are fine here.
+  /// Level 2 is a warm-up; from level 3 boards are crowded and hard, and
+  /// they keep getting bigger and deeper. A gentle wave adds variety; tiers
+  /// spike and breathers dip (still packed, just smaller). Only used by the
+  /// offline tool, so platform `exp`/`sin` are fine here.
   static double targetDifficulty(int n) {
-    final rise = 1 - math.exp(-(n - 1) / 240);
-    final base = 14 + 54 * rise + 2.0 * math.sin(n * 0.9);
-    if (isBreather(n)) return math.max(8, base * 0.65);
+    if (n <= 2) return 40;
+    final rise = 1 - math.exp(-(n - 3) / 380);
+    final base = 52 + 42 * rise + 2.0 * math.sin(n * 0.9);
+    if (isBreather(n)) return base * 0.8;
     return switch (tierFor(n)) {
       LevelTier.normal => base,
-      LevelTier.hard => math.min(86, base * 1.2 + 4),
-      LevelTier.superHard => math.min(92, base * 1.3 + 8),
+      LevelTier.hard => math.min(95, base + 8),
+      LevelTier.superHard => math.min(98, base + 13),
     };
   }
 
@@ -240,7 +253,7 @@ abstract final class Campaign {
         id: n,
         target: s.target,
         seed: s.seed + attempt * 7919,
-        shape: attempt < 3 ? s.shape : ShapeMask.rect(8, 10),
+        shape: attempt < 3 ? s.shape : ShapeMask.rect(14, 18),
         // Last resort: drop the mechanics rather than fail the build.
         mechanics: attempt < 6 ? s.mechanics : const MechanicSet(),
         breather: s.breather,

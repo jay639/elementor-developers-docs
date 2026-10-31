@@ -19,6 +19,7 @@ class BoardStyle {
     required this.ambulance,
     required this.ambulanceCross,
     required this.strokeFactor,
+    required this.maxStroke,
     required this.symbols,
   });
 
@@ -63,7 +64,8 @@ class BoardStyle {
           : Palette.lightGreen,
       ambulance: Palette.ambulance,
       ambulanceCross: Palette.ambulanceCross,
-      strokeFactor: settings.thickArrows ? 0.24 : 0.14,
+      strokeFactor: settings.thickArrows ? 0.17 : 0.1,
+      maxStroke: settings.thickArrows ? 5.0 : 3.0,
       // Colorblind and high-contrast modes add shape cues to colour cues.
       symbols: settings.colorblind || hc,
     );
@@ -87,6 +89,9 @@ class BoardStyle {
   /// Vehicle stroke width as a fraction of the cell size.
   final double strokeFactor;
 
+  /// Upper bound for the arrow line width, in logical pixels.
+  final double maxStroke;
+
   /// Draw symbols (stop bar, go circle, blocked cross) besides colours.
   final bool symbols;
 
@@ -106,6 +111,7 @@ class BoardStyle {
       other.lightRed == lightRed &&
       other.lightGreen == lightGreen &&
       other.strokeFactor == strokeFactor &&
+      other.maxStroke == maxStroke &&
       other.symbols == symbols;
 
   @override
@@ -121,6 +127,7 @@ class BoardStyle {
     lightRed,
     lightGreen,
     strokeFactor,
+    maxStroke,
     symbols,
   );
 }

@@ -29,7 +29,7 @@ class BoardBackgroundPainter extends CustomPainter {
     }
     canvas.drawPath(silhouette, Paint()..color = style.tile);
     final dot = Paint()..color = style.tileEdge;
-    final dotRadius = math.max(1.2, cell * 0.06);
+    final dotRadius = (cell * 0.06).clamp(1.0, 2.2);
     for (var i = 0; i < level.cellCount; i++) {
       if (level.mask[i]) canvas.drawCircle(layout.centerOf(i), dotRadius, dot);
     }
@@ -155,8 +155,11 @@ class BoardPiecesPainter extends CustomPainter {
     final def = level.pieces[piece];
     final cell = layout.cell;
     // The white ambulance needs a little more body to stand out.
+    // Thin lines whatever the cell size: big cells (small boards) would
+    // otherwise get bulky arrows.
     final stroke =
-        cell * style.strokeFactor * (def.kind == PieceKind.ambulance ? 1.7 : 1);
+        (cell * style.strokeFactor).clamp(1.6, style.maxStroke) *
+        (def.kind == PieceKind.ambulance ? 1.7 : 1);
     // Thin line from just behind the tail to the head; the arrowhead sits
     // past the head centre so a 1-cell arrow still reads as an arrow.
     final from = track.tailArc - 0.18 + offset;
@@ -169,8 +172,8 @@ class BoardPiecesPainter extends CustomPainter {
     }
     final tangent = track.tangentAt(to);
     final base = layout.toPixels(track.pointAt(to));
-    final halfWidth = math.max(stroke * 1.3, cell * 0.2);
-    final tip = base + tangent * (cell * 0.32);
+    final halfWidth = math.max(stroke * 1.5, cell * 0.15).clamp(3.0, 7.5);
+    final tip = base + tangent * (cell * 0.26).clamp(4.0, 10.0);
     final normal = Offset(-tangent.dy, tangent.dx) * halfWidth;
     final head = Path()
       ..moveTo(tip.dx, tip.dy)

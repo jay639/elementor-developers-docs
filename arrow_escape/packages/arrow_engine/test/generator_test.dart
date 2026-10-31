@@ -217,8 +217,14 @@ v..
     });
 
     test('target curve rises and breathers dip', () {
-      expect(Campaign.targetDifficulty(1), lessThan(18));
-      expect(Campaign.targetDifficulty(1497), greaterThan(60));
+      // Warm-up at 2, hard from 3 on, still rising late.
+      expect(Campaign.targetDifficulty(2), lessThan(45));
+      expect(Campaign.targetDifficulty(3), greaterThan(50));
+      expect(Campaign.targetDifficulty(1497), greaterThan(85));
+      expect(
+        Campaign.targetDifficulty(1001),
+        greaterThan(Campaign.targetDifficulty(501)),
+      );
       for (var n = 10; n <= 1500; n += 5) {
         expect(
           Campaign.targetDifficulty(n),
@@ -229,7 +235,8 @@ v..
       // Smooth: neighbours never jump much (ignoring breathers and tiers).
       bool special(int n) =>
           Campaign.isBreather(n) || Campaign.tierFor(n) != LevelTier.normal;
-      for (var n = 2; n <= 1500; n++) {
+      // (The step from the warm-up level 2 to level 3 is deliberate.)
+      for (var n = 4; n <= 1500; n++) {
         if (special(n) || special(n - 1)) continue;
         expect(
           (Campaign.targetDifficulty(n) - Campaign.targetDifficulty(n - 1))
@@ -269,8 +276,9 @@ v..
       expect(l.pieces, tutorialLevel.pieces);
     });
 
-    test('tiers: hard on 9s, super hard every 50th, from level 12', () {
-      expect(Campaign.tierFor(9), LevelTier.normal);
+    test('tiers: hard on 9s, super hard every 50th, from level 9', () {
+      expect(Campaign.tierFor(8), LevelTier.normal);
+      expect(Campaign.tierFor(9), LevelTier.hard);
       expect(Campaign.tierFor(19), LevelTier.hard);
       expect(Campaign.tierFor(49), LevelTier.superHard);
       expect(Campaign.tierFor(99), LevelTier.superHard);
@@ -360,8 +368,8 @@ v..
         'here (bump DailyChallenge.version on purpose instead)', () {
       int hashOf(DateTime d) =>
           stableHash(jsonEncode(DailyChallenge.levelFor(d).toJson()));
-      expect(hashOf(DateTime(2026, 10, 29)), 1862035536);
-      expect(hashOf(DateTime(2027, 3, 14)), 2762414564);
+      expect(hashOf(DateTime(2026, 10, 29)), 912112352);
+      expect(hashOf(DateTime(2027, 3, 14)), 525586384);
     });
 
     test('keys', () {
@@ -369,7 +377,7 @@ v..
       expect(DailyChallenge.keyFor(d), '2026-03-07');
       expect(DailyChallenge.parseKey('2026-03-07'), d);
       expect(() => DailyChallenge.parseKey('x'), throwsFormatException);
-      expect(DailyChallenge.targetFor(DateTime(2026, 11, 2)), 34); // Monday
+      expect(DailyChallenge.targetFor(DateTime(2026, 11, 2)), 55); // Monday
     });
   });
 }

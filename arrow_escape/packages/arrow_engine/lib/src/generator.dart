@@ -72,6 +72,7 @@ class LevelGenerator {
     _reserved = List.filled(n, false);
     _gateAt = List.filled(n, null);
     _cover = List.filled(n, 0);
+    _lastCover = List.filled(n, -1);
   }
 
   /// Generates a solvable level, or null if this seed can't make one.
@@ -89,6 +90,9 @@ class LevelGenerator {
 
   /// How many placed vehicles' paths cross each cell.
   late final List<int> _cover;
+
+  /// Index of the last placed vehicle whose path crosses each cell.
+  late final List<int> _lastCover;
   final _placed = <PieceDef>[];
 
   List<bool> get _mask => config.shape.cells;
@@ -156,6 +160,7 @@ class LevelGenerator {
       if (added == 0) return null;
     }
     if (_placed.length < 2) return null;
+    if (config.pack) _extendTails();
 
     final gates = <OneWayGate>[
       for (var c = 0; c < _gateAt.length; c++)
@@ -281,6 +286,35 @@ class LevelGenerator {
     }
   }
 
+  /// Grows arrows' tails into cells nothing else could use, so the board
+  /// has no holes. Only the tail moves, so an arrow's own path is
+  /// unchanged; a cell is taken only if every arrow whose path crosses it
+  /// leaves after this one (was placed before it).
+  void _extendTails() {
+    final cap = config.maxLength + 4;
+    var grown = true;
+    while (grown) {
+      grown = false;
+      for (var i = 0; i < _placed.length; i++) {
+        final p = _placed[i];
+        if (p.kind != PieceKind.car || p.cells.length >= cap) continue;
+        final tail = p.cells.last;
+        final ahead = _trace(p).cells.toSet();
+        for (final d in Dir.values) {
+          final c = _neighbor(tail, d);
+          if (c < 0 || !_isFree(c) || _gateAt[c] != null) continue;
+          if (_lastCover[c] >= i || ahead.contains(c)) continue;
+          if (p.cells.contains(c)) continue;
+          final next = PieceDef(kind: p.kind, dir: p.dir, cells: [...p.cells, c]);
+          _placed[i] = next;
+          _occupant[c] = i;
+          grown = true;
+          break;
+        }
+      }
+    }
+  }
+
   PieceDef? _bestCandidate(List<int> maskCells) {
     PieceDef? best;
     var bestScore = double.negativeInfinity;
@@ -308,7 +342,7 @@ class LevelGenerator {
   }
 
   /// A random arrow with its head at [head] whose path is clear, or null.
-  /// Lengths lean long (the larger of two draws).
+  /// Lengths are uniform in the configured range.
   PieceDef? _candidateAt(int head, {required int maxLength}) {
     final dirs = [...Dir.values];
     _rng.shuffle(dirs);
@@ -318,8 +352,7 @@ class LevelGenerator {
     );
     for (final dir in dirs) {
       final span = maxLength - minLength + 1;
-      final int length =
-          minLength + math.max<int>(_rng.nextInt(span), _rng.nextInt(span));
+      final int length = minLength + _rng.nextInt(span);
       // The body may not lie in front of its own head.
       final ahead = <int>{};
       for (var c = _neighbor(head, dir); c >= 0; c = _neighbor(c, dir)) {
@@ -387,6 +420,7 @@ class LevelGenerator {
     }
     for (final c in _trace(def).cells) {
       _cover[c]++;
+      _lastCover[c] = index;
     }
   }
 }

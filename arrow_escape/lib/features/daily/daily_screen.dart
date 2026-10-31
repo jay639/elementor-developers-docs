@@ -17,9 +17,9 @@ class DailyScreen extends ConsumerStatefulWidget {
   /// Label shown for each weekday's target difficulty.
   static String difficultyLabel(DateTime day) =>
       switch (DailyChallenge.targetFor(day)) {
-        < 40 => 'Easy',
-        < 48 => 'Medium',
-        < 58 => 'Hard',
+        < 60 => 'Easy',
+        < 68 => 'Medium',
+        < 76 => 'Hard',
         _ => 'Expert',
       };
 
