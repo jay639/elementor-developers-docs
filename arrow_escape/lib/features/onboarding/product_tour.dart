@@ -137,9 +137,9 @@ class _ProductTourState extends State<ProductTour> {
                         children: [
                           for (var i = 0; i < widget.steps.length; i++)
                             Container(
-                              width: i == _step ? 18 : 8,
-                              height: 8,
-                              margin: const EdgeInsets.only(right: 4),
+                              width: i == _step ? 14 : 6,
+                              height: 6,
+                              margin: const EdgeInsets.only(right: 3),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(4),
                                 color: i == _step

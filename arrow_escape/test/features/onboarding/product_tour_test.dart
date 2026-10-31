@@ -19,11 +19,17 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('tour walks streak, stars, coins, collection once', (
-    tester,
-  ) async {
+  testWidgets('tour walks every part of the home screen once', (tester) async {
     await openHome(tester, const SaveData(seenTips: [Tips.tutorial]));
-    for (final title in ['Daily streak', 'Stars', 'Coins', 'Collection']) {
+    for (final title in [
+      'Daily streak',
+      'Stars',
+      'Coins',
+      'Collection',
+      'Daily puzzle',
+      'City',
+      'Shop',
+    ]) {
       expect(find.text(title), findsWidgets, reason: title);
       await tester.tap(find.byKey(const Key('tour-next')));
       await tester.pumpAndSettle();

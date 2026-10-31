@@ -73,7 +73,34 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       icon: Icons.auto_awesome_rounded,
       color: Palette.pink,
       title: 'Collection',
-      body: 'Your Wonders (from a leaf to a galaxy) and arrow skins live here.',
+      body:
+          'Your Wonders (from a ladybug to a galaxy) and arrow skins live '
+          'here.',
+    ),
+    TourStep(
+      target: _dailyKey,
+      icon: Icons.calendar_today_rounded,
+      color: Palette.sun,
+      title: 'Daily puzzle',
+      body:
+          'A new puzzle every day, the same for everyone. It gets harder '
+          'through the week and pays big coins.',
+    ),
+    TourStep(
+      target: _cityKey,
+      icon: Icons.location_city_rounded,
+      color: Palette.sky,
+      title: 'City',
+      body:
+          'Every 10 levels you clear builds a new block of your city. '
+          'Jump back to any level from the map.',
+    ),
+    TourStep(
+      target: _shopKey,
+      icon: Icons.storefront_rounded,
+      color: Palette.secondary,
+      title: 'Shop',
+      body: 'Coin packs, the starter bundle and No Ads live here.',
     ),
   ];
 

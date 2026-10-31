@@ -2,43 +2,42 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-/// Brand mark: a white arrow escaping a royal-violet board past a gold one. [progress] (0..1)
-/// slides the arrows out for the splash animation.
+/// Brand mark: a white arrow escaping a royal-violet board past a gold
+/// one. Shown from a pre-rendered image (rendered by [paintLogo]), so it
+/// costs nothing to draw and works on every GPU. [progress] (0..1) zooms
+/// and fades it out for the splash animation.
 class ArrowLogo extends StatelessWidget {
   const ArrowLogo({super.key, this.size = 120, this.progress = 0});
+
+  static const asset = 'assets/branding/logo.png';
 
   final double size;
   final double progress;
 
   @override
   Widget build(BuildContext context) {
+    final t = progress.clamp(0.0, 1.0);
     return Semantics(
       label: 'Arrow Escape logo',
       image: true,
-      child: CustomPaint(
-        size: Size.square(size),
-        painter: _LogoPainter(
-          progress,
-          Theme.of(context).brightness == Brightness.dark,
+      child: SizedBox.square(
+        dimension: size,
+        child: Opacity(
+          opacity: 1 - t,
+          child: Transform.scale(
+            scale: 1 + 0.25 * t,
+            child: Image.asset(
+              asset,
+              width: size,
+              height: size,
+              filterQuality: FilterQuality.medium,
+              excludeFromSemantics: true,
+            ),
+          ),
         ),
       ),
     );
   }
-}
-
-class _LogoPainter extends CustomPainter {
-  _LogoPainter(this.progress, this.dark);
-
-  final double progress;
-  final bool dark;
-
-  @override
-  void paint(Canvas canvas, Size size) =>
-      paintLogo(canvas, size.width, progress);
-
-  @override
-  bool shouldRepaint(_LogoPainter old) =>
-      old.progress != progress || old.dark != dark;
 }
 
 /// Draws the brand mark into a [s]-sized square: a royal-violet tile with
