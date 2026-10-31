@@ -59,7 +59,11 @@ jobs:
       - name: Reuse the CI debug signing key
         uses: actions/cache@v4
         with:
-          path: ~/.android/debug.keystore
+          # AGP keeps it under ANDROID_USER_HOME, which differs by image.
+          path: |
+            ~/.android/debug.keystore
+            ~/.config/.android/debug.keystore
+            ${{ env.ANDROID_USER_HOME }}/debug.keystore
           key: android-debug-keystore-v1
 
       # 64-bit only: current phones refuse 32-bit apps, and Play serves
@@ -84,6 +88,8 @@ jobs:
       # Proves each APK parses and is signed, and records its checksum.
       - name: Check the APKs are install-ready
         run: |
+          echo "Debug keystores on this runner:"
+          find "$HOME" "${ANDROID_USER_HOME:-/nonexistent}" -name debug.keystore 2>/dev/null || true
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           for f in build/app/outputs/flutter-apk/*.apk; do
             echo "== $f"
