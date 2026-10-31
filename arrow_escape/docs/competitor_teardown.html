@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arrow Puzzle Competitor Teardown</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: one reading column, wide tables scroll inside their own frame. */
+  --bg: #f7f6fb;
+  --surface: #ffffff;
+  --ink: #1f1d2b;
+  --muted: #5d5a70;
+  --line: #e2dff0;
+  --accent: #5b4bd6;
+  --good: #1f8a5b;
+  --warn: #b26b00;
+  --bad: #c0394b;
+  --chip: #efecfb;
+  --display: "Fraunces", Georgia, serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15141c; --surface: #1e1c28; --ink: #ecebf5; --muted: #a8a5bd;
+    --line: #34314a; --accent: #a99cff; --good: #5fd39c; --warn: #f0b354;
+    --bad: #ff8a99; --chip: #2a2740; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15141c; --surface: #1e1c28; --ink: #ecebf5; --muted: #a8a5bd;
+  --line: #34314a; --accent: #a99cff; --good: #5fd39c; --warn: #f0b354;
+  --bad: #ff8a99; --chip: #2a2740; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 16px/1.6 var(--body);
+}
+main { max-width: 980px; margin: 0 auto; padding: 40px 20px 80px; display: grid; gap: 40px; }
+header { display: grid; gap: 10px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.2; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 42px); }
+h2 { font-size: 26px; }
+h3 { font-size: 19px; }
+p { margin: 0; max-width: 68ch; }
+.lede { color: var(--muted); font-size: 17px; }
+.meta { font: 500 13px/1.4 var(--mono); color: var(--muted); }
+section { display: grid; gap: 16px; }
+.cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+  padding: 18px; display: grid; gap: 8px; align-content: start;
+}
+.card .k { font: 600 13px/1.3 var(--body); color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+.big { font-family: var(--display); font-size: 34px; font-weight: 700; }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+thead th { font-weight: 600; background: var(--chip); position: sticky; top: 0; }
+tbody tr:last-child td { border-bottom: 0; }
+td.num, th.num { font-variant-numeric: tabular-nums; }
+th[scope="row"] { font-weight: 600; width: 22%; }
+.y { color: var(--good); font-weight: 600; }
+.n { color: var(--bad); font-weight: 600; }
+.p { color: var(--warn); font-weight: 600; }
+.ours { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+ul, ol { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 72ch; }
+.rec { background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: 12px; padding: 16px 18px; display: grid; gap: 8px; }
+.rec.p0 { border-left-color: var(--bad); }
+.rec.p1 { border-left-color: var(--warn); }
+.rec.p2 { border-left-color: var(--good); }
+.tag { display: inline-block; font: 600 12px/1 var(--body); padding: 5px 8px; border-radius: 999px; background: var(--chip); color: var(--ink); margin-right: 6px; }
+.evidence { font-size: 14px; color: var(--muted); }
+code { font: 500 13px var(--mono); background: var(--chip); padding: 1px 5px; border-radius: 5px; }
+.bars { display: grid; gap: 8px; }
+.bar { display: grid; grid-template-columns: 110px 1fr 54px; gap: 10px; align-items: center; font-size: 14px; }
+.track { height: 14px; background: var(--chip); border-radius: 7px; overflow: hidden; }
+.fill { height: 100%; background: var(--bad); border-radius: 7px; }
+.bar span:last-child { font-variant-numeric: tabular-nums; text-align: right; }
+footer { color: var(--muted); font-size: 14px; display: grid; gap: 8px; }
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 420px) { .bar { grid-template-columns: 80px 1fr 44px; } }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="meta">Arrow Escape · competitive teardown · 31 Oct 2026</p>
+  <h1>Arrow Puzzle Competitor Teardown</h1>
+  <p class="lede">Four arrow-puzzle apps from Google Play (two with 10Cr+ installs) compared with our build, from their APKs: manifests, SDKs, Unity class names, asset bundles and in-game text. What they do that we don't, where they are weak, and what to build next.</p>
+</header>
+
+<section aria-labelledby="bottom">
+  <h2 id="bottom">The short version</h2>
+  <div class="cards">
+    <div class="card">
+      <span class="k">Biggest gap</span>
+      <div class="big">83–99%</div>
+      <p>of our arrows are single-cell blocks. The leaders draw long, thin, winding lines that weave through the whole board. This is why ours look bulky and play easy.</p>
+    </div>
+    <div class="card">
+      <span class="k">Difficulty</span>
+      <div class="big">16 → 67</div>
+      <p>board cells in our first 20 levels vs our last 800. Boards stay small and blocking chains shallow (2–6 deep), so most levels solve themselves.</p>
+    </div>
+    <div class="card">
+      <span class="k">First session</span>
+      <div class="big">3 of 4</div>
+      <p>competitors teach with an animated hand, a "Pinch to zoom" hint and per-mechanic intro popups. We show a text banner only.</p>
+    </div>
+    <div class="card">
+      <span class="k">Our edge</span>
+      <div class="big">30 MB</div>
+      <p>vs 150–265 MB for the leaders, plus offline play, accessibility modes and a lighter ad stack. Keep these.</p>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="apps">
+  <h2 id="apps">The four apps</h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th scope="col">App</th><th scope="col">Built with</th><th scope="col" class="num">Base APK</th><th scope="col">Studio stack</th><th scope="col">What stands out</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">1 · Arrow Puzzle<br><span class="meta">com.easybrain.arrow.puzzle.game · v1.12.0 · 10Cr+</span></th><td>Unity 6 (IL2CPP)</td><td class="num">150 MB</td><td>Easybrain in-house SDK, AppLovin MAX + ~20 networks, Adjust</td><td>Cleanest core: thin rounded lines on a dot grid, boosters with tutorials, monthly daily-challenge calendar, tournaments, events</td></tr>
+        <tr><th scope="row">2 · Amaze GO<br><span class="meta">com.oakever.arrows · v1.36.2 · 10Cr+</span></th><td>Unity (encrypted metadata and bundles)</td><td class="num">265 MB</td><td>Learnings SDK, MAX + ~22 networks, AppsFlyer, TikTok</td><td>A hub of modes: 3D arrows, Arrow Clash, battles, time attack, one-life, tarot/zodiac/chess packs, picture gallery, heavy Spine animation</td></tr>
+        <tr><th scope="row">3 · Point Out<br><span class="meta">com.arrow.out · v2.2.1 · 1Cr+</span></th><td>Unity 6, Addressables</td><td class="num">193 MB</td><td>Lion Studios MSKit, MAX + ~24 networks, GameAnalytics</td><td>~2,000 predefined levels, combo system, tunnels/zap/ash mechanics, lives, battle pass, saga journey, offers on fail</td></tr>
+        <tr><th scope="row">4 · Arrow Puzzle<br><span class="meta">com.arwatech.arrowpuzzle · v3.1.1 · 1K+</span></th><td>Web app in Capacitor</td><td class="num">32 MB</td><td>AdMob, Unity Ads, Firebase</td><td>Procedural levels with near-duplicate rejection, named mazes, 17 spoken praise lines, selectable synth sound packs</td></tr>
+        <tr class="ours"><th scope="row">Ours · Arrow Escape</th><td>Flutter, CustomPainter</td><td class="num">30 MB</td><td>AdMob + 4 adapters, RevenueCat, Firebase</td><td>City map, skins, accessibility, offline daily challenge, 1,500 verified levels</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="evidence">Sizes are the base APKs you uploaded; native libraries ship in separate split APKs, so real installs are larger still.</p>
+</section>
+
+<section aria-labelledby="ours">
+  <h2 id="ours">Why our levels feel easy and our arrows bulky</h2>
+  <p>Measured from our shipped level packs. Each arrow in our engine is a "vehicle" of 1–4 cells; almost all are 1.</p>
+  <div class="bars" role="img" aria-label="Share of single-cell arrows by level range: 99, 87, 85, 84 and 83 percent">
+    <div class="bar"><span>L1–20</span><div class="track"><div class="fill" style="width:99%"></div></div><span>99%</span></div>
+    <div class="bar"><span>L21–100</span><div class="track"><div class="fill" style="width:87%"></div></div><span>87%</span></div>
+    <div class="bar"><span>L101–300</span><div class="track"><div class="fill" style="width:85%"></div></div><span>85%</span></div>
+    <div class="bar"><span>L301–700</span><div class="track"><div class="fill" style="width:84%"></div></div><span>84%</span></div>
+    <div class="bar"><span>L701–1500</span><div class="track"><div class="fill" style="width:83%"></div></div><span>83%</span></div>
+  </div>
+  <div class="scroll">
+    <table>
+      <thead><tr><th scope="col">Levels</th><th scope="col" class="num">Arrows</th><th scope="col" class="num">Avg length</th><th scope="col" class="num">Longest</th><th scope="col" class="num">Board cells</th><th scope="col" class="num">Blocking chain</th><th scope="col" class="num">Blocked at start</th></tr></thead>
+      <tbody>
+        <tr><td>1–20</td><td class="num">8.8</td><td class="num">1.02</td><td class="num">4</td><td class="num">16</td><td class="num">2.3</td><td class="num">27%</td></tr>
+        <tr><td>21–100</td><td class="num">8.5</td><td class="num">1.18</td><td class="num">3</td><td class="num">19</td><td class="num">2.4</td><td class="num">32%</td></tr>
+        <tr><td>101–300</td><td class="num">12.9</td><td class="num">1.20</td><td class="num">3</td><td class="num">27</td><td class="num">3.3</td><td class="num">36%</td></tr>
+        <tr><td>301–700</td><td class="num">23.8</td><td class="num">1.29</td><td class="num">4</td><td class="num">48</td><td class="num">4.6</td><td class="num">43%</td></tr>
+        <tr><td>701–1500</td><td class="num">36.8</td><td class="num">1.30</td><td class="num">4</td><td class="num">67</td><td class="num">6.2</td><td class="num">47%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The leaders' renderers are built around paths: app 1 has <code>ArrowPathBuilder</code>, <code>ArrowLineThickness</code>, <code>ArrowLineRoundingRadius</code> and a gradient trail; app 3 has <code>ArrowTurns</code> and path points; app 4 scores levels by dependency depth like we do, but on long arrows. One long arrow blocks many others at once, so the same board size produces far deeper chains and the screen reads as a single drawing instead of a scatter of chunky tiles.</p>
+</section>
+
+<section aria-labelledby="matrix">
+  <h2 id="matrix">Feature matrix</h2>
+  <p class="evidence">"Yes" means the feature's code, assets or text is in the APK. "Not seen" means no trace was found, which is strong evidence but not proof.</p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th scope="col">Feature</th><th scope="col">1 · Easybrain</th><th scope="col">2 · Amaze GO</th><th scope="col">3 · Point Out</th><th scope="col">4 · Arwatech</th><th scope="col" class="ours">Ours</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Animated hand tutorial on first launch</th><td class="y">Yes (onboarding + slides)</td><td class="y">Yes (guide hand, guide video)</td><td class="y">Yes (tutorial mask, gameplay tutorial)</td><td class="n">Not seen</td><td class="ours n">No, text banner only</td></tr>
+        <tr><th scope="row">Pinch-to-zoom hint</th><td class="y">"Pinch to zoom"</td><td class="y">One-hand scale animation</td><td class="p">Camera zoom, hint not seen</td><td class="n">Not seen</td><td class="ours n">No</td></tr>
+        <tr><th scope="row">Intro popup for each new mechanic</th><td class="y">Mechanic tutorial popups</td><td class="y">Per-mode guides</td><td class="y">Booster tutorials</td><td class="n">Not seen</td><td class="ours p">One-line banner</td></tr>
+        <tr><th scope="row">Long, thin, winding arrows</th><td class="y">Yes, rounded lines</td><td class="y">Yes, plus 3D arrows</td><td class="y">Yes, with turns</td><td class="y">Yes</td><td class="ours n">No (1–4 cells, thick)</td></tr>
+        <tr><th scope="row">Difficulty tag before the level</th><td class="y">Custom difficulties</td><td class="y">Normal / Hard / Super hard</td><td class="y">Pre-level difficulty screen</td><td class="y">Difficulty labels</td><td class="ours n">No (breathers only)</td></tr>
+        <tr><th scope="row">Lives across levels</th><td class="y">"Out of Lives!"</td><td class="y">Lives, last-life, one-life mode</td><td class="y">Lives panel and regen</td><td class="y">Hearts</td><td class="ours p">3 hearts per level</td></tr>
+        <tr><th scope="row">Boosters</th><td class="y">Hint, Eraser, Magic Wand, Grid Guide</td><td class="y">Hint and more</td><td class="y">Hint booster and more</td><td class="y">Hint, Guide lines</td><td class="ours p">Hint (video), Undo, Show paths</td></tr>
+        <tr><th scope="row">Combo for fast correct taps</th><td class="n">Not seen</td><td class="y">Combo animation</td><td class="y">Combo meter with decay and rewards</td><td class="y">"Genius Move!"</td><td class="ours n">No</td></tr>
+        <tr><th scope="row">Mid-level encouragement / voice</th><td class="p">Win-screen text only</td><td class="y">At 25%, 75%, 90%</td><td class="n">Not seen</td><td class="y">17 voice lines</td><td class="ours n">No</td></tr>
+        <tr><th scope="row">Special mechanics</th><td>Portals, two-headed arrows, locked zones</td><td>3D boards, black hole, mirror, Arrow Clash, many modes</td><td>Tunnels, zap, ash, blockers</td><td>Named mazes</td><td class="ours">Trucks, lights, gates, ambulance</td></tr>
+        <tr><th scope="row">Daily challenge</th><td class="y">Monthly calendar, cups, gold stars</td><td class="y">With trophies</td><td class="y">Calendar events</td><td class="y">Yes</td><td class="ours p">Yes, no calendar or trophies</td></tr>
+        <tr><th scope="row">Live events / competition</th><td class="y">Map and postcard events, tournaments, leaderboards</td><td class="y">Theme events, ranks, battles</td><td class="y">Battle pass, journey, pirate quest, missions</td><td class="p">Country flags</td><td class="ours n">None</td></tr>
+        <tr><th scope="row">Collection meta</th><td>Postcards</td><td>Picture gallery</td><td>Collectables</td><td>Shape collection</td><td class="ours">City map</td></tr>
+        <tr><th scope="row">Offers</th><td>Rotating full-screen offers, second chance</td><td>Rewarded fallbacks</td><td>Fail offers, journey offers, free daily offer, piggy bank</td><td class="n">Not seen</td><td class="ours p">Shop only</td></tr>
+        <tr><th scope="row">Push notifications</th><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td><td class="ours n">No</td></tr>
+        <tr><th scope="row">Accessibility (colorblind, screen reader)</th><td class="n">Not seen</td><td class="n">Not seen</td><td class="n">Not seen</td><td class="n">Not seen</td><td class="ours y">Yes</td></tr>
+        <tr><th scope="row">Works fully offline</th><td class="p">Daily needs a download</td><td class="p">Remote bundles</td><td class="p">Remote config</td><td class="y">Mostly</td><td class="ours y">Yes</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="weak">
+  <h2 id="weak">Where the leaders are weak</h2>
+  <ul>
+    <li><strong>Size and bloat.</strong> 150–265 MB base APKs, 10–15 code files each, mostly ad SDKs. Slow installs, more crashes and data use on budget phones. We are 30 MB.</li>
+    <li><strong>Ad pressure.</strong> Each of the top three runs 20+ ad networks, full-screen offers and fail offers. App 3 adds lives gating and a battle pass on top. Players who want calm puzzles feel squeezed.</li>
+    <li><strong>Feature sprawl.</strong> App 2 has tarot, zodiac, chess, shark and cat mini-modes beside the core game. It earns but dilutes the identity.</li>
+    <li><strong>No accessibility.</strong> No sign of colorblind, high-contrast or screen-reader support in any of the four.</li>
+    <li><strong>Online dependence.</strong> App 1's daily challenge has to download; bundles and configs are remote in 2 and 3.</li>
+    <li><strong>App 4</strong> has nice ideas (voice praise, sound packs, named mazes) but no tutorial, so new players churn.</li>
+  </ul>
+  <p class="evidence">Next step outside this analysis: read their 1–2 star Play reviews to confirm which of these players complain about most.</p>
+</section>
+
+<section aria-labelledby="plan">
+  <h2 id="plan">What to build, in order</h2>
+
+  <h3>P0 · Fix the core feel (do first)</h3>
+  <div class="rec p0">
+    <h3>1. Long, thin, winding arrows</h3>
+    <p>Change the generator so arrows are 3–15 cells that bend, packed to fill the board shape, and draw them as thin rounded lines (about 0.12–0.16 of a cell) with a compact head, over a soft dot grid. Keep the current "thick arrows" setting as an accessibility option.</p>
+    <p class="evidence">Where: <code>generator.dart</code> (body growth, target length), <code>board_painter.dart</code> (stroke, head, dot grid). Seen in: 1, 2, 3, 4.</p>
+  </div>
+  <div class="rec p0">
+    <h3>2. A real difficulty curve with visible tiers</h3>
+    <p>Grow boards much faster (about 6×6 by level 10, 10×10 by level 30, 20×20+ late with zoom), target deeper chains, and fewer free moves at the start. Tag levels Normal, Hard and Super Hard with a pre-level banner and bigger rewards; keep a breather after each Hard.</p>
+    <p class="evidence">Where: <code>campaign.dart</code> curve and size caps, <code>analyzer.dart</code> score. Seen in: 2 (Normal/Hard/Super hard), 3 (pre-level screen), 1 (custom difficulties).</p>
+  </div>
+  <div class="rec p0">
+    <h3>3. First-time tutorial with a hand</h3>
+    <p>Level 1: dim the board, spotlight one free arrow, animate a hand tapping it. Then show a blocked arrow bump with "Clear the way first". On the first big board, show a two-finger pinch animation. Introduce each mechanic (trucks, lights, gates, ambulance) with a one-screen animated popup the first time it appears.</p>
+    <p class="evidence">Seen in: 1 (onboarding, "Tap an arrow to remove!", "Pinch to zoom"), 2 (guide hand, guide video, one-hand-scale), 3 (tutorial mask).</p>
+  </div>
+
+  <h3>P1 · Make every level feel rewarding</h3>
+  <div class="rec p1">
+    <h3>4. Combo and praise</h3>
+    <p>Quick consecutive correct taps build a combo with rising pitch and a short praise ("Nice!", "Brilliant!"), optional voice lines, and small coin bonuses. Encouragement pops at 25%, 75% and 90% cleared.</p>
+    <p class="evidence">Seen in: 3 (combo with decay and rewards), 2 (encourage at 25/75/90%), 4 (17 voice lines).</p>
+  </div>
+  <div class="rec p1">
+    <h3>5. Juice</h3>
+    <p>Gradient trail on exiting arrows, small spark when an arrow leaves, board-appear animation, confetti and a picture-reveal moment on win (the shape fills in as arrows clear).</p>
+    <p class="evidence">Seen in: 1 (gradient trail, solved-dots reveal, board appear), 3 (spark particles, hit impact).</p>
+  </div>
+  <div class="rec p1">
+    <h3>6. Boosters that fit our mechanics</h3>
+    <p>Eraser (remove one arrow), Hint (exists), Grid Guide (show paths for one level; keep "show paths" free in accessibility settings), Undo (exists). Earn by coins, video or daily reward.</p>
+    <p class="evidence">Seen in: 1 (Hint, Eraser, Magic Wand, Grid Guide with tutorials).</p>
+  </div>
+
+  <h3>P2 · Retention and live-ops</h3>
+  <div class="rec p2">
+    <h3>7. Daily challenge calendar and monthly trophy</h3>
+    <p>Show a month grid; completing every day earns a collectible trophy. Our daily is already offline and deterministic, which is a plus.</p>
+  </div>
+  <div class="rec p2">
+    <h3>8. Collections built on what we have</h3>
+    <p>Name each shape board (we already have cars, animals, landmarks) and collect them into an album; let city blocks unlock themed districts. Weekly themed events with a small leaderboard come after.</p>
+  </div>
+  <div class="rec p2">
+    <h3>9. Re-engagement</h3>
+    <p>Local push notifications (daily ready, streak at risk), a rate prompt after a win streak, a returning-player gift, and a second-chance offer on fail (+1 heart for a video, already built) tuned by Remote Config.</p>
+  </div>
+  <div class="rec p2">
+    <h3>10. Sound</h3>
+    <p>Add soft background music with its own toggle and two or three selectable sound packs.</p>
+    <p class="evidence">Seen in: 2 (BGM bundles), 4 (Classic Arcade, Deep Basswave, Zen Chimes, Cyber Laser).</p>
+  </div>
+
+  <h3>Keep as differentiators</h3>
+  <ul>
+    <li>Small download, offline play, fair ad frequency, and accessibility modes. None of the four have all of these.</li>
+    <li>The city map and skins: you said they look good, and only one competitor has anything like a growing world.</li>
+  </ul>
+</section>
+
+<footer>
+  <h3>How this was done</h3>
+  <p>From the four base APKs: decoded manifests, SDK packages in the code, Unity IL2CPP metadata (class names) for apps 1 and 3, asset-bundle names for app 2, and the JavaScript bundle for app 4. App 2's metadata and bundles, and app 3's level files, are encrypted, so their exact level layouts were not readable. No competitor code, art or level data was copied into our app; this is design research only.</p>
+</footer>
+</main>
+</body>
+</html>
