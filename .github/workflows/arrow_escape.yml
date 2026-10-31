@@ -53,6 +53,15 @@ jobs:
         working-directory: arrow_escape/tool
         run: dart pub get && dart analyze && dart test && dart run bin/verify_levels.dart
 
+      # Without a release keystore, builds are signed with the debug key.
+      # Keep that key the same across runs so a new build installs over the
+      # previous one (a different key makes Android refuse the update).
+      - name: Reuse the CI debug signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: android-debug-keystore-v1
+
       # 64-bit only: current phones refuse 32-bit apps, and Play serves
       # 32-bit devices from the app bundle anyway.
       - name: Build release APKs (dev flavor, Google test ads)
@@ -70,6 +79,17 @@ jobs:
             if [ "$size" -gt $((40 * 1024 * 1024)) ]; then
               echo "::error file=$f::APK exceeds the 40 MB budget"; exit 1
             fi
+          done
+
+      # Proves each APK parses and is signed, and records its checksum.
+      - name: Check the APKs are install-ready
+        run: |
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          for f in build/app/outputs/flutter-apk/*.apk; do
+            echo "== $f"
+            "$BT/aapt2" dump badging "$f" | grep -E "^package:|^sdkVersion|^native-code"
+            "$BT/apksigner" verify --print-certs "$f" | grep -E "Signer #1 certificate (DN|SHA-256)"
+            sha256sum "$f"
           done
 
       - uses: actions/upload-artifact@v4
