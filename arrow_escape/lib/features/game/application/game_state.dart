@@ -1,5 +1,6 @@
 import 'package:arrow_engine/arrow_engine.dart';
 import 'package:arrow_escape/features/game/domain/level_ref.dart';
+import 'package:arrow_escape/features/onboarding/tips.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'game_state.freezed.dart';
@@ -21,6 +22,9 @@ abstract class GameViewState with _$GameViewState {
 
     /// Vehicle highlighted by a hint until the next move.
     int? hintPiece,
+
+    /// Level-1 tutorial progress (none outside the tutorial).
+    @Default(TutorialStep.none) TutorialStep tutorial,
   }) = _GameViewState;
 
   Level get level => session.level;

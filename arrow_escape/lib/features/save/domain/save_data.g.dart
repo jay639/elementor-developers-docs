@@ -29,6 +29,9 @@ _SaveData _$SaveDataFromJson(Map<String, dynamic> json) => _SaveData(
           ?.map((e) => e as String)
           .toList() ??
       const <String>[],
+  seenTips:
+      (json['seenTips'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const <String>[],
   cloudSynced: json['cloudSynced'] as bool? ?? false,
   revision: (json['revision'] as num?)?.toInt() ?? 0,
   updatedAt: (json['updatedAt'] as num?)?.toInt() ?? 0,
@@ -45,6 +48,7 @@ Map<String, dynamic> _$SaveDataToJson(_SaveData instance) => <String, dynamic>{
   'lastRewardDay': instance.lastRewardDay,
   'settings': instance.settings,
   'claimedBundles': instance.claimedBundles,
+  'seenTips': instance.seenTips,
   'cloudSynced': instance.cloudSynced,
   'revision': instance.revision,
   'updatedAt': instance.updatedAt,

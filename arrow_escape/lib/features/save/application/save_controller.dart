@@ -109,6 +109,12 @@ class SaveController extends Notifier<SaveData> {
   void selectSkin(String skin) => apply((s) => Economy.selectSkin(s, skin));
   void claimBundle(String bundle, {required int coins, String? skin}) =>
       apply((s) => Economy.claimBundle(s, bundle, coins: coins, skin: skin));
+
+  /// Records that a one-time tip was shown.
+  void markSeen(String tip) => apply(
+    (s) => s.hasSeen(tip) ? s : s.copyWith(seenTips: [...s.seenTips, tip]),
+  );
+
   void addCoins(int amount) => apply((s) => Economy.addCoins(s, amount));
   void updateSettings(AppSettings settings) =>
       apply((s) => s.copyWith(settings: settings));

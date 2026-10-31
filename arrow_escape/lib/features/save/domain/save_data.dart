@@ -34,6 +34,9 @@ abstract class SaveData with _$SaveData {
     /// granted, so restores on a new device don't grant them twice.
     @Default(<String>[]) List<String> claimedBundles,
 
+    /// One-time tips already shown (tutorial, pinch hint, mechanic intros).
+    @Default(<String>[]) List<String> seenTips,
+
     /// Set once this install's save has been merged with the cloud copy.
     @Default(false) bool cloudSynced,
 
@@ -48,4 +51,6 @@ abstract class SaveData with _$SaveData {
       _$SaveDataFromJson(json);
 
   bool owns(String skin) => ownedSkins.contains(skin);
+
+  bool hasSeen(String tip) => seenTips.contains(tip);
 }

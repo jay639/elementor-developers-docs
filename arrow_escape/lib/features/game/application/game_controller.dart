@@ -5,6 +5,7 @@ import 'package:arrow_escape/core/services/sound.dart';
 import 'package:arrow_escape/features/game/application/game_state.dart';
 import 'package:arrow_escape/features/game/data/level_repository.dart';
 import 'package:arrow_escape/features/game/domain/level_ref.dart';
+import 'package:arrow_escape/features/onboarding/tips.dart';
 import 'package:arrow_escape/features/save/application/save_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -32,12 +33,61 @@ class GameController extends Notifier<GameViewState> {
       ..reset()
       ..start();
     ref.read(analyticsProvider).levelStart(_label, daily: levelRef.isDaily);
-    return GameViewState(levelRef: levelRef, session: PlaySession.start(level));
+    final tutorial = _tutorialStart(level);
+    if (tutorial != TutorialStep.none) {
+      ref.read(analyticsProvider).log('tutorial_begin');
+    }
+    return GameViewState(
+      levelRef: levelRef,
+      session: PlaySession.start(level),
+      tutorial: tutorial,
+    );
+  }
+
+  TutorialStep _tutorialStart(Level level) =>
+      level.meta.shape == 'tutorial' &&
+          !ref.read(saveProvider).hasSeen(Tips.tutorial)
+      ? TutorialStep.tapBlocker
+      : TutorialStep.none;
+
+  /// Ends the tutorial early; it won't be shown again.
+  void skipTutorial() {
+    if (state.tutorial == TutorialStep.none) return;
+    ref.read(analyticsProvider).log('tutorial_skip', {
+      'step': state.tutorial.name,
+    });
+    ref.read(saveProvider.notifier).markSeen(Tips.tutorial);
+    state = state.copyWith(tutorial: TutorialStep.none);
+  }
+
+  void _advanceTutorial(MoveOutcome outcome, SessionStatus status) {
+    final step = state.tutorial;
+    if (step == TutorialStep.none) return;
+    final analytics = ref.read(analyticsProvider);
+    if (status == SessionStatus.won) {
+      analytics.log('tutorial_complete', {'seconds': _clock.elapsed.inSeconds});
+      ref.read(saveProvider.notifier).markSeen(Tips.tutorial);
+      state = state.copyWith(tutorial: TutorialStep.none);
+      return;
+    }
+    if (outcome is! ExitMove || !step.guided) return;
+    final next = step == TutorialStep.tapBlocker
+        ? TutorialStep.tapFreed
+        : TutorialStep.finish;
+    analytics.log('tutorial_step', {'step': next.name});
+    state = state.copyWith(tutorial: next);
   }
 
   /// Applies a tap and plays feedback. Returns the outcome so the view can
   /// animate it, or null if the tap was ignored.
   MoveOutcome? tap(int piece) {
+    // Guided tutorial steps only accept the highlighted arrow, so new
+    // players can't lose hearts while learning.
+    final allowed = state.tutorial.allowedPiece;
+    if (allowed != null && piece != allowed) {
+      ref.read(hapticsProvider).play(HapticKind.tap);
+      return null;
+    }
     final result = state.session.tap(piece);
     final outcome = result.outcome;
     if (outcome == null) return null;
@@ -91,6 +141,7 @@ class GameController extends Notifier<GameViewState> {
       case SessionStatus.playing:
         break;
     }
+    _advanceTutorial(outcome, result.session.status);
     return outcome;
   }
 
@@ -151,6 +202,7 @@ class GameController extends Notifier<GameViewState> {
       levelRef: levelRef,
       session: PlaySession.start(state.level, rules: state.session.rules),
       showPaths: state.showPaths,
+      tutorial: _tutorialStart(state.level),
     );
   }
 }

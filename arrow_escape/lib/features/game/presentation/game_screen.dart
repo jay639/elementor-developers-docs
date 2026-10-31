@@ -9,7 +9,10 @@ import 'package:arrow_escape/features/game/application/game_controller.dart';
 import 'package:arrow_escape/features/game/application/game_state.dart';
 import 'package:arrow_escape/features/game/data/level_repository.dart';
 import 'package:arrow_escape/features/game/domain/level_ref.dart';
+import 'package:arrow_escape/core/services/analytics.dart';
 import 'package:arrow_escape/features/game/presentation/board_view.dart';
+import 'package:arrow_escape/features/onboarding/tips.dart';
+import 'package:arrow_escape/features/save/application/save_controller.dart';
 import 'package:arrow_escape/features/game/presentation/widgets/game_toolbar.dart';
 import 'package:arrow_escape/features/game/presentation/widgets/hearts_bar.dart';
 import 'package:arrow_escape/features/game/presentation/widgets/result_overlay.dart';
@@ -86,6 +89,18 @@ class _GameViewState extends ConsumerState<_GameView> {
   /// Hard / Super Hard announcement, shown for a moment at start.
   Timer? _introTimer;
   bool _introChecked = false;
+
+  /// A mechanic seen here for the first time, explained before play.
+  Mechanic? _mechanicIntro;
+
+  void _closeMechanicIntro() {
+    final m = _mechanicIntro;
+    if (m == null) return;
+    ref.read(saveProvider.notifier).markSeen(Tips.mechanic(m));
+    ref.read(analyticsProvider).log('tip_shown', {'tip': Tips.mechanic(m)});
+    setState(() => _mechanicIntro = null);
+  }
+
   bool _showTierIntro = false;
 
   @override
@@ -100,6 +115,14 @@ class _GameViewState extends ConsumerState<_GameView> {
     if (_introChecked) return;
     _introChecked = true;
     final level = ref.read(gameControllerProvider(widget.levelRef)).level;
+    final save = ref.read(saveProvider);
+    for (final m in Mechanic.inLevel(level)) {
+      if (!save.hasSeen(Tips.mechanic(m))) {
+        _mechanicIntro = m;
+        // One card at a time: the tier banner still shows in the strip.
+        return;
+      }
+    }
     if (level.meta.tier == LevelTier.normal || widget.levelRef.isDaily) return;
     _showTierIntro = true;
     _introTimer = Timer(const Duration(milliseconds: 1600), () {
@@ -200,7 +223,13 @@ class _GameViewState extends ConsumerState<_GameView> {
           children: [
             Column(
               children: [
-                _MechanicBanner(state: state),
+                if (state.tutorial != TutorialStep.none)
+                  _TutorialCallout(
+                    step: state.tutorial,
+                    onSkip: controller.skipTutorial,
+                  )
+                else
+                  _MechanicBanner(state: state),
                 Expanded(child: BoardView(levelRef: levelRef)),
                 GameToolbar(
                   canUndo: state.session.canUndo,
@@ -214,6 +243,13 @@ class _GameViewState extends ConsumerState<_GameView> {
               ],
             ),
             if (_showTierIntro) _TierIntro(tier: state.level.meta.tier),
+            if (_mechanicIntro case final m?)
+              Positioned.fill(
+                child: _MechanicIntroCard(
+                  mechanic: m,
+                  onClose: _closeMechanicIntro,
+                ),
+              ),
             if (_showResult && state.status == SessionStatus.won)
               Positioned.fill(
                 child: ResultOverlay.win(
@@ -402,6 +438,121 @@ class _TierIntro extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tutorial instructions above the board, with a way out.
+class _TutorialCallout extends StatelessWidget {
+  const _TutorialCallout({required this.step, required this.onSkip});
+
+  final TutorialStep step;
+  final VoidCallback onSkip;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Semantics(
+        liveRegion: true,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: scheme.primaryContainer,
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
+            child: Row(
+              children: [
+                Icon(Icons.school_rounded, color: scheme.onPrimaryContainer),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    child: Text(
+                      step.copy,
+                      key: ValueKey(step),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                TextButton(
+                  key: const Key('skip-tutorial'),
+                  onPressed: onSkip,
+                  style: TextButton.styleFrom(minimumSize: const Size(56, 48)),
+                  child: const Text('Skip'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One-time explanation of a mechanic, shown before the level starts.
+class _MechanicIntroCard extends StatelessWidget {
+  const _MechanicIntroCard({required this.mechanic, required this.onClose});
+
+  final Mechanic mechanic;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return ColoredBox(
+      color: scheme.scrim.withValues(alpha: 0.4),
+      child: Center(
+        child: Card(
+          margin: const EdgeInsets.all(28),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 26, 24, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircleAvatar(
+                  radius: 34,
+                  backgroundColor: scheme.primaryContainer,
+                  child: Icon(
+                    mechanic.icon,
+                    size: 38,
+                    color: scheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'New: ${mechanic.title}',
+                  key: const Key('mechanic-intro'),
+                  style: theme.textTheme.headlineSmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  mechanic.body,
+                  style: theme.textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    key: const Key('mechanic-intro-ok'),
+                    onPressed: onClose,
+                    child: const Text('Got it'),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

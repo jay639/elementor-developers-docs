@@ -1,6 +1,7 @@
 import 'package:arrow_engine/arrow_engine.dart';
 import 'package:arrow_escape/app/router.dart';
 import 'package:arrow_escape/app/routes.dart';
+import 'package:arrow_escape/features/save/domain/save_data.dart';
 import 'package:arrow_escape/features/game/presentation/widgets/hearts_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,7 +16,12 @@ void main() {
 ''');
 
   Future<void> open(WidgetTester tester, String route) async {
-    await pumpApp(tester, levels: [level, level]);
+    await pumpApp(
+      tester,
+      levels: [level, level],
+      // Skip the one-time traffic-light intro card.
+      save: const SaveData(seenTips: ['mechanic_lights']),
+    );
     final c = ProviderScope.containerOf(
       tester.element(find.byType(Navigator).first),
     );

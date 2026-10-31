@@ -35,12 +35,18 @@ void main() {
       () => container.read(levelRepositoryProvider).load(1),
     );
     await tester.tap(find.byKey(const Key('play')));
-    await tester.pumpAndSettle();
+    // The tutorial hand loops forever, so step time instead of settling.
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
     expect(find.byType(GameScreen), findsOneWidget);
     expect(find.text('Level 1'), findsOneWidget);
     expect(find.byType(BoardView), findsOneWidget);
+    expect(find.byKey(const Key('skip-tutorial')), findsOneWidget);
     await tester.tap(find.byTooltip('Back'));
-    await tester.pumpAndSettle();
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
     expect(find.byType(HomeScreen), findsOneWidget);
   });
 

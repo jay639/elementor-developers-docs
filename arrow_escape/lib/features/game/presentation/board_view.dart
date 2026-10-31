@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:arrow_engine/arrow_engine.dart';
 import 'package:arrow_escape/core/theme/board_style.dart';
 import 'package:arrow_escape/features/game/application/game_controller.dart';
@@ -7,6 +9,8 @@ import 'package:arrow_escape/features/game/presentation/board_animations.dart';
 import 'package:arrow_escape/features/game/presentation/board_geometry.dart';
 import 'package:arrow_escape/features/game/presentation/board_painter.dart';
 import 'package:arrow_escape/features/game/presentation/track.dart';
+import 'package:arrow_escape/features/onboarding/tips.dart';
+import 'package:arrow_escape/features/onboarding/tutorial_overlay.dart';
 import 'package:arrow_escape/features/save/application/save_controller.dart';
 import 'package:arrow_escape/features/settings/application/settings_controller.dart';
 import 'package:arrow_escape/features/skins/skins.dart';
@@ -26,7 +30,7 @@ class BoardView extends ConsumerStatefulWidget {
 }
 
 class _BoardViewState extends ConsumerState<BoardView>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   /// Taps on the same vehicle closer together than this are treated as one.
   static const _debounce = Duration(milliseconds: 280);
 
@@ -95,6 +99,14 @@ class _BoardViewState extends ConsumerState<BoardView>
   }
 
   bool get _fast => ref.read(settingsProvider).reduceMotion;
+
+  bool _pinchDismissed = false;
+
+  void _dismissPinch() {
+    if (_pinchDismissed) return;
+    setState(() => _pinchDismissed = true);
+    ref.read(saveProvider.notifier).markSeen(Tips.pinch);
+  }
 
   void _handleTap(Offset position, Size size) {
     final state = ref.read(gameControllerProvider(widget.levelRef));
@@ -250,10 +262,22 @@ class _BoardViewState extends ConsumerState<BoardView>
     );
     final level = state.level;
     final remaining = state.session.board.remainingCount;
+    final step = state.tutorial;
+    final seenPinch = ref.watch(
+      saveProvider.select((s) => s.hasSeen(Tips.pinch)),
+    );
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final size = constraints.biggest;
+        final layout = BoardLayout(level, size);
+        final allowed = step.allowedPiece;
+        // Small cells mean a dense board worth zooming into.
+        final showPinch =
+            !seenPinch &&
+            step == TutorialStep.none &&
+            layout.cell < 30 &&
+            !_pinchDismissed;
         return Stack(
           children: [
             Semantics(
@@ -265,38 +289,73 @@ class _BoardViewState extends ConsumerState<BoardView>
                 minScale: 1,
                 maxScale: 3.5,
                 boundaryMargin: const EdgeInsets.all(48),
+                onInteractionStart: (_) {
+                  if (showPinch) _dismissPinch();
+                },
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTapUp: (d) => _handleTap(d.localPosition, size),
                   child: SizedBox.fromSize(
                     size: size,
-                    child: RepaintBoundary(
-                      child: CustomPaint(
-                        isComplex: true,
-                        willChange: false,
-                        painter: BoardBackgroundPainter(
-                          level: level,
-                          style: style,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: RepaintBoundary(
+                            child: CustomPaint(
+                              isComplex: true,
+                              willChange: false,
+                              painter: BoardBackgroundPainter(
+                                level: level,
+                                style: style,
+                              ),
+                              foregroundPainter: BoardPiecesPainter(
+                                rules: state.session.rules,
+                                restTracks: _tracks(level),
+                                board: state.session.board,
+                                style: style,
+                                showPaths: state.showPaths,
+                                hintPiece: state.hintPiece,
+                                animations: _animations,
+                                flashes: _flashes,
+                                now: () => _now,
+                                onActivate: _tapPiece,
+                                repaint: _frame,
+                              ),
+                            ),
+                          ),
                         ),
-                        foregroundPainter: BoardPiecesPainter(
-                          rules: state.session.rules,
-                          restTracks: _tracks(level),
-                          board: state.session.board,
-                          style: style,
-                          showPaths: state.showPaths,
-                          hintPiece: state.hintPiece,
-                          animations: _animations,
-                          flashes: _flashes,
-                          now: () => _now,
-                          onActivate: _tapPiece,
-                          repaint: _frame,
-                        ),
-                      ),
+                        if (allowed != null) ...[
+                          Positioned.fill(
+                            child: IgnorePointer(
+                              child: CustomPaint(
+                                painter: TutorialSpotlightPainter(
+                                  rules: state.session.rules,
+                                  board: state.session.board,
+                                  step: step,
+                                  scrim: theme.colorScheme.scrim.withValues(
+                                    alpha: 0.45,
+                                  ),
+                                  danger: style.danger,
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (state.session.board.isOnBoard(allowed) &&
+                              !_animations.containsKey(allowed))
+                            TapHand(
+                              key: ValueKey('hand-$allowed'),
+                              at: layout.centerOf(level.pieces[allowed].head),
+                              size: math.max(44, layout.cell * 0.9),
+                            ),
+                        ],
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
+            if (showPinch)
+              Positioned.fill(child: PinchHint(onDismiss: _dismissPinch)),
             Positioned(
               right: 8,
               top: 8,
