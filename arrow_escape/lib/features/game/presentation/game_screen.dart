@@ -162,8 +162,21 @@ class _GameViewState extends ConsumerState<_GameView> {
     final controller = ref.read(
       gameControllerProvider(widget.levelRef).notifier,
     );
+    void noHint() => ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'No move can clear the board from here. Restart to try another '
+          'order.',
+        ),
+      ),
+    );
+    // Don't make the player watch a video for a hint that can't exist.
+    if (ref.read(gameControllerProvider(widget.levelRef)).stuck) {
+      noHint();
+      return;
+    }
     if (await watchRewarded(context, ref, RewardKind.hint)) {
-      controller.showHint();
+      if (!controller.showHint() && mounted) noHint();
     }
   }
 
@@ -323,6 +336,13 @@ class _GameViewState extends ConsumerState<_GameView> {
                   child: _MechanicIntroCard(
                     mechanic: m,
                     onClose: _closeMechanicIntro,
+                  ),
+                ),
+              if (state.stuck && state.status == SessionStatus.playing)
+                Positioned.fill(
+                  child: _StuckCard(
+                    onRestart: controller.restart,
+                    onHome: () => context.go(Routes.home),
                   ),
                 ),
               if (_showResult && state.status == SessionStatus.won)
@@ -634,6 +654,70 @@ class _MechanicIntroCard extends StatelessWidget {
                     onPressed: onClose,
                     child: const Text('Got it'),
                   ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Shown when no order of moves can clear the board any more. Restarting
+/// is free: being trapped by the lights is part of the puzzle, not a loss.
+class _StuckCard extends StatelessWidget {
+  const _StuckCard({required this.onRestart, required this.onHome});
+
+  final VoidCallback onRestart;
+  final VoidCallback onHome;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ColoredBox(
+      color: theme.colorScheme.scrim.withValues(alpha: 0.35),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: SoftCard(
+            key: const Key('stuck-card'),
+            radius: 32,
+            padding: const EdgeInsets.fromLTRB(22, 24, 22, 12),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const IconBubble(
+                  icon: Icons.traffic_rounded,
+                  colors: [Color(0xFFFF9A7A), Color(0xFFE5484D)],
+                  size: 56,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'No way out',
+                  style: theme.textTheme.headlineSmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'The arrows that are left can never all get out in this '
+                  'order. Restart and try a different one. It\'s free.',
+                  style: theme.textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                CandyButton(
+                  key: const Key('stuck-restart'),
+                  height: 56,
+                  fontSize: 20,
+                  icon: Icons.refresh_rounded,
+                  label: 'Restart',
+                  onPressed: onRestart,
+                ),
+                TextButton(
+                  onPressed: onHome,
+                  style: TextButton.styleFrom(minimumSize: const Size(120, 48)),
+                  child: const Text('Home'),
                 ),
               ],
             ),

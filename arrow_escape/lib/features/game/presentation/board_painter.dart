@@ -187,12 +187,12 @@ class BoardPiecesPainter extends CustomPainter {
     }
     final (:base, :tangent) = headPose(track, offset, layout);
     // A sharp, clearly pointed head: longer than it is wide.
-    // A bold, sharp head on every board size: it starts a little behind
-    // the head cell's centre and reaches almost to the next cell, so the
-    // point is unmistakable even on big, crowded boards.
-    final headLength = math.max(stroke * 4, cell * 0.62).clamp(11.0, 22.0);
-    final halfWidth = headLength * 0.46;
-    final headBase = base - tangent * (headLength * 0.25);
+    // A crisp head, centred on the line (the last body segment always runs
+    // straight into it), starting a little behind the head cell's centre
+    // so the point reads clearly without crowding the next cell.
+    final headLength = math.max(stroke * 3.4, cell * 0.46).clamp(9.0, 17.0);
+    final halfWidth = headLength * 0.48;
+    final headBase = base - tangent * (headLength * 0.3);
     final tip = headBase + tangent * headLength;
     final normal = Offset(-tangent.dy, tangent.dx) * halfWidth;
     final head = Path()

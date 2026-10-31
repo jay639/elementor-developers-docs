@@ -207,4 +207,40 @@ void main() {
     expect(done.name, 'level_complete');
     expect(done.params['stars'], 3);
   });
+
+  group('dead ends', () {
+    // The left car needs the light green; moving the right car first turns
+    // it red and leaves no move that could switch it back.
+    final trap = parseAsciiLevel('>g.\n..^');
+    const ref = LevelRef.campaign(1);
+
+    Future<ProviderContainer> start() async {
+      final c = ProviderContainer(overrides: testOverrides(levels: [trap]));
+      addTearDown(c.dispose);
+      await c.read(levelProvider(ref).future);
+      c.listen(gameControllerProvider(ref), (_, _) {});
+      return c;
+    }
+
+    test('a move into a dead end marks the board stuck', () async {
+      final c = await start();
+      c.read(gameControllerProvider(ref).notifier).tap(1);
+      final s = c.read(gameControllerProvider(ref));
+      expect(s.status, SessionStatus.playing);
+      expect(s.stuck, isTrue);
+      expect(c.read(gameControllerProvider(ref).notifier).showHint(), isFalse);
+    });
+
+    test('the right order is never flagged, and restart clears it', () async {
+      final c = await start();
+      final game = c.read(gameControllerProvider(ref).notifier);
+      game.tap(0);
+      expect(c.read(gameControllerProvider(ref)).stuck, isFalse);
+      game.restart();
+      game.tap(1);
+      expect(c.read(gameControllerProvider(ref)).stuck, isTrue);
+      game.restart();
+      expect(c.read(gameControllerProvider(ref)).stuck, isFalse);
+    });
+  });
 }

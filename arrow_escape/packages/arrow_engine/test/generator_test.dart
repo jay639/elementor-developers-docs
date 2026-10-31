@@ -370,8 +370,8 @@ v..
         'here (bump DailyChallenge.version on purpose instead)', () {
       int hashOf(DateTime d) =>
           stableHash(jsonEncode(DailyChallenge.levelFor(d).toJson()));
-      expect(hashOf(DateTime(2026, 10, 29)), 3609196452);
-      expect(hashOf(DateTime(2027, 3, 14)), 1170252708);
+      expect(hashOf(DateTime(2026, 10, 29)), 2300763381);
+      expect(hashOf(DateTime(2027, 3, 14)), 2583454065);
     });
 
     test('keys', () {
@@ -391,6 +391,18 @@ v..
       );
     });
   });
-}
 
+  test('every arrow runs straight into its head (no turn at the head)', () {
+    for (final n in [3, 11, 60, 250]) {
+      final level = Campaign.build(n);
+      for (final p in level.pieces) {
+        if (p.cells.length < 2) continue;
+        final behind = p.cells[1];
+        final dx = level.xOf(p.head) - level.xOf(behind);
+        final dy = level.yOf(p.head) - level.yOf(behind);
+        expect((dx, dy), (p.dir.dx, p.dir.dy), reason: 'L$n');
+      }
+    }
+  });
+}
 const _goldenRng = <int>[3898016280, 503430273, 2109199260];

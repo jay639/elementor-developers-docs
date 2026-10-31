@@ -350,7 +350,8 @@ class LevelGenerator {
         if (p.kind != PieceKind.car || p.cells.length >= cap[i]) continue;
         final tail = p.cells.last;
         final ahead = _trace(p).cells.toSet();
-        for (final d in Dir.values) {
+        // A one-cell arrow may only grow straight back (see _growBody).
+        for (final d in p.cells.length == 1 ? [p.dir.opposite] : Dir.values) {
           final c = _neighbor(tail, d);
           if (c < 0 || !_isFree(c) || _gateAt[c] != null) continue;
           if (_lastCover[c] >= i || ahead.contains(c)) continue;
@@ -485,7 +486,13 @@ class LevelGenerator {
     var behind = dir.opposite;
     while (cells.length < length) {
       final options = <(int, Dir, double)>[];
-      for (final d in [behind, behind.clockwise, behind.counterClockwise]) {
+      // The cell right behind the head is always straight behind it, so
+      // the line runs into the arrowhead (a turn at the head reads as a
+      // tilted, ambiguous arrow).
+      final dirs = cells.length == 1
+          ? [behind]
+          : [behind, behind.clockwise, behind.counterClockwise];
+      for (final d in dirs) {
         final next = _neighbor(cells.last, d);
         if (next < 0 ||
             !_isFree(next) ||

@@ -88,8 +88,16 @@ scope, rules and conventions. Update it when a decision changes.
 - Brand: `paintLogo` (core/widgets/arrow_logo.dart) draws the logo in-app
   and renders the launcher icons (`flutter test test_screens/icon_test.dart`
   then resize; Android mipmaps, iOS AppIcon, assets/branding/).
-- Arrowheads point along the road just past the head (`headPose`), never
-  along the last body segment (bodies may turn at the head cell).
+- Every arrow's body runs straight into its head (the generator forces the
+  cell behind the head to be straight behind), so heads never look tilted;
+  `headPose` still takes the direction from the road past the head.
+- Dead ends: with lights or the ambulance a wrong order can trap the last
+  arrows. After each move the controller checks the solver; if no order
+  can clear the board it sets `stuck`, the game shows "No way out" with a
+  free restart, and Hint explains instead of asking for a video.
+- Splash: native splash shows only the background colour (Android 12+
+  `splash_blank` icon, iOS launch colour); the Flutter splash grows the
+  big logo in, holds, then zooms out.
 - Daily streak, daily reward, star rating.
 
 ## UI
@@ -275,8 +283,9 @@ arrow_escape/
   into pockets, then a fill pass drops short arrows into remaining gaps.
   Bigger minimum boards (150→280 cells; breathers smaller). Curve
   recalibrated (60→~76); verifier tolerances widened for per-level noise.
-  Bold pointed arrowheads (`headPose`, ~0.62 cell). Settings redesigned
-  as boxes (theme cards with previews, two-column toggle tiles). The logo
+  Crisp pointed arrowheads (~0.46 cell). Settings use inset grouped
+  lists with platform switches (`Switch.adaptive`) so they feel native on
+  iOS and Android. The logo
   is shown from assets/branding/logo.png (painting it live crashed the CI
   emulator's GPU).
 - This dev container cannot reach dl.google.com (Android SDK), so APKs are

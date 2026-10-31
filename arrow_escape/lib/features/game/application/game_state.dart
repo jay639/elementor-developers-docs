@@ -26,6 +26,10 @@ abstract class GameViewState with _$GameViewState {
     /// Level-1 tutorial progress (none outside the tutorial).
     @Default(TutorialStep.none) TutorialStep tutorial,
 
+    /// No order of moves can clear the board any more (traffic lights or
+    /// the ambulance turned the last moves into a dead end).
+    @Default(false) bool stuck,
+
     /// Picture puzzles this win unlocked (ids), announced on the win card.
     @Default(<String>[]) List<String> unlockedPuzzles,
   }) = _GameViewState;

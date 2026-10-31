@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
-  static const duration = Duration(milliseconds: 1100);
+  static const duration = Duration(milliseconds: 1500);
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -37,29 +37,51 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // One continuous motion on the same background as the system splash:
+    // the big logo grows in (0-30%), rests, then zooms out (70-100%).
     return Scaffold(
       body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedBuilder(
-              animation: _controller,
-              builder: (context, _) => ArrowLogo(
-                size: 128,
-                progress: Curves.easeIn.transform(
-                  (_controller.value * 1.4 - 0.4).clamp(0.0, 1.0),
-                ),
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            final t = _controller.value;
+            final appear = Curves.easeOutBack.transform(
+              (t / 0.3).clamp(0.0, 1.0),
+            );
+            final leave = Curves.easeIn.transform(
+              ((t - 0.7) / 0.3).clamp(0.0, 1.0),
+            );
+            return Opacity(
+              opacity: (t / 0.2).clamp(0.0, 1.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Transform.scale(
+                    scale: 0.8 + 0.2 * appear,
+                    child: ArrowLogo(size: 176, progress: leave),
+                  ),
+                  const SizedBox(height: 24),
+                  Opacity(
+                    opacity: 1 - leave,
+                    child: Column(
+                      children: [
+                        Text(
+                          'Arrow Escape',
+                          style: theme.textTheme.headlineMedium,
+                        ),
+                        Text(
+                          'Traffic Puzzle',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 24),
-            Text('Arrow Escape', style: theme.textTheme.headlineMedium),
-            Text(
-              'Traffic Puzzle',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: theme.colorScheme.primary,
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );

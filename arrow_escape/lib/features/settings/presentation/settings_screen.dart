@@ -7,8 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Settings as a board of boxes: theme cards with a mini preview, then
-/// two-column toggle tiles you tap anywhere to switch.
+/// Settings as inset grouped lists: the pattern both iOS Settings and
+/// Android's settings use, so it feels native on each. Rows have a small
+/// coloured icon tile, a title, an optional hint and a platform switch.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -24,132 +25,126 @@ class SettingsScreen extends ConsumerWidget {
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
           children: [
-            const _Header('Look', Icons.palette_rounded),
-            Row(
-              key: const Key('theme-mode'),
+            _Group(
+              title: 'Appearance',
               children: [
-                for (final (mode, label, icon) in const [
-                  (ThemeMode.system, 'Auto', Icons.brightness_auto_rounded),
-                  (ThemeMode.light, 'Light', Icons.light_mode_rounded),
-                  (ThemeMode.dark, 'Dark', Icons.dark_mode_rounded),
-                ]) ...[
-                  if (mode != ThemeMode.system) const SizedBox(width: 10),
-                  Expanded(
-                    child: _ThemeCard(
-                      mode: mode,
-                      label: label,
-                      icon: icon,
-                      selected: s.themeMode == mode,
-                      onTap: () => c.setThemeMode(mode),
-                    ),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: _ThemePicker(
+                    value: s.themeMode,
+                    onChanged: c.setThemeMode,
                   ),
-                ],
+                ),
               ],
             ),
-            const _Header('Accessibility', Icons.accessibility_new_rounded),
-            _TileGrid(
+            _Group(
+              title: 'Accessibility',
+              footer:
+                  'Colorblind and high-contrast modes replace skin '
+                  'colours so every arrow stays easy to tell apart.',
               children: [
-                _ToggleTile(
+                _SwitchRow(
                   key: const Key('thick-arrows'),
                   icon: Icons.line_weight_rounded,
-                  colors: const [Color(0xFF9B87FF), Palette.primary],
+                  color: Palette.primary,
                   title: 'Thick arrows',
-                  subtitle: 'Bolder, easier to tap',
+                  subtitle: 'Bolder lines, easier to tap',
                   value: s.thickArrows,
                   onChanged: c.setThickArrows,
                 ),
-                _ToggleTile(
+                _SwitchRow(
                   key: const Key('high-contrast'),
                   icon: Icons.contrast_rounded,
-                  colors: const [Color(0xFF6B7280), Color(0xFF1F2937)],
+                  color: const Color(0xFF374151),
                   title: 'High contrast',
-                  subtitle: 'Stronger colours',
+                  subtitle: 'Stronger colours and outlines',
                   value: s.highContrast,
                   onChanged: c.setHighContrast,
                 ),
-                _ToggleTile(
+                _SwitchRow(
                   key: const Key('colorblind'),
                   icon: Icons.visibility_rounded,
-                  colors: const [Color(0xFF56B4E9), Color(0xFF0072B2)],
-                  title: 'Colorblind',
-                  subtitle: 'Safe palette + symbols',
+                  color: const Color(0xFF0072B2),
+                  title: 'Colorblind mode',
+                  subtitle: 'Safe palette plus symbols',
                   value: s.colorblind,
                   onChanged: c.setColorblind,
                 ),
-                _ToggleTile(
+                _SwitchRow(
                   key: const Key('reduce-motion'),
                   icon: Icons.slow_motion_video_rounded,
-                  colors: const [Color(0xFF7CE3B5), Palette.tertiary],
+                  color: Palette.tertiary,
                   title: 'Reduce motion',
-                  subtitle: 'Calmer animations',
+                  subtitle: 'Shorter, calmer animations',
                   value: s.reduceMotion,
                   onChanged: c.setReduceMotion,
                 ),
               ],
             ),
-            const _Header('Feedback', Icons.graphic_eq_rounded),
-            _TileGrid(
+            _Group(
+              title: 'Sound & feel',
               children: [
-                _ToggleTile(
+                _SwitchRow(
                   key: const Key('sound'),
                   icon: s.sound
                       ? Icons.volume_up_rounded
                       : Icons.volume_off_rounded,
-                  colors: const [Color(0xFFFFD25E), Palette.sun],
+                  color: Palette.sun,
                   title: 'Sound',
-                  subtitle: 'Soft move effects',
                   value: s.sound,
                   onChanged: c.setSound,
                 ),
-                _ToggleTile(
+                _SwitchRow(
                   key: const Key('haptics'),
                   icon: Icons.vibration_rounded,
-                  colors: const [Color(0xFFFF9A7A), Palette.secondary],
+                  color: Palette.secondary,
                   title: 'Vibration',
-                  subtitle: 'Gentle haptics',
                   value: s.haptics,
                   onChanged: c.setHaptics,
                 ),
               ],
             ),
-            const _Header('Privacy', Icons.lock_rounded),
-            _TileGrid(
+            _Group(
+              title: 'Privacy',
+              footer:
+                  'Anonymous gameplay stats help us tune level '
+                  'difficulty. No personal data is collected.',
               children: [
-                _ToggleTile(
+                _SwitchRow(
                   key: const Key('share-analytics'),
                   icon: Icons.insights_rounded,
-                  colors: const [Color(0xFFFFA8D9), Palette.pink],
+                  color: Palette.pink,
                   title: 'Share usage analytics',
-                  subtitle: 'Anonymous stats',
                   value: s.shareAnalytics,
                   onChanged: c.setShareAnalytics,
                 ),
+                FutureBuilder<bool>(
+                  future: ref.read(adServiceProvider).privacyOptionsRequired(),
+                  builder: (context, snap) => snap.data == true
+                      ? _LinkRow(
+                          key: const Key('privacy-options'),
+                          icon: Icons.privacy_tip_rounded,
+                          color: const Color(0xFF7A4DF0),
+                          title: 'Privacy options',
+                          subtitle: 'Change your ad consent choices',
+                          onTap: () =>
+                              ref.read(adServiceProvider).showPrivacyOptions(),
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ],
             ),
-            const _Header('Account', Icons.person_rounded),
-            _ActionTile(
-              key: const Key('open-shop'),
-              icon: Icons.restore_rounded,
-              colors: const [Color(0xFF7CC8FF), Palette.sky],
-              title: 'Shop & restore purchases',
-              onTap: () => context.push(Routes.shop),
-            ),
-            FutureBuilder<bool>(
-              future: ref.read(adServiceProvider).privacyOptionsRequired(),
-              builder: (context, snap) => snap.data == true
-                  ? Padding(
-                      padding: const EdgeInsets.only(top: 10),
-                      child: _ActionTile(
-                        key: const Key('privacy-options'),
-                        icon: Icons.privacy_tip_rounded,
-                        colors: const [Color(0xFFC9B6FF), Palette.primary],
-                        title: 'Privacy options',
-                        subtitle: 'Change your ad consent choices.',
-                        onTap: () =>
-                            ref.read(adServiceProvider).showPrivacyOptions(),
-                      ),
-                    )
-                  : const SizedBox.shrink(),
+            _Group(
+              title: 'Account',
+              children: [
+                _LinkRow(
+                  key: const Key('open-shop'),
+                  icon: Icons.restore_rounded,
+                  color: Palette.sky,
+                  title: 'Shop & restore purchases',
+                  onTap: () => context.push(Routes.shop),
+                ),
+              ],
             ),
           ],
         ),
@@ -158,240 +153,168 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-class _Header extends StatelessWidget {
-  const _Header(this.text, this.icon);
+/// A titled, rounded card of rows with hairline dividers between them.
+class _Group extends StatelessWidget {
+  const _Group({required this.title, required this.children, this.footer});
 
-  final String text;
-  final IconData icon;
+  final String title;
+  final String? footer;
+  final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final divider = Divider(
+      height: 1,
+      thickness: 0.6,
+      indent: 60,
+      color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
+    );
     return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 22, 4, 10),
-      child: Semantics(
-        header: true,
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: theme.colorScheme.primary),
-            const SizedBox(width: 8),
-            Text(
-              text.toUpperCase(),
-              style: theme.textTheme.labelLarge?.copyWith(
-                letterSpacing: 1.6,
-                color: theme.colorScheme.primary,
+      padding: const EdgeInsets.only(top: 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Semantics(
+              header: true,
+              child: Text(
+                title.toUpperCase(),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  letterSpacing: 1.1,
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+          Material(
+            color: dark ? const Color(0xFF1C1C1E) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              children: [
+                for (var i = 0; i < children.length; i++) ...[
+                  if (i > 0) divider,
+                  children[i],
+                ],
+              ],
+            ),
+          ),
+          if (footer != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Text(
+                footer!,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 }
 
-/// Two boxes per row; a lone last box stays half width.
-class _TileGrid extends StatelessWidget {
-  const _TileGrid({required this.children});
+/// The small rounded-square icon used by system settings on both
+/// platforms.
+class _IconTile extends StatelessWidget {
+  const _IconTile(this.icon, this.color);
 
-  final List<Widget> children;
+  final IconData icon;
+  final Color color;
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final w = (constraints.maxWidth - 12) / 2;
-      return Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        children: [for (final c in children) SizedBox(width: w, child: c)],
-      );
-    },
+  Widget build(BuildContext context) => Container(
+    width: 30,
+    height: 30,
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Icon(icon, color: Colors.white, size: 18),
   );
 }
 
-/// A box that is the switch: tap anywhere to toggle. On shows a coloured
-/// border and an "On" pill.
-class _ToggleTile extends StatelessWidget {
-  const _ToggleTile({
+class _RowText extends StatelessWidget {
+  const _RowText(this.title, this.subtitle);
+
+  final String title;
+  final String? subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        if (subtitle != null)
+          Text(
+            subtitle!,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// A row that is a switch: the whole row toggles, with the platform's own
+/// switch (Cupertino on iOS, Material on Android) on the right.
+class _SwitchRow extends StatelessWidget {
+  const _SwitchRow({
     super.key,
     required this.icon,
-    required this.colors,
+    required this.color,
     required this.title,
-    required this.subtitle,
     required this.value,
     required this.onChanged,
+    this.subtitle,
   });
 
   final IconData icon;
-  final List<Color> colors;
+  final Color color;
   final String title;
-  final String subtitle;
+  final String? subtitle;
   final bool value;
   final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
     return Semantics(
-      button: true,
       toggled: value,
-      label: '$title, $subtitle',
-      excludeSemantics: true,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: value ? colors.last : Colors.transparent,
-            width: 2.5,
-          ),
-        ),
-        child: SoftCard(
-          radius: 22,
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-          onTap: () => onChanged(!value),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  IconBubble(
-                    icon: icon,
-                    colors: value
-                        ? colors
-                        : const [Color(0xFFC9C5D8), Color(0xFF9C97B0)],
-                    size: 40,
-                  ),
-                  const Spacer(),
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 180),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: value
-                          ? colors.last
-                          : scheme.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      value ? 'On' : 'Off',
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        color: value ? Colors.white : scheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                maxLines: 2,
-                style: theme.textTheme.titleMedium?.copyWith(height: 1.15),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Light / dark / auto as cards with a tiny preview of the screen.
-class _ThemeCard extends StatelessWidget {
-  const _ThemeCard({
-    required this.mode,
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final ThemeMode mode;
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    Widget half(Color bg, Color fg) => Expanded(
-      child: Container(
-        color: bg,
-        child: Center(
-          child: Icon(Icons.north_east_rounded, color: fg, size: 18),
-        ),
-      ),
-    );
-    final preview = ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: SizedBox(
-        height: 56,
-        child: Row(
-          children: [
-            if (mode != ThemeMode.dark)
-              half(Palette.washTop, Palette.primaryDeep),
-            if (mode != ThemeMode.light) half(Colors.black, Colors.white),
-          ],
-        ),
-      ),
-    );
-    return Semantics(
       button: true,
-      selected: selected,
-      label: '$label theme',
+      label: subtitle == null ? title : '$title, $subtitle',
       excludeSemantics: true,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: selected ? Palette.primary : Colors.transparent,
-            width: 2.5,
-          ),
-        ),
-        child: SoftCard(
-          radius: 22,
-          padding: const EdgeInsets.all(8),
-          onTap: onTap,
-          child: Column(
-            children: [
-              preview,
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    selected ? Icons.check_circle_rounded : icon,
-                    size: 18,
-                    color: selected
-                        ? Palette.primary
-                        : theme.colorScheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelLarge,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+      child: InkWell(
+        onTap: () => onChanged(!value),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 56),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 10, 8),
+            child: Row(
+              children: [
+                _IconTile(icon, color),
+                const SizedBox(width: 16),
+                Expanded(child: _RowText(title, subtitle)),
+                Switch.adaptive(
+                  value: value,
+                  activeTrackColor: Palette.primary,
+                  onChanged: onChanged,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -399,53 +322,127 @@ class _ThemeCard extends StatelessWidget {
   }
 }
 
-class _ActionTile extends StatelessWidget {
-  const _ActionTile({
+class _LinkRow extends StatelessWidget {
+  const _LinkRow({
     super.key,
     required this.icon,
-    required this.colors,
+    required this.color,
     required this.title,
     required this.onTap,
     this.subtitle,
   });
 
   final IconData icon;
-  final List<Color> colors;
+  final Color color;
   final String title;
   final String? subtitle;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Semantics(
       button: true,
       label: subtitle == null ? title : '$title, $subtitle',
       excludeSemantics: true,
-      child: SoftCard(
-        radius: 22,
-        padding: const EdgeInsets.all(14),
+      child: InkWell(
         onTap: onTap,
-        child: Row(
-          children: [
-            IconBubble(icon: icon, colors: colors, size: 40),
-            const SizedBox(width: 12),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 56),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 12, 8),
+            child: Row(
+              children: [
+                _IconTile(icon, color),
+                const SizedBox(width: 16),
+                Expanded(child: _RowText(title, subtitle)),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Auto / Light / Dark as a sliding segmented control, which reads as
+/// native on both platforms.
+class _ThemePicker extends StatelessWidget {
+  const _ThemePicker({required this.value, required this.onChanged});
+
+  final ThemeMode value;
+  final ValueChanged<ThemeMode> onChanged;
+
+  static const _options = [
+    (ThemeMode.system, 'Auto', Icons.brightness_auto_rounded),
+    (ThemeMode.light, 'Light', Icons.light_mode_rounded),
+    (ThemeMode.dark, 'Dark', Icons.dark_mode_rounded),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    return Container(
+      key: const Key('theme-mode'),
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: dark ? const Color(0xFF2C2C2E) : const Color(0xFFEFEDF6),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          for (final (mode, label, icon) in _options)
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: theme.textTheme.titleMedium),
-                  if (subtitle != null)
-                    Text(subtitle!, style: theme.textTheme.bodySmall),
-                ],
+              child: Semantics(
+                button: true,
+                selected: value == mode,
+                label: '$label theme',
+                excludeSemantics: true,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onChanged(mode),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: value == mode
+                          ? (dark ? const Color(0xFF636366) : Colors.white)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(9),
+                      boxShadow: value == mode && !dark
+                          ? const [
+                              BoxShadow(
+                                color: Color(0x1F000000),
+                                blurRadius: 6,
+                                offset: Offset(0, 2),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(icon, size: 18),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelLarge,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }

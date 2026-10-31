@@ -226,7 +226,13 @@ class GameController extends Notifier<GameViewState> {
         haptics.play(HapticKind.lose);
         sound.play(Sfx.lose);
       case SessionStatus.playing:
-        break;
+        if (_isDeadEnd(result.session)) {
+          state = state.copyWith(stuck: true);
+          ref.read(analyticsProvider).log('level_stuck', {
+            ..._info.params,
+            'progress_pct': _progressPct,
+          });
+        }
     }
     _advanceTutorial(outcome, result.session.status);
     return outcome;
@@ -256,6 +262,18 @@ class GameController extends Notifier<GameViewState> {
 
   /// Highlights a vehicle that keeps the board solvable. Returns false when
   /// there is none (game over or the solver gave up).
+  /// Only lights and the ambulance can trap the player: without them an
+  /// exit never blocks anyone, so some order always clears the board.
+  bool _isDeadEnd(PlaySession session) {
+    final level = session.level;
+    if (level.lights.isEmpty && !level.hasAmbulance) return false;
+    return Solver.fromRules(
+          session.rules,
+          maxStates: 80000,
+        ).solve(session.board) ==
+        null;
+  }
+
   bool showHint() {
     final session = state.session;
     if (session.isOver) return false;
