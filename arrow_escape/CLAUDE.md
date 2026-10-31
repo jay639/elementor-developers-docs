@@ -35,7 +35,8 @@ scope, rules and conventions. Update it when a decision changes.
   (nearest-piece hit test with tolerance), double-tap protection (a piece that
   is already animating ignores taps; per-piece debounce).
 - Mechanics unlock gradually:
-  - **L20 trucks** — multi-segment vehicles (straight or bent, 2–4 cells).
+  - Every arrow is multi-segment from level 1 (long, bending "snakes";
+    the old L20 trucks unlock was folded into this in Sprint 1).
   - **L40 traffic lights** — a light sits on an empty cell; every successful
     exit toggles all lights. A red light blocks any path that crosses it.
   - **L70 one-way gates** — a gate on an empty cell forces traffic entering
@@ -214,6 +215,17 @@ arrow_escape/
     move); guideline tests in `test/a11y`.
   - CI: `.github/workflows/arrow_escape.yml` runs every check and builds
     split-per-ABI release APKs (dev flavor) with a 40 MB budget.
+- Sprint 1 (growth plan) done:
+  - Arrows are long thin "snakes" (2–16 cells by level) drawn on a dot
+    grid; trucks are no longer a separate mechanic (L20 unlock removed).
+  - Difficulty tiers: from L12 every 10th level is Hard (2× first-clear
+    coins) and every 50th Super Hard (3×); faster curve.
+  - Onboarding: level 1 is a guided tutorial (hand, blocked-path demo,
+    only the highlighted arrow accepts taps, skippable), pinch hint on
+    small cells, one-time popups for each mechanic.
+  - Analytics: typed events (README "Analytics"), attempt counter per
+    level in the save, user properties via `AnalyticsSync`, AdMob paid
+    events, consent mode v2, in-app analytics opt-out.
 - This dev container cannot reach dl.google.com (Android SDK), so APKs are
   built in CI, not locally.
 

@@ -51,7 +51,9 @@ class AdMobAdService implements AdService {
         debugPrint('ATT unavailable: $e');
       }
     }
-    if (!await ConsentInformation.instance.canRequestAds()) return;
+    final canRequest = await ConsentInformation.instance.canRequestAds();
+    await analytics.setAdConsent(granted: canRequest && await _personalized());
+    if (!canRequest) return;
     await MobileAds.instance.updateRequestConfiguration(
       RequestConfiguration(
         // Not a children's app.
@@ -66,6 +68,25 @@ class AdMobAdService implements AdService {
     _ready = true;
     _loadInterstitial();
     _loadRewarded();
+  }
+
+  /// Whether UMP consent covers personalised ads: "obtained" from the form,
+  /// or "not required" outside regulated regions.
+  Future<bool> _personalized() async {
+    final status = await ConsentInformation.instance.getConsentStatus();
+    return status == ConsentStatus.obtained ||
+        status == ConsentStatus.notRequired;
+  }
+
+  /// Impression-level revenue for ARPDAU / LTV (micros to currency units).
+  void _paid(String format, Ad ad, double micros, PrecisionType p, String cc) {
+    analytics.adRevenue(
+      format: format,
+      value: micros / 1e6,
+      currency: cc,
+      source: ad.responseInfo?.loadedAdapterResponseInfo?.adSourceName,
+      precision: p.name,
+    );
   }
 
   Future<void> _gatherConsent() {
@@ -107,6 +128,8 @@ class AdMobAdService implements AdService {
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
           _retry = 0;
+          ad.onPaidEvent = (ad, micros, precision, currency) =>
+              _paid('interstitial', ad, micros, precision, currency);
           _interstitial = ad;
         },
         onAdFailedToLoad: (e) {
@@ -126,6 +149,8 @@ class AdMobAdService implements AdService {
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (ad) {
           _retry = 0;
+          ad.onPaidEvent = (ad, micros, precision, currency) =>
+              _paid('rewarded', ad, micros, precision, currency);
           _rewarded = ad;
         },
         onAdFailedToLoad: (e) {
@@ -204,14 +229,19 @@ class AdMobAdService implements AdService {
 
   @override
   Widget buildBanner() => _ready && !adsRemoved
-      ? _AdaptiveBanner(unitId: ids.banner)
+      ? _AdaptiveBanner(
+          unitId: ids.banner,
+          onPaid: (ad, micros, precision, currency) =>
+              _paid('banner', ad, micros, precision, currency),
+        )
       : const SizedBox.shrink();
 }
 
 class _AdaptiveBanner extends StatefulWidget {
-  const _AdaptiveBanner({required this.unitId});
+  const _AdaptiveBanner({required this.unitId, required this.onPaid});
 
   final String unitId;
+  final OnPaidEventCallback onPaid;
 
   @override
   State<_AdaptiveBanner> createState() => _AdaptiveBannerState();
@@ -242,6 +272,7 @@ class _AdaptiveBannerState extends State<_AdaptiveBanner> {
           if (mounted) setState(() => _loaded = true);
         },
         onAdFailedToLoad: (ad, _) => ad.dispose(),
+        onPaidEvent: widget.onPaid,
       ),
     );
     _ad = ad;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:arrow_engine/arrow_engine.dart';
 import 'package:arrow_escape/core/services/analytics.dart';
 import 'package:arrow_escape/core/services/haptics.dart';
@@ -21,6 +23,23 @@ class GameController extends Notifier<GameViewState> {
 
   final _clock = Stopwatch();
 
+  /// Analytics context for the current attempt.
+  late LevelInfo _info;
+  HelpCounts _help = const HelpCounts();
+
+  /// Whether the current attempt already ended in a win or a loss.
+  bool _ended = false;
+  late AnalyticsService _analytics;
+
+  /// Latest session, kept outside [state] so onDispose can read it.
+  PlaySession? _session;
+
+  @override
+  set state(GameViewState value) {
+    _session = value.session;
+    super.state = value;
+  }
+
   String get _label => switch (levelRef) {
     CampaignLevelRef(:final number) => '$number',
     DailyLevelRef(:final dateKey) => 'daily_$dateKey',
@@ -29,18 +48,59 @@ class GameController extends Notifier<GameViewState> {
   @override
   GameViewState build() {
     final level = ref.watch(levelProvider(levelRef)).requireValue;
+    // Captured now: `ref` can't be used inside onDispose.
+    _analytics = ref.read(analyticsProvider);
+    _startAttempt(level);
+    ref.onDispose(_logQuitIfUnfinished);
+    final tutorial = _tutorialStart(level);
+    if (tutorial != TutorialStep.none) {
+      _analytics.log('tutorial_begin');
+    }
+    final session = _session = PlaySession.start(level);
+    return GameViewState(
+      levelRef: levelRef,
+      session: session,
+      tutorial: tutorial,
+    );
+  }
+
+  void _startAttempt(Level level) {
     _clock
       ..reset()
       ..start();
-    ref.read(analyticsProvider).levelStart(_label, daily: levelRef.isDaily);
-    final tutorial = _tutorialStart(level);
-    if (tutorial != TutorialStep.none) {
-      ref.read(analyticsProvider).log('tutorial_begin');
-    }
-    return GameViewState(
-      levelRef: levelRef,
-      session: PlaySession.start(level),
-      tutorial: tutorial,
+    _help = const HelpCounts();
+    _ended = false;
+    final attempt = (ref.read(saveProvider).levelAttempts[_label] ?? 0) + 1;
+    // Deferred: providers may not change other providers while building.
+    scheduleMicrotask(
+      () => ref.read(saveProvider.notifier).setAttempts(_label, attempt),
+    );
+    _info = LevelInfo(
+      level: _label,
+      mode: levelRef.isDaily ? 'daily' : 'campaign',
+      tier: level.meta.tier.name,
+      attempt: attempt,
+      arrows: level.pieces.length,
+      predictedDifficulty: level.meta.difficulty,
+    );
+    _analytics.levelStart(_info);
+  }
+
+  int get _progressPct {
+    final session = _session;
+    if (session == null) return 0;
+    final total = session.rules.pieceCount;
+    if (total == 0) return 0;
+    return ((total - session.board.remainingCount) * 100 / total).round();
+  }
+
+  void _logQuitIfUnfinished() {
+    if (_ended) return;
+    _ended = true;
+    _analytics.levelQuit(
+      _info,
+      seconds: _clock.elapsed.inSeconds,
+      progressPct: _progressPct,
     );
   }
 
@@ -117,24 +177,29 @@ class GameController extends Notifier<GameViewState> {
           DailyLevelRef(:final dateKey) => save.winDaily(dateKey, stars),
         };
         state = state.copyWith(coinsEarned: coins);
+        _ended = true;
         ref
             .read(analyticsProvider)
             .levelComplete(
-              _label,
-              daily: levelRef.isDaily,
+              _info,
               stars: stars,
               mistakes: result.session.mistakes,
               seconds: _clock.elapsed.inSeconds,
+              help: _help,
             );
+        // Queued after the attempt count this build may have scheduled.
+        scheduleMicrotask(() => save.clearAttempts(_label));
         haptics.play(HapticKind.win);
         sound.play(Sfx.win);
       case SessionStatus.lost:
+        _ended = true;
         ref
             .read(analyticsProvider)
             .levelFail(
-              _label,
-              daily: levelRef.isDaily,
+              _info,
               seconds: _clock.elapsed.inSeconds,
+              progressPct: _progressPct,
+              help: _help,
             );
         haptics.play(HapticKind.lose);
         sound.play(Sfx.lose);
@@ -152,6 +217,8 @@ class GameController extends Notifier<GameViewState> {
     if (identical(before, after)) return null;
     state = state.copyWith(session: after, hintPiece: null);
     ref.read(hapticsProvider).play(HapticKind.tap);
+    _help = _help.copyWith(undos: _help.undos + 1);
+    ref.read(analyticsProvider).helpUsed('undo', level: _label, source: 'free');
     for (final p in after.board.remaining) {
       if (!before.board.isOnBoard(p)) return p;
     }
@@ -161,6 +228,12 @@ class GameController extends Notifier<GameViewState> {
   void togglePaths() {
     state = state.copyWith(showPaths: !state.showPaths);
     ref.read(hapticsProvider).play(HapticKind.tap);
+    if (state.showPaths && !_help.paths) {
+      _help = _help.copyWith(paths: true);
+      ref
+          .read(analyticsProvider)
+          .helpUsed('paths', level: _label, source: 'free');
+    }
   }
 
   /// Highlights a vehicle that keeps the board solvable. Returns false when
@@ -175,19 +248,28 @@ class GameController extends Notifier<GameViewState> {
     if (piece == null) return false;
     state = state.copyWith(hintPiece: piece);
     ref.read(hapticsProvider).play(HapticKind.tap);
+    _help = _help.copyWith(hints: _help.hints + 1);
+    ref
+        .read(analyticsProvider)
+        .helpUsed('hint', level: _label, source: 'video');
     return true;
   }
 
   /// Rewarded "extra heart": continue after running out.
   void addHeart() {
     state = state.copyWith(session: state.session.addHeart());
+    // The attempt goes on: a later win or quit is logged for it.
+    _ended = false;
     _clock.start();
+    ref.read(analyticsProvider).levelContinue(_info, source: 'video');
   }
 
   /// Rewarded "double coins" on the win card; once per win.
   void doubleCoins() {
     if (state.coinsDoubled || state.coinsEarned == 0) return;
-    ref.read(saveProvider.notifier).addCoins(state.coinsEarned);
+    ref
+        .read(saveProvider.notifier)
+        .addCoins(state.coinsEarned, reason: 'double_coins');
     state = state.copyWith(
       coinsEarned: state.coinsEarned * 2,
       coinsDoubled: true,
@@ -195,9 +277,9 @@ class GameController extends Notifier<GameViewState> {
   }
 
   void restart() {
-    _clock
-      ..reset()
-      ..start();
+    // Restarting mid-level abandons that attempt.
+    _logQuitIfUnfinished();
+    _startAttempt(state.level);
     state = GameViewState(
       levelRef: levelRef,
       session: PlaySession.start(state.level, rules: state.session.rules),

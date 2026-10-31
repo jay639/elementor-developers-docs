@@ -75,7 +75,7 @@ class PurchaseController {
       error: outcome.ok ? null : outcome.status.name,
     );
     if (outcome.ok && product.kind == ProductKind.consumable) {
-      _ref.read(saveProvider.notifier).addCoins(product.coins);
+      _ref.read(saveProvider.notifier).addCoins(product.coins, reason: 'iap');
     }
     // Non-consumables (remove ads, starter) arrive through entitlements.
     return outcome;

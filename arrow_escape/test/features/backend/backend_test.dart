@@ -152,12 +152,12 @@ void main() {
         );
         await sync.start();
         final before = cloud.pushes;
-        c.read(saveProvider.notifier).addCoins(5);
-        c.read(saveProvider.notifier).addCoins(5);
+        c.read(saveProvider.notifier).addCoins(5, reason: 'test');
+        c.read(saveProvider.notifier).addCoins(5, reason: 'test');
         await Future<void>.delayed(const Duration(milliseconds: 60));
         expect(cloud.pushes, before + 1, reason: 'debounced into one push');
         expect(cloud.stored?.coins, 10);
-        c.read(saveProvider.notifier).addCoins(1);
+        c.read(saveProvider.notifier).addCoins(1, reason: 'test');
         await sync.flush();
         expect(cloud.stored?.coins, 11);
         await sync.dispose();

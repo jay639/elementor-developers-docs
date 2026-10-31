@@ -34,7 +34,11 @@ void main() {
     await controller.buy(Products.coinsMedium);
     await controller.buy(Products.coinsMedium);
     expect(c.read(saveProvider).coins, 3000);
-    expect(analytics.events.last.name, 'purchase_success');
+    expect(analytics.names.toList().sublist(analytics.events.length - 2), [
+      'purchase_success',
+      'earn_virtual_currency',
+    ]);
+    expect(analytics.last('earn_virtual_currency')['reason'], 'iap');
   });
 
   test('failed or cancelled purchases grant nothing', () async {

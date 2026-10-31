@@ -61,8 +61,8 @@ void main() {
         );
         addTearDown(c.dispose);
         final ctrl = c.read(saveProvider.notifier);
-        ctrl.addCoins(10);
-        ctrl.addCoins(5);
+        ctrl.addCoins(10, reason: 'test');
+        ctrl.addCoins(5, reason: 'test');
         await ctrl.flush();
         expect(repo.data!.coins, 15);
         expect(repo.data!.revision, 2);
@@ -99,7 +99,7 @@ void main() {
         overrides: [saveRepositoryProvider.overrideWithValue(_Broken())],
       );
       addTearDown(c.dispose);
-      c.read(saveProvider.notifier).addCoins(1);
+      c.read(saveProvider.notifier).addCoins(1, reason: 'test');
       await c.read(saveProvider.notifier).flush();
       expect(c.read(saveProvider).coins, 1);
     });

@@ -7,6 +7,7 @@ import 'package:arrow_escape/features/ads/data/ad_service.dart';
 import 'package:arrow_escape/features/ads/data/admob_ad_service.dart';
 import 'package:arrow_escape/features/ads/domain/ad_unit_ids.dart';
 import 'package:arrow_escape/features/ads/domain/interstitial_policy.dart';
+import 'package:arrow_escape/features/backend/application/analytics_sync.dart';
 import 'package:arrow_escape/features/backend/application/cloud_sync.dart';
 import 'package:arrow_escape/features/backend/data/backend.dart';
 import 'package:arrow_escape/features/backend/data/firebase_backend.dart';
@@ -93,6 +94,8 @@ Future<void> bootstrap(FlavorConfig flavor) async {
       child: const ArrowEscapeApp(),
     ),
   );
+  // Before anything else is logged, so an opt-out applies from the start.
+  AnalyticsSync(container).start();
   unawaited(_startServices(container));
 }
 

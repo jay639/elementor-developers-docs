@@ -1,3 +1,4 @@
+import 'package:arrow_escape/core/services/analytics.dart';
 import 'package:arrow_escape/features/save/application/save_controller.dart';
 import 'package:arrow_escape/features/settings/domain/app_settings.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,19 @@ class SettingsController extends Notifier<AppSettings> {
 
   void _update(AppSettings next) {
     if (next == state) return;
+    final changed = {
+      ...next
+          .toJson()
+          .entries
+          .where((e) => state.toJson()[e.key] != e.value)
+          .map((e) => e.key),
+    };
+    for (final key in changed) {
+      ref.read(analyticsProvider).log('settings_change', {
+        'setting': key,
+        'value': '${next.toJson()[key]}',
+      });
+    }
     ref.read(saveProvider.notifier).updateSettings(next);
   }
 
@@ -24,4 +38,5 @@ class SettingsController extends Notifier<AppSettings> {
   void setHaptics(bool v) => _update(state.copyWith(haptics: v));
   void setSound(bool v) => _update(state.copyWith(sound: v));
   void setReduceMotion(bool v) => _update(state.copyWith(reduceMotion: v));
+  void setShareAnalytics(bool v) => _update(state.copyWith(shareAnalytics: v));
 }

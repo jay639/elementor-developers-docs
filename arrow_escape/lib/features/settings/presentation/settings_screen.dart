@@ -115,6 +115,14 @@ class SettingsScreen extends ConsumerWidget {
             s.haptics,
             c.setHaptics,
           ),
+          header('Privacy'),
+          toggle(
+            'share-analytics',
+            'Share usage analytics',
+            'Anonymous gameplay stats that help us tune levels.',
+            s.shareAnalytics,
+            c.setShareAnalytics,
+          ),
           header('Account'),
           ListTile(
             key: const Key('open-shop'),

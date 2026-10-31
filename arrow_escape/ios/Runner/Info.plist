@@ -68,6 +68,14 @@
 	<string>$(ADMOB_APP_ID)</string>
 	<key>GADDelayAppMeasurementInit</key>
 	<true/>
+	<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_STORAGE</key>
+	<false/>
+	<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_USER_DATA</key>
+	<false/>
+	<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS</key>
+	<false/>
+	<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_ANALYTICS_STORAGE</key>
+	<true/>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>Your data is used to show you more relevant ads. You can still play everything without allowing this.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

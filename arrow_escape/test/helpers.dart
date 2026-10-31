@@ -47,6 +47,28 @@ class RecordingAnalytics extends AnalyticsService {
     String name, [
     Map<String, Object> params = const {},
   ]) async => events.add((name: name, params: params));
+
+  final properties = <String, String?>{};
+  final collection = <bool>[];
+  final adConsent = <bool>[];
+
+  @override
+  Future<void> setUserProperty(String name, String? value) async =>
+      properties[name] = value;
+
+  @override
+  Future<void> setCollectionEnabled(bool enabled) async =>
+      collection.add(enabled);
+
+  @override
+  Future<void> setAdConsent({required bool granted}) async =>
+      adConsent.add(granted);
+
+  Iterable<String> get names => events.map((e) => e.name);
+
+  /// Params of the last [name] event.
+  Map<String, Object> last(String name) =>
+      events.lastWhere((e) => e.name == name).params;
 }
 
 /// Ads that "play" instantly. [earn] decides whether rewards are granted.

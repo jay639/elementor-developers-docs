@@ -34,6 +34,10 @@ abstract class SaveData with _$SaveData {
     /// granted, so restores on a new device don't grant them twice.
     @Default(<String>[]) List<String> claimedBundles,
 
+    /// Plays of each level not yet won (for the `attempt` analytics
+    /// parameter); an entry is removed on the first win.
+    @Default(<String, int>{}) Map<String, int> levelAttempts,
+
     /// One-time tips already shown (tutorial, pinch hint, mechanic intros).
     @Default(<String>[]) List<String> seenTips,
 

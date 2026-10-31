@@ -151,4 +151,22 @@ class FirebaseAnalyticsService extends AnalyticsService {
 
   @override
   Future<void> setUserId(String? id) => _fa.setUserId(id: id);
+
+  @override
+  Future<void> setUserProperty(String name, String? value) =>
+      _fa.setUserProperty(name: name, value: value);
+
+  @override
+  Future<void> setCollectionEnabled(bool enabled) =>
+      _fa.setAnalyticsCollectionEnabled(enabled);
+
+  /// Consent mode v2. Analytics storage stays granted (it is first-party
+  /// and covered by the in-app toggle); the ad signals follow UMP.
+  @override
+  Future<void> setAdConsent({required bool granted}) => _fa.setConsent(
+    analyticsStorageConsentGranted: true,
+    adStorageConsentGranted: granted,
+    adUserDataConsentGranted: granted,
+    adPersonalizationSignalsConsentGranted: granted,
+  );
 }

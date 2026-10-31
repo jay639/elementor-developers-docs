@@ -14,6 +14,9 @@ abstract class AppSettings with _$AppSettings {
     @Default(true) bool haptics,
     @Default(true) bool sound,
     @Default(false) bool reduceMotion,
+
+    /// "Share usage analytics": anonymous gameplay stats.
+    @Default(true) bool shareAnalytics,
   }) = _AppSettings;
 
   factory AppSettings.fromJson(Map<String, Object?> json) =>

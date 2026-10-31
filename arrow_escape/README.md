@@ -69,6 +69,49 @@ and register App Check (Play Integrity / App Attest) with enforcement on.
 The Google Services and Crashlytics Gradle plugins are applied
 automatically when the json file exists.
 
+#### Analytics
+
+All events go through `AnalyticsService` (`lib/core/services/analytics.dart`),
+one typed method per event; `docs/growth_plan.html` has the full plan.
+
+| Area | Events | Key parameters |
+| --- | --- | --- |
+| Levels | `level_start`, `level_complete`, `level_fail`, `level_quit`, `level_continue` | level, mode, tier, attempt, arrows, predicted_difficulty, seconds, stars, mistakes, progress_pct, hints, undos, paths_used, first_try |
+| Help | `help_used` | type (hint/undo/paths), level, source |
+| Onboarding | `tutorial_begin`, `tutorial_step`, `tutorial_skip`, `tutorial_complete`, `tip_shown` | step, tip |
+| Economy | `earn_virtual_currency`, `spend_virtual_currency`, `daily_reward_claim`, `skin_unlock`, `city_block_built`, `streak_update` | value, reason / item_name, source |
+| Ads | `ad_show`, `ad_reward`, `ad_fail`, `ad_impression` (AdMob paid event → revenue) | format, placement, value, currency, ad_source |
+| Store | `purchase_success`, `purchase_fail` | product, error |
+| Other | `settings_change`, `save_tamper` | setting, value |
+
+User properties (bucketed, set only on change): `max_level`, `total_stars`,
+`is_payer`, `no_ads`, `streak_days`, `skin`, `a11y_mode`.
+
+Setup in the Firebase console:
+
+1. Register the custom dimensions you want to filter by (event-scoped:
+   `level`, `tier`, `attempt`, `reason`, `placement`; user-scoped: the
+   properties above).
+2. Mark `level_complete` and `purchase_success` as key events.
+3. Link BigQuery (Project settings → Integrations → BigQuery, daily
+   export, plus streaming if you need same-day data). Level funnels,
+   per-level fail/quit rates (difficulty spikes) and ARPDAU are easiest
+   there, e.g. fail rate per level:
+   ```sql
+   SELECT (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'level') AS level,
+          COUNTIF(event_name = 'level_fail') / COUNTIF(event_name = 'level_start') AS fail_rate
+   FROM `PROJECT.analytics_XXXX.events_*`
+   WHERE event_name IN ('level_start', 'level_fail')
+   GROUP BY level ORDER BY SAFE_CAST(level AS INT64);
+   ```
+4. Link AdMob to Firebase so `ad_impression` revenue shows in the revenue
+   reports.
+
+Privacy: Settings → "Share usage analytics" turns collection off.
+Consent mode v2 defaults (`AndroidManifest.xml`, `Info.plist`) deny ad
+storage, ad user data and ad personalisation until the UMP answer arrives;
+analytics storage is granted. No personal data is ever sent.
+
 ### 4.2 AdMob + mediation
 
 1. Create the app in AdMob (one per platform) with three units: adaptive
