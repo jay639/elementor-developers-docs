@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arrow Escape Growth Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: one reading column with a jump list; tables and code scroll in their own frames. */
+  --bg: #f7f6fb;
+  --surface: #ffffff;
+  --ink: #1f1d2b;
+  --muted: #5d5a70;
+  --line: #e2dff0;
+  --accent: #5b4bd6;
+  --good: #1f8a5b;
+  --warn: #b26b00;
+  --bad: #c0394b;
+  --chip: #efecfb;
+  --code-bg: #1d1b2b;
+  --code-ink: #e6e3ff;
+  --display: "Fraunces", Georgia, serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15141c; --surface: #1e1c28; --ink: #ecebf5; --muted: #a8a5bd;
+    --line: #34314a; --accent: #a99cff; --good: #5fd39c; --warn: #f0b354;
+    --bad: #ff8a99; --chip: #2a2740; --code-bg: #0f0e16; --code-ink: #e6e3ff;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15141c; --surface: #1e1c28; --ink: #ecebf5; --muted: #a8a5bd;
+  --line: #34314a; --accent: #a99cff; --good: #5fd39c; --warn: #f0b354;
+  --bad: #ff8a99; --chip: #2a2740; --code-bg: #0f0e16; --code-ink: #e6e3ff;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.6 var(--body); }
+main { max-width: 980px; margin: 0 auto; padding: 40px 20px 80px; display: grid; gap: 44px; }
+header { display: grid; gap: 10px; }
+h1, h2, h3 { font-family: var(--display); line-height: 1.2; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 42px); }
+h2 { font-size: 26px; }
+h3 { font-size: 19px; }
+p { margin: 0; max-width: 70ch; }
+.lede { color: var(--muted); font-size: 17px; }
+.meta { font: 500 13px/1.4 var(--mono); color: var(--muted); }
+section { display: grid; gap: 16px; }
+nav ol { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0; }
+nav a { display: inline-block; padding: 7px 12px; border-radius: 999px; background: var(--chip); color: var(--ink); text-decoration: none; font-size: 14px; font-weight: 500; }
+nav a:hover { background: color-mix(in srgb, var(--accent) 18%, var(--chip)); }
+.cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 8px; align-content: start; }
+.card .k { font: 600 13px/1.3 var(--body); color: var(--accent); text-transform: uppercase; letter-spacing: .04em; }
+.scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+thead th { font-weight: 600; background: var(--chip); }
+tbody tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chip { display: inline-block; font: 600 12px/1 var(--body); padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
+.agree { background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good); }
+.adjust { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+.done { background: var(--chip); color: var(--accent); }
+.new { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad); }
+ul, ol.plain { margin: 0; padding-left: 22px; display: grid; gap: 6px; max-width: 74ch; }
+.rec { background: var(--surface); border: 1px solid var(--line); border-left: 5px solid var(--accent); border-radius: 12px; padding: 16px 18px; display: grid; gap: 8px; }
+.rec.p0 { border-left-color: var(--bad); }
+.rec.p1 { border-left-color: var(--warn); }
+.rec.p2 { border-left-color: var(--good); }
+.evidence { font-size: 14px; color: var(--muted); }
+code { font: 500 13px var(--mono); background: var(--chip); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
+pre { margin: 0; background: var(--code-bg); color: var(--code-ink); border-radius: 12px; padding: 16px; overflow-x: auto; font: 500 13px/1.7 var(--mono); }
+pre code { background: none; padding: 0; color: inherit; }
+.callout { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; }
+.steps { counter-reset: s; display: grid; gap: 10px; list-style: none; padding: 0; margin: 0; }
+.steps li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start; }
+.steps li::before { content: counter(s); display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--surface); font-weight: 600; font-size: 14px; }
+footer { color: var(--muted); font-size: 14px; display: grid; gap: 8px; }
+a { color: var(--accent); }
+a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <p class="meta">Arrow Escape · merged plan · 31 Oct 2026</p>
+  <h1>Arrow Escape Growth Plan</h1>
+  <p class="lede">One plan that merges the ChatGPT recommendation report with our competitor teardown and our own level data, then adds a full analytics setup and a push-notification plan, mapped onto the code we already have.</p>
+  <nav aria-label="Sections">
+    <ol>
+      <li><a href="#merge">ChatGPT vs teardown</a></li>
+      <li><a href="#priorities">Merged priorities</a></li>
+      <li><a href="#analytics">Analytics guide</a></li>
+      <li><a href="#push">Push notifications</a></li>
+      <li><a href="#more">More features</a></li>
+      <li><a href="#sprints">Sprint plan</a></li>
+    </ol>
+  </nav>
+</header>
+
+<section aria-labelledby="merge">
+  <h2 id="merge">Where the two reports agree, and where to adjust</h2>
+  <p>The ChatGPT report is a sound strategy, written without access to our source code or the competitor APKs (it says so in its evidence note). Several of its "new" items already ship, and a few numbers need correcting against what we measured.</p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th scope="col">ChatGPT recommendation</th><th scope="col">Verdict</th><th scope="col">What the data and code say</th></tr></thead>
+      <tbody>
+        <tr><td>Make arrows 25–35% thinner</td><td><span class="chip adjust">Adjust</span></td><td>Thinning alone won't fix it. 83–99% of our arrows are one cell long; the leaders draw long winding lines. Make them long <em>and</em> about 60% thinner (stroke from 0.32 to ~0.13 of a cell). Keep "thick arrows" as an accessibility setting.</td></tr>
+        <tr><td>Increase dependency depth, not just arrow count</td><td><span class="chip agree">Agree</span></td><td>Exactly right. Long arrows are what makes depth possible: one long arrow blocks many others. Our chains are only 2–6 deep today.</td></tr>
+        <tr><td>Interactive tutorial: tap, pinch, blocked path, complete; skippable; tracked</td><td><span class="chip agree">Agree</span></td><td>Matches what apps 1, 2 and 3 ship (hand, "Pinch to zoom", mechanic popups). Its suggested copy is good; use it.</td></tr>
+        <tr><td>Distinct tap, valid, blocked, escape, complete feedback</td><td><span class="chip agree">Agree</span></td><td>Bump, flash, haptics and sounds exist. Add the missing pieces: tap highlight, exit trail and sparks, board-clear transition, combo praise.</td></tr>
+        <tr><td>Larger invisible hit area; no double input during animation</td><td><span class="chip done">Already built</span></td><td>Nearest-arrow tolerance of 0.75 cell, per-arrow animation lock, debounce, and swallowing taps on just-exited cells.</td></tr>
+        <tr><td>Build a level validation engine</td><td><span class="chip done">Already built</span></td><td>Solver, analyzer (moves, initial legal moves, chain depth, blocked share, dead ends) and CI verification of all 1,500 levels. Next step: calibrate it with real player data (see analytics).</td></tr>
+        <tr><td>Undo, hint, zoom, daily challenge as new P1 features</td><td><span class="chip done">Already built</span></td><td>All four ship. Upgrade instead: daily calendar and trophies, hint as a booster with tutorial, pinch hint in onboarding.</td></tr>
+        <tr><td>Achievements</td><td><span class="chip agree">Agree</span></td><td>Cheap, and app 2 has them. Make it P1.</td></tr>
+        <tr><td>Zen mode (no mistakes pressure)</td><td><span class="chip agree">Agree</span></td><td>Good fit for a calm brand; trivial on our engine (unlimited hearts, no ads mid-session). P2.</td></tr>
+        <tr><td>Boss puzzles every N levels</td><td><span class="chip agree">Agree, merge</span></td><td>Same idea as the competitors' Hard / Super Hard tiers. Implement as tiers with a pre-level banner and bigger reward.</td></tr>
+        <tr><td>Time attack, weekly leaderboard</td><td><span class="chip agree">Agree, later</span></td><td>Apps 1 and 2 have them. Leaderboards need server-side score checks (Firestore + a function), so P2.</td></tr>
+        <tr><td>Special mechanics: locked arrows with keys, frozen arrows, moving blockers</td><td><span class="chip adjust">Later</span></td><td>We already have four (trucks, lights, gates, ambulance). Fix the core first; add one new mechanic per update after that.</td></tr>
+        <tr><td>Monetization principles (no early ads, never mid-puzzle, remove ads)</td><td><span class="chip done">Already built</span></td><td>No interstitial before L10, max one per 3 levels and 3 min, only after a finished level; remove-ads and starter bundle via RevenueCat.</td></tr>
+        <tr><td>Folder structure, Hive or Isar, Flame audio</td><td><span class="chip adjust">Skip</span></td><td>We already have feature-first folders, a pure engine package, encrypted Hive and audioplayers. Don't migrate; Isar adds risk for no gain.</td></tr>
+        <tr><td>Analytics: retention, tutorial, level completion, abandonment, hint/undo, crashes</td><td><span class="chip agree">Agree, expand</span></td><td>The right metrics. Below is the full event list, dashboards and the loop that feeds results back into the level generator.</td></tr>
+        <tr><td>Not covered by ChatGPT</td><td><span class="chip new">Add</span></td><td>Combos and praise, difficulty tiers, push notifications, rate prompt, shareable daily result, ad-revenue tracking, consent mode.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="priorities">
+  <h2 id="priorities">Merged priorities</h2>
+  <div class="rec p0"><h3>P0 · Core feel (first)</h3>
+    <ul>
+      <li>Long, thin, rounded arrows over a soft dot grid, generated to fill the board shape.</li>
+      <li>Faster difficulty curve with Normal / Hard / Super Hard tiers and a breather after each Hard.</li>
+      <li>First-session tutorial: hand on a free arrow, blocked-path demo, pinch animation on the first big board, mechanic popups.</li>
+      <li>Feedback polish: tap highlight, exit trail, sparks, board-clear transition.</li>
+      <li>Analytics foundation (events below) <em>before</em> the changes ship, so we can measure the difference.</li>
+    </ul>
+  </div>
+  <div class="rec p1"><h3>P1 · Reasons to come back</h3>
+    <ul>
+      <li>Push notifications (local first).</li>
+      <li>Combo meter and praise; encouragement at 25%, 75%, 90%.</li>
+      <li>Achievements; daily calendar with monthly trophy; shareable daily result.</li>
+      <li>Boosters: Eraser and Grid Guide added to Hint and Undo.</li>
+      <li>City blocks and skins tied to milestones; shape album.</li>
+    </ul>
+  </div>
+  <div class="rec p2"><h3>P2 · Growth</h3>
+    <ul>
+      <li>Zen mode, time attack, weekly leaderboard for the daily.</li>
+      <li>One new mechanic per update; themed events.</li>
+      <li>Offers tested with Remote Config A/B tests against retention.</li>
+    </ul>
+  </div>
+</section>
+
+<section aria-labelledby="analytics">
+  <h2 id="analytics">Analytics guide</h2>
+  <div class="cards">
+    <div class="card"><span class="k">Product analytics</span><p><strong>Firebase Analytics</strong>, already in the app. Free, Google Ads and AdMob linking, audiences for push targeting.</p></div>
+    <div class="card"><span class="k">Raw data</span><p><strong>BigQuery export</strong> from Firebase (free tier covers us early). Needed for per-level funnels and the difficulty loop.</p></div>
+    <div class="card"><span class="k">Experiments</span><p><strong>Remote Config + A/B Testing</strong>, already wired for ad frequency. Use it for curve slope, hearts, tutorial variants.</p></div>
+    <div class="card"><span class="k">Stability</span><p><strong>Crashlytics</strong>, already in. Upload the obfuscation symbols from each release build.</p></div>
+  </div>
+  <p class="evidence">Optional later: GameAnalytics (free, ready-made progression dashboards) and an attribution SDK such as AppsFlyer or Adjust only once you buy installs.</p>
+
+  <h3>What we log today</h3>
+  <p><code>level_start</code>, <code>level_complete</code> (stars, mistakes, seconds), <code>level_fail</code>, <code>ad_show</code>, <code>ad_reward</code>, <code>ad_fail</code>, <code>purchase_success</code> / <code>purchase_fail</code>, <code>save_tamper</code>. Missing: quits, attempts, help used per level, tutorial steps, economy, notifications, user properties and ad revenue.</p>
+
+  <h3>Event plan</h3>
+  <div class="scroll">
+    <table>
+      <thead><tr><th scope="col">Event</th><th scope="col">When</th><th scope="col">Parameters</th><th scope="col">Answers</th></tr></thead>
+      <tbody>
+        <tr><td><code>tutorial_begin</code> / <code>tutorial_step</code> / <code>tutorial_complete</code> / <code>tutorial_skip</code></td><td>First session</td><td><code>step</code> (tap, blocked, pinch, mechanic name), <code>seconds</code></td><td>Do new players get it? Where do they drop?</td></tr>
+        <tr><td><code>level_start</code></td><td>Board shown</td><td><code>level</code>, <code>mode</code> (campaign, daily, zen), <code>tier</code>, <code>attempt</code>, <code>arrows</code>, <code>predicted_difficulty</code></td><td>Funnel base; replays</td></tr>
+        <tr><td><code>level_complete</code></td><td>Win</td><td>above + <code>stars</code>, <code>mistakes</code>, <code>seconds</code>, <code>hints</code>, <code>undos</code>, <code>paths_used</code>, <code>max_combo</code>, <code>first_try</code></td><td>Real difficulty per level</td></tr>
+        <tr><td><code>level_fail</code></td><td>Out of hearts</td><td>above + <code>progress_pct</code> (share of arrows cleared)</td><td>Where levels are too hard</td></tr>
+        <tr><td><code>level_quit</code> <span class="chip new">new</span></td><td>Back or app closed mid-level</td><td><code>level</code>, <code>attempt</code>, <code>progress_pct</code>, <code>seconds</code></td><td>Abandonment: the strongest "unfair or boring" signal</td></tr>
+        <tr><td><code>level_continue</code></td><td>+1 heart from a video</td><td><code>level</code>, <code>source</code></td><td>Value of revives</td></tr>
+        <tr><td><code>help_used</code></td><td>Hint, undo, paths, booster</td><td><code>type</code>, <code>level</code>, <code>source</code> (free, coins, video)</td><td>Where players get stuck</td></tr>
+        <tr><td><code>earn_virtual_currency</code> / <code>spend_virtual_currency</code></td><td>Coins change</td><td><code>virtual_currency_name</code>, <code>value</code>, <code>reason</code></td><td>Economy balance (Firebase standard events)</td></tr>
+        <tr><td><code>daily_reward_claim</code>, <code>streak_update</code></td><td>Home</td><td><code>day</code>, <code>doubled</code>, <code>streak</code></td><td>Habit strength</td></tr>
+        <tr><td><code>skin_unlock</code>, <code>city_block_built</code>, <code>achievement_unlock</code></td><td>Meta</td><td><code>id</code>, <code>source</code></td><td>Which goals motivate</td></tr>
+        <tr><td><code>notification_permission</code>, <code>notification_open</code></td><td>Push</td><td><code>result</code>; <code>type</code>, <code>hours_since_last_play</code></td><td>Push effectiveness</td></tr>
+        <tr><td><code>ad_impression</code></td><td>AdMob paid event</td><td><code>value</code>, <code>currency</code>, <code>ad_format</code>, <code>ad_source</code></td><td>Real ad revenue per user (ARPDAU, LTV)</td></tr>
+        <tr><td><code>settings_change</code></td><td>Settings</td><td><code>setting</code>, <code>value</code></td><td>How many use accessibility modes</td></tr>
+        <tr><td><code>rate_prompt</code>, <code>share_daily</code></td><td>After wins</td><td><code>result</code></td><td>Virality and ratings</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="evidence">Firebase limits: event names up to 40 characters, 25 parameters per event, values up to 100 characters, 500 distinct event names. Never send names, emails or free text. Firebase logs <code>first_open</code>, <code>session_start</code>, <code>app_remove</code> and Play purchases by itself.</p>
+
+  <h3>User properties</h3>
+  <p><code>max_level</code> (bucketed 1–10, 11–50, …), <code>total_stars</code> (bucketed), <code>is_payer</code>, <code>no_ads</code>, <code>streak_days</code>, <code>skin</code>, <code>a11y_mode</code>, <code>notifications_on</code>. These power segments for push campaigns and A/B tests.</p>
+
+  <h3>KPIs to put on one dashboard</h3>
+  <div class="scroll">
+    <table>
+      <thead><tr><th scope="col">Metric</th><th scope="col">Typical target for casual puzzles</th><th scope="col">Where it comes from</th></tr></thead>
+      <tbody>
+        <tr><td>D1 / D7 / D30 retention</td><td class="num">40% / 15–20% / 6–10%</td><td>Firebase retention cohorts</td></tr>
+        <tr><td>Tutorial completion</td><td class="num">90%+</td><td>tutorial_begin → tutorial_complete funnel</td></tr>
+        <tr><td>Levels 1–10 funnel</td><td class="num">≤ 3% loss per level</td><td>level_start by level</td></tr>
+        <tr><td>First-try win rate by tier</td><td class="num">Normal 85–95%, Hard 45–65%</td><td>level_complete.first_try / level_start</td></tr>
+        <tr><td>Quit rate per level</td><td class="num">Flag if 2× neighbours</td><td>level_quit / level_start</td></tr>
+        <tr><td>Session length, sessions per day</td><td class="num">8–15 min, 2–3</td><td>Firebase engagement</td></tr>
+        <tr><td>Crash-free users</td><td class="num">99.5%+</td><td>Crashlytics</td></tr>
+        <tr><td>ARPDAU, ad impressions per DAU</td><td class="num">Track trend</td><td>ad_impression value, AdMob</td></tr>
+        <tr><td>Push open rate</td><td class="num">5–10%</td><td>notification_open / sent</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="evidence">Targets are common industry ranges for casual puzzle games, given as starting goals, not guarantees.</p>
+
+  <h3>The loop that fixes difficulty for good</h3>
+  <ol class="steps">
+    <li><span>Every level already ships with a predicted difficulty from our analyzer.</span></li>
+    <li><span>BigQuery query per level: first-try win rate, median seconds, mistakes, hints, quit rate.</span></li>
+    <li><span>Fit the analyzer weights so predicted difficulty matches what players experienced; flag levels far off target.</span></li>
+    <li><span>Regenerate those levels (or the curve) with the tool, verify in CI, ship as a new level pack.</span></li>
+  </ol>
+
+  <h3>Privacy and consent</h3>
+  <ul>
+    <li>Tie analytics to the existing consent flow: Firebase consent mode (<code>setConsent</code>) with ad storage and personalisation off until the UMP form allows it.</li>
+    <li>Analytics opt-out switch in Settings; respect it everywhere.</li>
+    <li>Update the Play Data safety form and privacy policy (India DPDP Act 2023, GDPR, COPPA "not directed at children").</li>
+    <li>Use the anonymous user id only; no personal data in events.</li>
+  </ul>
+
+  <h3>How it fits our code</h3>
+<pre><code>// lib/core/services/analytics.dart: one typed method per event
+Future&lt;void&gt; levelQuit(String level, {required int attempt,
+    required int progressPct, required int seconds}) =>
+  log('level_quit', {'level': level, 'attempt': attempt,
+      'progress_pct': progressPct, 'seconds': seconds});
+
+// GameController: count hints/undos per attempt and log on win, fail or quit.
+// AdMob: BannerAd/InterstitialAd/RewardedAd.onPaidEvent -&gt; ad_impression.</code></pre>
+</section>
+
+<section aria-labelledby="push">
+  <h2 id="push">Push notifications</h2>
+  <div class="cards">
+    <div class="card"><span class="k">Local (build first)</span><p>Scheduled on the phone with <code>flutter_local_notifications</code>. No server, works offline, covers most value: daily ready, streak at risk, reward waiting, comeback.</p></div>
+    <div class="card"><span class="k">Remote (then)</span><p><code>firebase_messaging</code> for campaigns and events, targeted with Analytics audiences from the Firebase console. iOS needs an APNs key.</p></div>
+  </div>
+
+  <h3>The schedule</h3>
+  <div class="scroll">
+    <table>
+      <thead><tr><th scope="col">Notification</th><th scope="col">When</th><th scope="col">Example copy</th><th scope="col">Opens</th></tr></thead>
+      <tbody>
+        <tr><td>Daily challenge ready</td><td>Daily at the player's usual play hour</td><td>"Today's puzzle is a Hard one. Ready?"</td><td>Daily screen</td></tr>
+        <tr><td>Streak at risk</td><td>8 pm if not played today and streak ≥ 2</td><td>"Your 5-day streak ends at midnight. One quick puzzle keeps it."</td><td>Next level</td></tr>
+        <tr><td>Daily reward</td><td>Morning, if unclaimed</td><td>"Day 4 reward is waiting: 50 coins."</td><td>Home</td></tr>
+        <tr><td>Comeback</td><td>Day 2, 4 and 8 after last play, then stop</td><td>"The traffic's piling up in Maple Street."</td><td>City map</td></tr>
+        <tr><td>Hearts refilled (if lives are added)</td><td>When full</td><td>"Your hearts are full again."</td><td>Next level</td></tr>
+        <tr><td>Event start (remote)</td><td>Campaign</td><td>"Weekend event: build the Harbor district."</td><td>Event screen</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>Rules that keep players from turning them off</h3>
+  <ul>
+    <li>At most one per day; quiet hours 10 pm–8 am in the player's time zone.</li>
+    <li>Cancel and reschedule every time the app opens, so nobody gets "come back" after playing.</li>
+    <li>Stop a type after three ignored in a row; per-type switches in Settings.</li>
+    <li>Ask for permission after the first win or level 3, with a short in-app explanation first, never on first launch. Android 13+ requires the runtime prompt; we already declare <code>POST_NOTIFICATIONS</code>.</li>
+    <li>Every notification deep-links to the right screen (go_router already handles routes) and logs <code>notification_open</code>.</li>
+    <li>No ads in notifications (Play policy); localise copy.</li>
+  </ul>
+
+  <h3>How it fits our code</h3>
+<pre><code>lib/features/notifications/
+  domain/notification_planner.dart   // pure: save + now -&gt; list of scheduled pushes (unit-tested)
+  data/local_notifier.dart           // flutter_local_notifications + timezone
+  data/remote_push.dart              // firebase_messaging token + topic subscribe
+  presentation/permission_prompt.dart
+
+// On app start and on pause: planner.plan(save, clock) -&gt; cancelAll() + schedule()</code></pre>
+</section>
+
+<section aria-labelledby="more">
+  <h2 id="more">Other features worth adding</h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th scope="col">Feature</th><th scope="col">Why</th><th scope="col">Effort</th><th scope="col">Priority</th></tr></thead>
+      <tbody>
+        <tr><td>Shareable daily result (emoji grid, like Wordle)</td><td>Free installs from friends; daily is already the same for everyone</td><td>S</td><td>P1</td></tr>
+        <tr><td>In-app rating prompt (<code>in_app_review</code>)</td><td>Ask after a 3-star streak; ratings drive store ranking</td><td>S</td><td>P1</td></tr>
+        <tr><td>Achievements with a small reward</td><td>Long-term goals; cheap to build</td><td>M</td><td>P1</td></tr>
+        <tr><td>Streak freeze (earned or bought)</td><td>Saves streaks after one missed day; reduces churn</td><td>S</td><td>P1</td></tr>
+        <tr><td>Shape album (collect named boards)</td><td>Turns our shape masks into a collection</td><td>M</td><td>P1</td></tr>
+        <tr><td>In-app updates (Play Core)</td><td>Keeps players on the latest levels and fixes</td><td>S</td><td>P2</td></tr>
+        <tr><td>Zen mode</td><td>Calm play, no hearts or ads mid-session</td><td>S</td><td>P2</td></tr>
+        <tr><td>Weekly daily-challenge leaderboard</td><td>Competition; needs server-side checks</td><td>L</td><td>P2</td></tr>
+        <tr><td>Background music and sound packs</td><td>Atmosphere; competitors 2 and 4 have them</td><td>M</td><td>P2</td></tr>
+        <tr><td>Home-screen widget with today's daily</td><td>Daily reminder without a push</td><td>M</td><td>P2</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="sprints">
+  <h2 id="sprints">Sprint plan</h2>
+  <div class="rec p0"><h3>Sprint 1 · Measure, then fix the feel (about 2 weeks)</h3>
+    <ul>
+      <li>Analytics events, user properties, consent mode, ad revenue; BigQuery export on.</li>
+      <li>Long thin arrows + dot grid; new generator settings; regenerate and verify 1,500 levels.</li>
+      <li>Difficulty tiers and faster curve; tutorial with hand, blocked demo and pinch.</li>
+      <li>Ship to a closed test track; record baseline metrics for a week.</li>
+    </ul>
+  </div>
+  <div class="rec p1"><h3>Sprint 2 · Come-back loop (about 2 weeks)</h3>
+    <ul>
+      <li>Local notifications with permission prompt and settings.</li>
+      <li>Combo and praise, trails and sparks, board-clear transition.</li>
+      <li>Achievements, daily calendar and trophy, shareable result, rating prompt.</li>
+    </ul>
+  </div>
+  <div class="rec p2"><h3>Sprint 3 · Tune and grow</h3>
+    <ul>
+      <li>First difficulty-calibration pass from BigQuery data.</li>
+      <li>Remote push campaigns; A/B tests on curve, hearts and ad frequency.</li>
+      <li>Zen mode, boosters, music; then one new mechanic.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  <p>Sources: the ChatGPT "Arrow Escape Recommendation Report" (31 Oct 2026), our competitor teardown of four Google Play APKs, measurements from our shipped level packs, and the current Arrow Escape source code.</p>
+</footer>
+</main>
+</body>
+</html>
