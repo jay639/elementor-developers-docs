@@ -6,8 +6,8 @@ import 'package:arrow_engine/arrow_engine.dart';
 /// human-readable problems; empty means pass.
 List<String> verifyCampaign(
   List<Level> levels, {
-  int maxWidth = 10,
-  int maxHeight = 14,
+  int maxWidth = 16,
+  int maxHeight = 22,
   double targetTolerance = 15,
   double maxOutlierShare = 0.05,
 }) {
@@ -26,9 +26,6 @@ List<String> verifyCampaign(
       fail('L$n: only ${level.pieces.length} pieces');
     }
 
-    if (n < MechanicUnlocks.trucks && level.hasTrucks) {
-      fail('L$n: trucks before L${MechanicUnlocks.trucks}');
-    }
     if (n < MechanicUnlocks.trafficLights && level.lights.isNotEmpty) {
       fail('L$n: lights before L${MechanicUnlocks.trafficLights}');
     }
@@ -40,6 +37,9 @@ List<String> verifyCampaign(
     }
     if (level.meta.breather != Campaign.isBreather(n)) {
       fail('L$n: breather flag is ${level.meta.breather}');
+    }
+    if (level.meta.tier != Campaign.tierFor(n)) {
+      fail('L$n: tier is ${level.meta.tier.name}');
     }
 
     final s = analyzeLevel(level);
@@ -123,7 +123,7 @@ List<String> verifyCampaign(
 String campaignReport(List<Level> levels) {
   final b = StringBuffer()
     ..writeln(
-      'levels     target  actual   min   max  pieces  trucks lights gates amb',
+      'levels     target  actual   min   max  arrows  avglen lights gates amb',
     );
   for (var start = 0; start < levels.length; start += 100) {
     final chunk = levels.sublist(start, math.min(start + 100, levels.length));
@@ -137,7 +137,7 @@ String campaignReport(List<Level> levels) {
       '${actual.reduce(math.min).toStringAsFixed(0).padLeft(5)} '
       '${actual.reduce(math.max).toStringAsFixed(0).padLeft(5)} '
       '${avg([for (final l in chunk) l.pieces.length]).toStringAsFixed(1).padLeft(7)} '
-      '${chunk.where((l) => l.hasTrucks).length.toString().padLeft(7)} '
+      '${(chunk.fold<int>(0, (a, l) => a + l.pieces.fold<int>(0, (b, p) => b + p.length)) / chunk.fold<int>(0, (a, l) => a + l.pieces.length)).toStringAsFixed(1).padLeft(7)} '
       '${chunk.where((l) => l.lights.isNotEmpty).length.toString().padLeft(6)} '
       '${chunk.where((l) => l.gates.isNotEmpty).length.toString().padLeft(5)} '
       '${chunk.where((l) => l.hasAmbulance).length.toString().padLeft(4)}',

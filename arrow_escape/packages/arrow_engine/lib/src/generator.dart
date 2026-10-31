@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'dir.dart';
 import 'level.dart';
 import 'path_tracer.dart';
@@ -13,12 +15,13 @@ class GeneratorConfig {
     this.id = 0,
     this.fill = 0.7,
     this.greed = 3,
-    this.truckChance = 0,
-    this.minTrucks = 0,
-    this.maxTruckLength = 3,
+    this.minLength = 2,
+    this.maxLength = 6,
+    this.turnChance = 0.35,
     this.lights = 0,
     this.gates = 0,
     this.ambulance = false,
+    this.pack = true,
   });
 
   final int seed;
@@ -32,15 +35,19 @@ class GeneratorConfig {
   /// placed vehicles wins. Higher = longer dependency chains = harder.
   final int greed;
 
-  /// Chance that a placed vehicle is a multi-cell truck.
-  final double truckChance;
+  /// Arrow length range in cells. Arrows are drawn as winding lines; longer
+  /// arrows lie across more paths, which makes deeper blocking chains.
+  final int minLength;
+  final int maxLength;
 
-  /// The first placements are trucks until this many exist.
-  final int minTrucks;
-  final int maxTruckLength;
+  /// Chance per cell that an arrow's body turns a corner.
+  final double turnChance;
   final int lights;
   final int gates;
   final bool ambulance;
+
+  /// Pack leftover space after the main placement pass.
+  final bool pack;
 }
 
 /// Seeded procedural level generator.
@@ -83,7 +90,6 @@ class LevelGenerator {
   /// How many placed vehicles' paths cross each cell.
   late final List<int> _cover;
   final _placed = <PieceDef>[];
-  var _trucks = 0;
 
   List<bool> get _mask => config.shape.cells;
 
@@ -124,6 +130,7 @@ class LevelGenerator {
       _place(piece);
       filled += piece.length;
     }
+    if (config.pack) _packRemaining(maskCells);
 
     if (ambulance != null) {
       for (final c in [...ambulance.cells, ...lane]) {
@@ -138,7 +145,9 @@ class LevelGenerator {
       _rng.shuffle(laneCells);
       for (final c in laneCells) {
         if (added >= wanted) break;
-        final piece = _candidateAt(c, allowTruck: false);
+        // An earlier lane arrow's body may have taken this cell.
+        if (!_isFree(c)) continue;
+        final piece = _candidateAt(c, maxLength: 3);
         if (piece != null) {
           _place(piece);
           added++;
@@ -257,6 +266,21 @@ class LevelGenerator {
     return null;
   }
 
+  /// Fills leftover space with any arrow that can still leave, longest
+  /// first, so boards read as one dense drawing. These arrows are placed
+  /// last, so in play they are the first ones free.
+  void _packRemaining(List<int> maskCells) {
+    final order = [...maskCells];
+    _rng.shuffle(order);
+    for (final c in order) {
+      if (!_isFree(c)) continue;
+      final piece =
+          _candidateAt(c, maxLength: config.maxLength) ??
+          _candidateAt(c, maxLength: config.minLength + 1);
+      if (piece != null) _place(piece);
+    }
+  }
+
   PieceDef? _bestCandidate(List<int> maskCells) {
     PieceDef? best;
     var bestScore = double.negativeInfinity;
@@ -268,7 +292,7 @@ class LevelGenerator {
     ) {
       final head = _rng.pick(maskCells);
       if (!_isFree(head)) continue;
-      final piece = _candidateAt(head, allowTruck: true);
+      final piece = _candidateAt(head, maxLength: config.maxLength);
       if (piece == null) continue;
       valid++;
       var score = _rng.nextDouble() * 0.5;
@@ -283,46 +307,51 @@ class LevelGenerator {
     return best;
   }
 
-  /// A random vehicle with its head at [head] whose path is clear, or null.
-  PieceDef? _candidateAt(int head, {required bool allowTruck}) {
+  /// A random arrow with its head at [head] whose path is clear, or null.
+  /// Lengths lean long (the larger of two draws).
+  PieceDef? _candidateAt(int head, {required int maxLength}) {
     final dirs = [...Dir.values];
     _rng.shuffle(dirs);
+    final int minLength = math.min<int>(
+      math.max<int>(config.minLength, 1),
+      maxLength,
+    );
     for (final dir in dirs) {
-      final cells = [head];
-      final wantTruck =
-          _trucks < config.minTrucks || _rng.nextBool(config.truckChance);
-      if (allowTruck && config.truckChance > 0 && wantTruck) {
-        final length = 2 + _rng.nextInt(config.maxTruckLength - 1);
-        _growBody(cells, dir, length);
+      final span = maxLength - minLength + 1;
+      final int length =
+          minLength + math.max<int>(_rng.nextInt(span), _rng.nextInt(span));
+      // The body may not lie in front of its own head.
+      final ahead = <int>{};
+      for (var c = _neighbor(head, dir); c >= 0; c = _neighbor(c, dir)) {
+        ahead.add(c);
       }
-      final def = PieceDef(
-        kind: cells.length > 1 ? PieceKind.truck : PieceKind.car,
-        dir: dir,
-        cells: cells,
-      );
+      final cells = [head];
+      _growBody(cells, dir, length, ahead);
+      if (cells.length < minLength) continue;
+      final def = PieceDef(kind: PieceKind.car, dir: dir, cells: cells);
       if (_pathClear(def)) return def;
     }
     return null;
   }
 
-  /// Extends [cells] backwards from the head, preferring straight bodies.
-  void _growBody(List<int> cells, Dir dir, int length) {
+  /// Extends [cells] backwards from the head as a random walk that mostly
+  /// goes straight and sometimes turns.
+  void _growBody(List<int> cells, Dir dir, int length, Set<int> forbidden) {
     var behind = dir.opposite;
     while (cells.length < length) {
-      final options = <Dir>[
-        behind,
-        if (_rng.nextBool(0.45)) ...[behind.clockwise, behind.counterClockwise],
-      ];
-      _rng.shuffle(options);
-      if (options.first != behind && _rng.nextBool(0.5)) {
-        options
-          ..remove(behind)
-          ..insert(0, behind);
-      }
+      final turn = _rng.nextBool(config.turnChance);
+      final sides = [behind.clockwise, behind.counterClockwise];
+      _rng.shuffle(sides);
+      final options = turn ? [...sides, behind] : [behind, ...sides];
       var grown = false;
       for (final d in options) {
         final next = _neighbor(cells.last, d);
-        if (next < 0 || !_isFree(next) || cells.contains(next)) continue;
+        if (next < 0 ||
+            !_isFree(next) ||
+            cells.contains(next) ||
+            forbidden.contains(next)) {
+          continue;
+        }
         cells.add(next);
         behind = d;
         grown = true;
@@ -351,7 +380,6 @@ class LevelGenerator {
   }
 
   void _place(PieceDef def) {
-    if (def.kind == PieceKind.truck) _trucks++;
     final index = _placed.length;
     _placed.add(def);
     for (final c in def.cells) {

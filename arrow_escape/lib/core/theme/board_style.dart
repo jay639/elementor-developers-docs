@@ -63,7 +63,7 @@ class BoardStyle {
           : Palette.lightGreen,
       ambulance: Palette.ambulance,
       ambulanceCross: Palette.ambulanceCross,
-      strokeFactor: settings.thickArrows ? 0.46 : 0.32,
+      strokeFactor: settings.thickArrows ? 0.24 : 0.14,
       // Colorblind and high-contrast modes add shape cues to colour cues.
       symbols: settings.colorblind || hc,
     );

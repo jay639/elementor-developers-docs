@@ -21,22 +21,17 @@ class BoardBackgroundPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final layout = BoardLayout(level, size);
     final cell = layout.cell;
-    final inset = cell * 0.06;
-    final radius = Radius.circular(cell * 0.22);
-    final tile = Paint()..color = style.tile;
-    final edge = Paint()
-      ..color = style.tileEdge
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = math.max(1, cell * 0.03);
-
+    // The shape reads as one soft silhouette; a dot marks each cell so
+    // paths can be followed by eye, like graph paper.
+    final silhouette = Path();
     for (var i = 0; i < level.cellCount; i++) {
-      if (!level.mask[i]) continue;
-      final r = RRect.fromRectAndRadius(
-        layout.cellRect(i).deflate(inset),
-        radius,
-      );
-      canvas.drawRRect(r, tile);
-      canvas.drawRRect(r, edge);
+      if (level.mask[i]) silhouette.addRect(layout.cellRect(i).inflate(0.5));
+    }
+    canvas.drawPath(silhouette, Paint()..color = style.tile);
+    final dot = Paint()..color = style.tileEdge;
+    final dotRadius = math.max(1.2, cell * 0.06);
+    for (var i = 0; i < level.cellCount; i++) {
+      if (level.mask[i]) canvas.drawCircle(layout.centerOf(i), dotRadius, dot);
     }
 
     final gatePaint = Paint()
@@ -159,9 +154,13 @@ class BoardPiecesPainter extends CustomPainter {
   ) {
     final def = level.pieces[piece];
     final cell = layout.cell;
-    final stroke = cell * style.strokeFactor;
-    final from = track.tailArc - 0.34 + offset;
-    final to = track.headArc + 0.02 + offset;
+    // The white ambulance needs a little more body to stand out.
+    final stroke =
+        cell * style.strokeFactor * (def.kind == PieceKind.ambulance ? 1.7 : 1);
+    // Thin line from just behind the tail to the head; the arrowhead sits
+    // past the head centre so a 1-cell arrow still reads as an arrow.
+    final from = track.tailArc - 0.18 + offset;
+    final to = track.headArc + 0.04 + offset;
     final pts = [for (final p in track.slice(from, to)) layout.toPixels(p)];
 
     final body = Path()..moveTo(pts.first.dx, pts.first.dy);
@@ -170,8 +169,8 @@ class BoardPiecesPainter extends CustomPainter {
     }
     final tangent = track.tangentAt(to);
     final base = layout.toPixels(track.pointAt(to));
-    final halfWidth = math.min(stroke * 0.95, cell * 0.36);
-    final tip = base + tangent * (cell * 0.34);
+    final halfWidth = math.max(stroke * 1.3, cell * 0.2);
+    final tip = base + tangent * (cell * 0.32);
     final normal = Offset(-tangent.dy, tangent.dx) * halfWidth;
     final head = Path()
       ..moveTo(tip.dx, tip.dy)
@@ -193,13 +192,27 @@ class BoardPiecesPainter extends CustomPainter {
     Paint rimLine(Color c, double w) =>
         line(c, w)..strokeJoin = StrokeJoin.round;
 
+    if (offset > 0.3 && !isAmbulance) {
+      // Fading trail behind a moving arrow.
+      final trail = [
+        for (final p in track.slice(math.max(0, from - 1.4), from))
+          layout.toPixels(p),
+      ];
+      if (trail.length > 1) {
+        canvas.drawPoints(
+          ui.PointMode.polygon,
+          trail,
+          line(color.withValues(alpha: 0.28), stroke * 0.8),
+        );
+      }
+    }
     if (flash > 0) {
       final glow = style.danger.withValues(alpha: 0.55 * flash);
-      canvas.drawPath(body, line(glow, stroke + cell * 0.28 * flash));
-      canvas.drawPath(head, rimLine(glow, cell * 0.28 * flash));
+      canvas.drawPath(body, line(glow, stroke + cell * 0.22 * flash));
+      canvas.drawPath(head, rimLine(glow, cell * 0.22 * flash));
     }
     if (rim != null) {
-      final w = math.max(2.5, cell * 0.05);
+      final w = math.max(1.5, cell * 0.035);
       canvas.drawPath(body, line(rim, stroke + w * 2));
       canvas.drawPath(head, rimLine(rim, w * 2));
       canvas.drawPath(head, fill(rim));
@@ -210,20 +223,12 @@ class BoardPiecesPainter extends CustomPainter {
     if (isAmbulance) {
       // Red cross on the roof, between tail and head.
       final mid = layout.toPixels(track.pointAt((from + to) / 2));
-      final arm = stroke * 0.32;
-      final cross = line(style.ambulanceCross, stroke * 0.18)
+      final arm = cell * 0.13;
+      final cross = line(style.ambulanceCross, cell * 0.06)
         ..strokeCap = StrokeCap.butt;
       canvas
         ..drawLine(mid - Offset(arm, 0), mid + Offset(arm, 0), cross)
         ..drawLine(mid - Offset(0, arm), mid + Offset(0, arm), cross);
-    } else if (def.kind == PieceKind.truck) {
-      // Cab window just behind the arrow head.
-      final cab = layout.toPixels(track.pointAt(to - 0.28));
-      canvas.drawCircle(
-        cab,
-        stroke * 0.16,
-        fill(Colors.white.withValues(alpha: 0.85)),
-      );
     }
   }
 
@@ -400,8 +405,7 @@ class BoardPiecesPainter extends CustomPainter {
         rect = rect.expandToInclude(layout.cellRect(c));
       }
       final kind = switch (def.kind) {
-        PieceKind.car => 'Car',
-        PieceKind.truck => 'Truck, ${def.length} long,',
+        PieceKind.car || PieceKind.truck => 'Arrow',
         PieceKind.ambulance => 'Ambulance',
       };
       final x = level.xOf(def.head) + 1;

@@ -62,10 +62,16 @@ class SaveController extends Notifier<SaveData> {
   /// Completes pending writes (tests, app pause).
   Future<void> flush() => _writes;
 
-  int winLevel(int level, int stars) {
+  int winLevel(int level, int stars, {int rewardMultiplier = 1}) {
     var coins = 0;
     apply((s) {
-      final r = Economy.winLevel(s, level, stars, _now);
+      final r = Economy.winLevel(
+        s,
+        level,
+        stars,
+        _now,
+        rewardMultiplier: rewardMultiplier,
+      );
       coins = r.coins;
       return r.save;
     });

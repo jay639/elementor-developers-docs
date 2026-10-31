@@ -1,6 +1,7 @@
 import 'dir.dart';
 
-/// Vehicle types. Trucks and ambulances may span several cells.
+/// Vehicle types. Every kind may span several cells and bend; `car` is the
+/// plain arrow. `truck` is kept for older hand-made levels.
 enum PieceKind {
   car('c'),
   truck('t'),
@@ -114,20 +115,33 @@ class OneWayGate {
 }
 
 /// Generator/solver metadata stored with each level.
+/// How a level is presented and rewarded.
+enum LevelTier {
+  normal,
+  hard,
+  superHard;
+
+  /// Coin reward multiplier.
+  int get rewardMultiplier => index + 1;
+}
+
 class LevelMeta {
   const LevelMeta({
     this.shape = 'rect',
     this.seed = 0,
     this.difficulty = 0,
     this.breather = false,
+    this.tier = LevelTier.normal,
   });
 
-  LevelMeta copyWith({double? difficulty, bool? breather}) => LevelMeta(
-    shape: shape,
-    seed: seed,
-    difficulty: difficulty ?? this.difficulty,
-    breather: breather ?? this.breather,
-  );
+  LevelMeta copyWith({double? difficulty, bool? breather, LevelTier? tier}) =>
+      LevelMeta(
+        shape: shape,
+        seed: seed,
+        difficulty: difficulty ?? this.difficulty,
+        breather: breather ?? this.breather,
+        tier: tier ?? this.tier,
+      );
 
   final String shape;
   final int seed;
@@ -135,21 +149,25 @@ class LevelMeta {
   /// 0..100 difficulty score from the solver.
   final double difficulty;
   final bool breather;
+  final LevelTier tier;
 
   Map<String, Object> toJson() => {
     's': shape,
     'seed': seed,
     'df': difficulty,
     if (breather) 'b': 1,
+    if (tier != LevelTier.normal) 't': tier.index,
   };
 
   static LevelMeta fromJson(Object? json) {
     if (json is! Map) return const LevelMeta();
+    final t = json['t'] as int? ?? 0;
     return LevelMeta(
       shape: json['s'] as String? ?? 'rect',
       seed: json['seed'] as int? ?? 0,
       difficulty: (json['df'] as num?)?.toDouble() ?? 0,
       breather: json['b'] == 1,
+      tier: LevelTier.values[t.clamp(0, LevelTier.values.length - 1)],
     );
   }
 }
@@ -245,9 +263,6 @@ class Level {
 
     for (final p in pieces) {
       if (p.cells.isEmpty) throw const FormatException('Empty piece');
-      if (p.kind == PieceKind.car && p.length != 1) {
-        throw const FormatException('Cars occupy exactly one cell');
-      }
       for (var i = 0; i < p.length; i++) {
         claim(p.cells[i], 'Piece');
         if (i > 0) {

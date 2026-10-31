@@ -100,8 +100,7 @@ void main() {
           shape: shape,
           greed: 1 + seed % 6,
           fill: 0.5 + (seed % 4) * 0.1,
-          truckChance: m.trucks ? 0.3 : 0,
-          minTrucks: m.trucks ? 1 : 0,
+          maxLength: 2 + seed % 8,
           lights: m.lights,
           gates: m.gates,
           ambulance: m.ambulance,
@@ -134,14 +133,10 @@ void main() {
     });
 
     for (final (name, m) in [
-      ('trucks', const MechanicSet(trucks: true)),
       ('lights', const MechanicSet(lights: 2)),
       ('gates', const MechanicSet(gates: 2)),
       ('ambulance', const MechanicSet(ambulance: true)),
-      (
-        'everything',
-        const MechanicSet(trucks: true, lights: 2, gates: 2, ambulance: true),
-      ),
+      ('everything', const MechanicSet(lights: 2, gates: 2, ambulance: true)),
     ]) {
       test('$name levels are solvable and contain the mechanic', () {
         var produced = 0;
@@ -150,7 +145,6 @@ void main() {
           if (level == null) continue;
           produced++;
           expect(Solver(level).solve(), isNotNull, reason: 'seed $seed');
-          if (m.trucks) expect(level.hasTrucks, isTrue);
           if (m.ambulance) expect(level.hasAmbulance, isTrue);
         }
         expect(produced, greaterThan(40), reason: 'too many failed seeds');
@@ -223,8 +217,8 @@ v..
     });
 
     test('target curve rises and breathers dip', () {
-      expect(Campaign.targetDifficulty(1), lessThan(15));
-      expect(Campaign.targetDifficulty(1499), greaterThan(65));
+      expect(Campaign.targetDifficulty(1), lessThan(18));
+      expect(Campaign.targetDifficulty(1497), greaterThan(60));
       for (var n = 10; n <= 1500; n += 5) {
         expect(
           Campaign.targetDifficulty(n),
@@ -232,9 +226,11 @@ v..
           reason: 'L$n',
         );
       }
-      // Smooth: neighbours never jump much (ignoring breathers).
+      // Smooth: neighbours never jump much (ignoring breathers and tiers).
+      bool special(int n) =>
+          Campaign.isBreather(n) || Campaign.tierFor(n) != LevelTier.normal;
       for (var n = 2; n <= 1500; n++) {
-        if (Campaign.isBreather(n) || Campaign.isBreather(n - 1)) continue;
+        if (special(n) || special(n - 1)) continue;
         expect(
           (Campaign.targetDifficulty(n) - Campaign.targetDifficulty(n - 1))
               .abs(),
@@ -247,14 +243,14 @@ v..
       for (var n = 1; n <= 400; n++) {
         if (Campaign.handmade.containsKey(n)) continue;
         final m = Campaign.spec(n).mechanics;
-        if (n <= MechanicUnlocks.trucks) expect(m.trucks, isFalse);
-        if (n <= MechanicUnlocks.trafficLights) expect(m.lights, 0);
-        if (n <= MechanicUnlocks.gates) expect(m.gates, 0);
-        if (n <= MechanicUnlocks.ambulance) expect(m.ambulance, isFalse);
+        if (n < MechanicUnlocks.trafficLights) expect(m.lights, 0);
+        if (n < MechanicUnlocks.gates) expect(m.gates, 0);
+        if (n < MechanicUnlocks.ambulance) expect(m.ambulance, isFalse);
       }
+      // The unlock level itself shows the new mechanic.
       expect(
-        Campaign.spec(MechanicUnlocks.trucks + 1).mechanics.trucks,
-        isTrue,
+        Campaign.spec(MechanicUnlocks.trafficLights).mechanics.lights,
+        greaterThan(0),
       );
       expect(
         Campaign.spec(MechanicUnlocks.trafficLights + 2).mechanics.lights,
@@ -267,11 +263,46 @@ v..
       );
     });
 
-    test('handmade levels keep their layout but get campaign ids', () {
-      final l = Campaign.build(MechanicUnlocks.trucks);
-      expect(l.id, MechanicUnlocks.trucks);
-      expect(l.hasTrucks, isTrue);
-      expect(l.meta.breather, isTrue);
+    test('level 1 is the hand-made tutorial', () {
+      final l = Campaign.build(1);
+      expect(l.id, 1);
+      expect(l.pieces, tutorialLevel.pieces);
+    });
+
+    test('tiers: hard on 9s, super hard every 50th, from level 12', () {
+      expect(Campaign.tierFor(9), LevelTier.normal);
+      expect(Campaign.tierFor(19), LevelTier.hard);
+      expect(Campaign.tierFor(49), LevelTier.superHard);
+      expect(Campaign.tierFor(99), LevelTier.superHard);
+      expect(Campaign.tierFor(20), LevelTier.normal);
+      expect(
+        Campaign.targetDifficulty(29),
+        greaterThan(Campaign.targetDifficulty(28)),
+      );
+      expect(
+        Campaign.targetDifficulty(49),
+        greaterThan(Campaign.targetDifficulty(39)),
+      );
+      expect(Campaign.build(29).meta.tier, LevelTier.hard);
+      expect(LevelTier.superHard.rewardMultiplier, 3);
+    });
+
+    test('generated arrows are long and fill the board', () {
+      for (final n in [30, 300, 900]) {
+        final l = Campaign.build(n);
+        final cells = l.pieces.fold<int>(0, (a, p) => a + p.length);
+        expect(cells / l.pieces.length, greaterThan(2.2), reason: 'L$n');
+        expect(
+          cells / l.mask.where((m) => m).length,
+          greaterThan(0.6),
+          reason: 'L$n coverage',
+        );
+        for (final p in l.pieces) {
+          if (p.kind == PieceKind.car) {
+            expect(p.length, greaterThanOrEqualTo(2), reason: 'L$n');
+          }
+        }
+      }
     });
 
     test('build is deterministic and near target', () {
@@ -329,8 +360,8 @@ v..
         'here (bump DailyChallenge.version on purpose instead)', () {
       int hashOf(DateTime d) =>
           stableHash(jsonEncode(DailyChallenge.levelFor(d).toJson()));
-      expect(hashOf(DateTime(2026, 10, 29)), 559591586);
-      expect(hashOf(DateTime(2027, 3, 14)), 1981154516);
+      expect(hashOf(DateTime(2026, 10, 29)), 1862035536);
+      expect(hashOf(DateTime(2027, 3, 14)), 2762414564);
     });
 
     test('keys', () {

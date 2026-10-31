@@ -84,18 +84,25 @@ void main() {
       );
     });
 
-    test('rejects multi-cell cars', () {
-      expect(
-        () => Level(
-          id: 1,
-          width: 2,
-          height: 1,
-          pieces: [
-            PieceDef(kind: PieceKind.car, dir: Dir.up, cells: [0, 1]),
-          ],
-        ),
-        throwsFormatException,
+    test('arrows may span several cells', () {
+      final level = Level(
+        id: 1,
+        width: 2,
+        height: 1,
+        pieces: [
+          PieceDef(kind: PieceKind.car, dir: Dir.right, cells: [1, 0]),
+        ],
       );
+      expect(level.pieces.single.length, 2);
+    });
+
+    test('tier round trips through json', () {
+      final level = parseAsciiLevel(
+        '>.',
+        meta: const LevelMeta(tier: LevelTier.superHard),
+      );
+      expect(Level.fromJson(level.toJson()).meta.tier, LevelTier.superHard);
+      expect(parseAsciiLevel('>.').toJson().toString(), isNot(contains("'t'")));
     });
 
     test('rejects lights on vehicles', () {

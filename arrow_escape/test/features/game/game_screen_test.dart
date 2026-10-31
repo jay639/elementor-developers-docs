@@ -146,4 +146,28 @@ void main() {
     expect(hearts(tester).hearts, 3);
     await settle(tester);
   });
+
+  testWidgets('hard levels announce themselves and pay double', (tester) async {
+    final hard = parseAsciiLevel(
+      '>.^',
+      meta: const LevelMeta(tier: LevelTier.hard),
+    );
+    await pumpApp(tester, levels: [hard]);
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(Navigator).first),
+    );
+    container.read(routerProvider).go(Routes.game(1));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byKey(const Key('tier-intro')), findsOneWidget);
+    expect(find.text('Hard level · 2× coins'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.byKey(const Key('tier-intro')), findsNothing);
+
+    await tapPiece(tester, hard, 1);
+    await settle(tester);
+    await tapPiece(tester, hard, 0);
+    await settle(tester);
+    expect(find.text('+50'), findsOneWidget);
+  });
 }

@@ -83,6 +83,11 @@ class _GameViewState extends ConsumerState<_GameView> {
   Timer? _resultTimer;
   bool _showResult = false;
 
+  /// Hard / Super Hard announcement, shown for a moment at start.
+  Timer? _introTimer;
+  bool _introChecked = false;
+  bool _showTierIntro = false;
+
   @override
   void initState() {
     super.initState();
@@ -90,7 +95,21 @@ class _GameViewState extends ConsumerState<_GameView> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_introChecked) return;
+    _introChecked = true;
+    final level = ref.read(gameControllerProvider(widget.levelRef)).level;
+    if (level.meta.tier == LevelTier.normal || widget.levelRef.isDaily) return;
+    _showTierIntro = true;
+    _introTimer = Timer(const Duration(milliseconds: 1600), () {
+      if (mounted) setState(() => _showTierIntro = false);
+    });
+  }
+
+  @override
   void dispose() {
+    _introTimer?.cancel();
     _resultTimer?.cancel();
     super.dispose();
   }
@@ -194,6 +213,7 @@ class _GameViewState extends ConsumerState<_GameView> {
                 ),
               ],
             ),
+            if (_showTierIntro) _TierIntro(tier: state.level.meta.tier),
             if (_showResult && state.status == SessionStatus.won)
               Positioned.fill(
                 child: ResultOverlay.win(
@@ -229,7 +249,8 @@ class _GameViewState extends ConsumerState<_GameView> {
   }
 }
 
-/// One-line explainer when a level contains a special mechanic.
+/// Tier strip for Hard / Super Hard levels, else a one-line reminder of
+/// the level's special mechanic.
 class _MechanicBanner extends StatelessWidget {
   const _MechanicBanner({required this.state});
 
@@ -238,43 +259,150 @@ class _MechanicBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final level = state.level;
+    final scheme = Theme.of(context).colorScheme;
+    final tier = level.meta.tier;
+    if (tier != LevelTier.normal && !state.levelRef.isDaily) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+        child: _Strip(
+          key: const Key('tier-banner'),
+          icon: Icons.local_fire_department_rounded,
+          text: '${TierLabel.of(tier)} level · ${tier.rewardMultiplier}× coins',
+          background: TierLabel.color(tier, scheme),
+          foreground: Colors.white,
+        ),
+      );
+    }
     final String? text;
     if (level.hasAmbulance) {
-      text = 'Ambulance first! Only cars in its lane may move before it.';
+      text = 'Ambulance first! Only arrows in its lane may move before it.';
     } else if (level.gates.isNotEmpty) {
-      text = 'One-way gates turn traffic in the arrow\'s direction.';
+      text = 'One-way gates turn arrows in the gate\'s direction.';
     } else if (level.lights.isNotEmpty) {
-      text = 'Lights switch every time a car leaves. Red means wait.';
-    } else if (level.pieces.any((p) => p.kind == PieceKind.truck)) {
-      text = 'Trucks follow their cab. Only the front needs a clear road.';
+      text = 'Lights switch every time an arrow leaves. Red means wait.';
     } else {
       text = null;
     }
     if (text == null) return const SizedBox(height: 8);
-    final scheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: scheme.secondaryContainer,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Row(
-            children: [
-              Icon(Icons.lightbulb_rounded, color: scheme.onSecondaryContainer),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  text,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSecondaryContainer,
-                    fontWeight: FontWeight.w600,
-                  ),
+      child: _Strip(
+        icon: Icons.lightbulb_rounded,
+        text: text,
+        background: scheme.secondaryContainer,
+        foreground: scheme.onSecondaryContainer,
+      ),
+    );
+  }
+}
+
+class _Strip extends StatelessWidget {
+  const _Strip({
+    super.key,
+    required this.icon,
+    required this.text,
+    required this.background,
+    required this.foreground,
+  });
+
+  final IconData icon;
+  final String text;
+  final Color background;
+  final Color foreground;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
+          children: [
+            Icon(icon, color: foreground),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                text,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: foreground,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Names and colours for difficulty tiers.
+abstract final class TierLabel {
+  static String of(LevelTier tier) => switch (tier) {
+    LevelTier.normal => 'Normal',
+    LevelTier.hard => 'Hard',
+    LevelTier.superHard => 'Super hard',
+  };
+
+  static Color color(LevelTier tier, ColorScheme scheme) => switch (tier) {
+    LevelTier.normal => scheme.primary,
+    LevelTier.hard => const Color(0xFFE0663A),
+    LevelTier.superHard => const Color(0xFFB2316B),
+  };
+}
+
+/// Card that announces a Hard / Super Hard level for a moment at start.
+class _TierIntro extends StatelessWidget {
+  const _TierIntro({required this.tier});
+
+  final LevelTier tier;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return IgnorePointer(
+      child: Center(
+        child: TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.6, end: 1),
+          duration: const Duration(milliseconds: 450),
+          curve: Curves.easeOutBack,
+          builder: (context, v, child) =>
+              Transform.scale(scale: v, child: child),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: TierLabel.color(tier, theme.colorScheme),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.local_fire_department_rounded,
+                    color: Colors.white,
+                    size: 44,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${TierLabel.of(tier)} level',
+                    key: const Key('tier-intro'),
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
+                  Text(
+                    '${tier.rewardMultiplier}× coins for the first clear',
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

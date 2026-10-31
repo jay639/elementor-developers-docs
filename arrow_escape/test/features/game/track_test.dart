@@ -82,6 +82,19 @@ void main() {
       expect(layout.pieceAt(layout.centerOf(5), all), isNull);
     });
 
+    test('on small cells the tap radius is at least 22 logical pixels', () {
+      final big = parseAsciiLevel('>${'.' * 19}');
+      final layout = BoardLayout(big, const Size(200, 100), padding: 0);
+      expect(layout.cell, 10);
+      bool all(int _) => true;
+      // 2 cells (20px) right of the arrow, on empty board: still a hit.
+      expect(layout.pieceAt(layout.centerOf(0) + const Offset(20, 0), all), 0);
+      expect(
+        layout.pieceAt(layout.centerOf(0) + const Offset(30, 0), all),
+        isNull,
+      );
+    });
+
     test('vehicles that left cannot be hit', () {
       final layout = BoardLayout(level, const Size(400, 300), padding: 0);
       expect(layout.pieceAt(layout.centerOf(0), (p) => p != 0), isNull);

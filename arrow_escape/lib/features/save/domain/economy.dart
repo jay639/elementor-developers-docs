@@ -37,10 +37,20 @@ abstract final class Economy {
     return s.copyWith(streak: streak, lastWinDay: today);
   }
 
-  static WinResult winLevel(SaveData s, int level, int stars, DateTime now) {
+  /// [rewardMultiplier] is 2 for Hard and 3 for Super Hard levels; it
+  /// applies to the first clear only.
+  static WinResult winLevel(
+    SaveData s,
+    int level,
+    int stars,
+    DateTime now, {
+    int rewardMultiplier = 1,
+  }) {
     final p = s.progress;
     final first = p.starsFor(level) == 0;
-    final coins = levelCoins(firstClear: first, stars: stars);
+    final coins =
+        levelCoins(firstClear: first, stars: stars) *
+        (first ? rewardMultiplier : 1);
     final best = stars > p.starsFor(level) ? stars : p.starsFor(level);
     final next = s.copyWith(
       coins: s.coins + coins,

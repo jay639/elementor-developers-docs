@@ -2,7 +2,7 @@
   "version": 1,
   "count": 1500,
   "packSize": 100,
-  "seed": 10973237,
+  "seed": 10973238,
   "packs": [
     "pack_01.json.gz",
     "pack_02.json.gz",

@@ -27,11 +27,11 @@ void main() {
     final handle = tester.ensureSemantics();
     await open(tester, Routes.game(1));
     expect(
-      find.semantics.byLabel('Car facing right, row 1, column 1'),
+      find.semantics.byLabel('Arrow facing right, row 1, column 1'),
       findsOneWidget,
     );
     expect(
-      find.semantics.byLabel('Car facing up, row 1, column 3'),
+      find.semantics.byLabel('Arrow facing up, row 1, column 3'),
       findsOneWidget,
     );
     expect(find.semantics.byLabel('Traffic light, red'), findsOneWidget);
@@ -42,11 +42,11 @@ void main() {
     final handle = tester.ensureSemantics();
     await open(tester, Routes.game(1));
     tester.semantics.tap(
-      find.semantics.byLabel('Car facing up, row 1, column 3'),
+      find.semantics.byLabel('Arrow facing up, row 1, column 3'),
     );
     await settle(tester);
     expect(
-      find.semantics.byLabel('Car facing up, row 1, column 3'),
+      find.semantics.byLabel('Arrow facing up, row 1, column 3'),
       findsNothing,
       reason: 'it drove away',
     );
@@ -62,11 +62,11 @@ void main() {
     await tester.tap(find.byKey(const Key('paths')));
     await tester.pumpAndSettle();
     expect(
-      find.semantics.byLabel('Car facing right, row 1, column 1, blocked'),
+      find.semantics.byLabel('Arrow facing right, row 1, column 1, blocked'),
       findsOneWidget,
     );
     expect(
-      find.semantics.byLabel('Car facing up, row 1, column 3, road clear'),
+      find.semantics.byLabel('Arrow facing up, row 1, column 3, road clear'),
       findsOneWidget,
     );
     handle.dispose();

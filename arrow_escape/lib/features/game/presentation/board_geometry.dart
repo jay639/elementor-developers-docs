@@ -24,8 +24,12 @@ class BoardLayout {
   /// Cells never get bigger than this, so small boards don't look bloated.
   static const maxCell = 76.0;
 
-  /// Taps this close (in cells) to a vehicle still select it.
+  /// Taps this close (in cells) to a vehicle still select it…
   static const tapTolerance = 0.75;
+
+  /// …or this close in logical pixels, whichever is larger, so thin arrows
+  /// on dense boards stay easy to hit.
+  static const minTapRadius = 22.0;
 
   final Level level;
   final double cell;
@@ -62,7 +66,7 @@ class BoardLayout {
   int? pieceAt(Offset position, bool Function(int piece) isOnBoard) {
     final units = (position - origin) / cell;
     int? best;
-    var bestDist = tapTolerance;
+    var bestDist = math.max(tapTolerance, minTapRadius / cell);
     final pieces = level.pieces;
     for (var i = 0; i < pieces.length; i++) {
       if (!isOnBoard(i)) continue;

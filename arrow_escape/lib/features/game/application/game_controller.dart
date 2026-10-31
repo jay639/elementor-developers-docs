@@ -59,7 +59,11 @@ class GameController extends Notifier<GameViewState> {
         final save = ref.read(saveProvider.notifier);
         final stars = result.session.stars;
         final coins = switch (levelRef) {
-          CampaignLevelRef(:final number) => save.winLevel(number, stars),
+          CampaignLevelRef(:final number) => save.winLevel(
+            number,
+            stars,
+            rewardMultiplier: state.level.meta.tier.rewardMultiplier,
+          ),
           DailyLevelRef(:final dateKey) => save.winDaily(dateKey, stars),
         };
         state = state.copyWith(coinsEarned: coins);

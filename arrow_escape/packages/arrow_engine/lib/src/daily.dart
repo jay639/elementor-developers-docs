@@ -8,7 +8,7 @@ import 'shapes.dart';
 abstract final class DailyChallenge {
   /// Part of the seed. Bump when generator changes would alter past dailies
   /// anyway, so the change is deliberate.
-  static const version = 1;
+  static const version = 2;
 
   /// Easier early in the week, hardest on Sunday.
   static const weekdayTargets = {
@@ -52,7 +52,6 @@ abstract final class DailyChallenge {
     ];
     final shape = rng.pick(shapes);
     final mechanics = MechanicSet(
-      trucks: rng.nextBool(0.7),
       lights: rng.nextBool(0.4) ? 1 + rng.nextInt(2) : 0,
       gates: rng.nextBool(0.35) ? 1 + rng.nextInt(2) : 0,
       ambulance: rng.nextBool(0.25),
@@ -64,8 +63,8 @@ abstract final class DailyChallenge {
         target: targetFor(day),
         seed: seed + attempt * 7919,
         // Fall back to fewer constraints if a combination is too tight.
-        shape: attempt < 3 ? shape : ShapeMask.rect(7, 9),
-        mechanics: attempt < 4 ? mechanics : const MechanicSet(trucks: true),
+        shape: attempt < 3 ? shape : ShapeMask.rect(9, 11),
+        mechanics: attempt < 4 ? mechanics : const MechanicSet(),
         candidates: 10,
       );
       if (level != null) return level;

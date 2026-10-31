@@ -19,6 +19,13 @@ void main() {
       expect(r.save.coins, 27);
     });
 
+    test('hard tiers multiply the first clear only', () {
+      var r = Economy.winLevel(empty, 19, 3, day1, rewardMultiplier: 2);
+      expect(r.coins, 50);
+      r = Economy.winLevel(r.save, 19, 3, day1, rewardMultiplier: 2);
+      expect(r.coins, 2);
+    });
+
     test('replaying an old level does not move the unlock back', () {
       final s = empty.copyWith.progress(unlocked: 50);
       expect(Economy.winLevel(s, 3, 2, day1).save.progress.unlocked, 50);

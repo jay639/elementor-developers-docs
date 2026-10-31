@@ -10,38 +10,39 @@ import 'shapes.dart';
 
 /// Which special mechanics a generated level must contain.
 class MechanicSet {
-  const MechanicSet({
-    this.trucks = false,
-    this.lights = 0,
-    this.gates = 0,
-    this.ambulance = false,
-    this.maxTruckLength = 3,
-  });
+  const MechanicSet({this.lights = 0, this.gates = 0, this.ambulance = false});
 
-  final bool trucks;
   final int lights;
   final int gates;
   final bool ambulance;
-  final int maxTruckLength;
+
+  bool get isEmpty => lights == 0 && gates == 0 && !ambulance;
 
   /// Rough difficulty the mechanics add on their own (see
   /// [scoreDifficulty]); subtracted when sizing the board.
   double get expectedBonus =>
-      (trucks ? 2.5 : 0) +
       3.0 * math.min(lights, 3) +
       2.5 * math.min(gates, 3) +
       (ambulance ? 5 : 0);
 
   bool satisfiedBy(Level level) =>
-      (!trucks || level.hasTrucks) &&
       level.lights.length >= lights &&
       level.gates.length >= gates &&
       (!ambulance || level.hasAmbulance);
 
   @override
-  String toString() =>
-      'trucks=$trucks lights=$lights gates=$gates ambulance=$ambulance';
+  String toString() => 'lights=$lights gates=$gates ambulance=$ambulance';
 }
+
+/// Board and arrow parameters for a given search `scale` (roughly the
+/// difficulty the board itself must provide). Plain arithmetic only: the
+/// daily challenge must be bit-identical on every platform.
+({int cells, int greed, double fill, int maxLength}) _shapeFor(double s) => (
+  cells: (10 + s * 2.2).round(),
+  greed: (1 + s / 10).round().clamp(1, 12),
+  fill: (0.62 + s / 400).clamp(0.6, 0.9),
+  maxLength: (3 + s / 7).round().clamp(3, 16),
+);
 
 /// Generates candidates of varying size and density and keeps the one
 /// whose solver-measured difficulty is closest to [target].
@@ -52,33 +53,34 @@ Level? generateForTarget({
   required ShapeMask shape,
   MechanicSet mechanics = const MechanicSet(),
   bool breather = false,
+  LevelTier tier = LevelTier.normal,
   int candidates = 10,
 }) {
   final rng = Rng(seed);
-  // `scale` drives board size and density together. It starts from a
-  // calibrated guess and is corrected after every candidate, so the search
-  // homes in on the target instead of sampling blindly.
+  // `scale` drives board size, density and arrow length together. It starts
+  // from a calibrated guess and is corrected after every candidate, so the
+  // search homes in on the target instead of sampling blindly.
   var scale = math.max(3.0, target - mechanics.expectedBonus);
-  final minCells = Shapes.isLetter(shape) ? 40 : 0;
+  final minCells = Shapes.isLetter(shape) ? 60 : 0;
   Level? best;
   var bestError = double.infinity;
   for (var i = 0; i < candidates; i++) {
     final jitter = 0.92 + 0.16 * rng.nextDouble();
-    final s = scale * jitter;
-    final cells = (8 + s * 1.05).round();
-    final greed = (1 + s / 12).round().clamp(1, 10);
-    final fill = (0.5 + s / 300).clamp(0.45, 0.88);
-    final fitted = shape.fitTo(math.max(cells, minCells));
+    final p = _shapeFor(scale * jitter);
+    final fitted = shape.fitTo(
+      math.max(p.cells, minCells),
+      maxWidth: 16,
+      maxHeight: 22,
+    );
     final level = LevelGenerator.generate(
       GeneratorConfig(
         seed: rng.nextUint32(),
         shape: fitted,
         id: id,
-        fill: fill,
-        greed: greed,
-        truckChance: mechanics.trucks ? 0.3 : 0,
-        minTrucks: mechanics.trucks ? 1 : 0,
-        maxTruckLength: mechanics.maxTruckLength,
+        fill: p.fill,
+        greed: p.greed,
+        minLength: 2,
+        maxLength: p.maxLength,
         lights: mechanics.lights,
         gates: mechanics.gates,
         ambulance: mechanics.ambulance,
@@ -94,14 +96,13 @@ Level? generateForTarget({
         meta: level.meta.copyWith(
           difficulty: double.parse(stats.difficulty.toStringAsFixed(1)),
           breather: breather,
+          tier: tier,
         ),
       );
       if (error < 1.5) break;
     }
-    // Plain arithmetic only (no pow/log): dailies must be bit-identical on
-    // every platform.
     final ratio = target / math.max(1.0, stats.difficulty);
-    scale = (scale * ratio * ratio).clamp(2.0, 140.0);
+    scale = (scale * ratio * ratio).clamp(2.0, 320.0);
   }
   return best;
 }
@@ -112,6 +113,7 @@ class LevelSpec {
     required this.number,
     required this.target,
     required this.breather,
+    required this.tier,
     required this.shape,
     required this.mechanics,
     required this.seed,
@@ -120,18 +122,19 @@ class LevelSpec {
   final int number;
   final double target;
   final bool breather;
+  final LevelTier tier;
   final ShapeMask shape;
   final MechanicSet mechanics;
   final int seed;
 }
 
-/// The 1500-level campaign: difficulty curve, breathers, mechanic unlocks.
+/// The 1500-level campaign: difficulty curve, tiers, breathers, unlocks.
 abstract final class Campaign {
   static const levelCount = 1500;
   static const packSize = 100;
 
   /// Bump to regenerate the whole campaign with a new seed.
-  static const seed = 0xA77035;
+  static const seed = 0xA77036;
 
   static int get packCount => (levelCount + packSize - 1) ~/ packSize;
   static int packOf(int level) => (level - 1) ~/ packSize + 1;
@@ -141,39 +144,45 @@ abstract final class Campaign {
   /// Every 5th level is noticeably easier.
   static bool isBreather(int n) => n % 5 == 0;
 
-  /// Hand-made levels: the tutorial, and the first level of each mechanic.
-  static final Map<int, Level> handmade = {
-    1: sampleLevels[0],
-    2: sampleLevels[1],
-    3: sampleLevels[2],
-    MechanicUnlocks.trucks: sampleLevels[3],
-    MechanicUnlocks.trafficLights: sampleLevels[4],
-    MechanicUnlocks.gates: sampleLevels[5],
-    MechanicUnlocks.ambulance: sampleLevels[6],
-  };
+  /// Levels ending in 9 are Hard and every 50th (49, 99, …) Super Hard,
+  /// each followed by a breather. Tiers start once the basics are learned.
+  static LevelTier tierFor(int n) {
+    if (n < 12) return LevelTier.normal;
+    if (n % 50 == 49) return LevelTier.superHard;
+    if (n % 10 == 9) return LevelTier.hard;
+    return LevelTier.normal;
+  }
 
-  /// Smooth rising curve (fast early growth that levels off), a gentle
-  /// wave for variety, and a dip on breather levels. Only used by the
-  /// offline tool, so platform `exp`/`sin` are fine here.
+  /// Only the tutorial is hand-made; every mechanic is introduced by
+  /// generated levels so the art style stays consistent.
+  static final Map<int, Level> handmade = {1: tutorialLevel};
+
+  /// Steep early rise that levels off, a gentle wave for variety, tier
+  /// spikes and breather dips. Only used by the offline tool, so platform
+  /// `exp`/`sin` are fine here.
   static double targetDifficulty(int n) {
-    final rise = 1 - math.exp(-(n - 1) / 520);
-    final base = 10 + 68 * rise + 2.5 * math.sin(n * 0.9);
-    return isBreather(n) ? math.max(6, base * 0.6) : base;
+    final rise = 1 - math.exp(-(n - 1) / 240);
+    final base = 14 + 54 * rise + 2.0 * math.sin(n * 0.9);
+    if (isBreather(n)) return math.max(8, base * 0.65);
+    return switch (tierFor(n)) {
+      LevelTier.normal => base,
+      LevelTier.hard => math.min(86, base * 1.2 + 4),
+      LevelTier.superHard => math.min(92, base * 1.3 + 8),
+    };
   }
 
   static LevelSpec spec(int n) {
     final rng = Rng(seed ^ stableHash('campaign-$n'));
     final breather = isBreather(n);
 
-    // A new mechanic shows up in every one of the few levels right after
-    // its hand-made introduction, then in a share of later levels.
+    // A new mechanic is in its unlock level and the 4 after it (gently),
+    // then in a share of later levels.
     bool use(int unlock, double chance) {
-      if (n <= unlock) return false;
+      if (n < unlock) return false;
       if (n <= unlock + 4) return true;
       return rng.nextBool(breather ? chance / 2 : chance);
     }
 
-    final trucks = use(MechanicUnlocks.trucks, 0.55);
     final lights = use(MechanicUnlocks.trafficLights, 0.3)
         ? 1 + (n > 250 ? 1 : 0) + (n > 700 ? 1 : 0)
         : 0;
@@ -182,23 +191,27 @@ abstract final class Campaign {
         : 0;
     final ambulance = use(MechanicUnlocks.ambulance, 0.15);
 
-    final target = targetDifficulty(n);
-    // Letters need ~40 cells to read, too big for easy levels.
+    // The unlock level itself is an easy showcase of the new mechanic.
+    final isIntro =
+        n == MechanicUnlocks.trafficLights ||
+        n == MechanicUnlocks.gates ||
+        n == MechanicUnlocks.ambulance;
+    final target = isIntro ? targetDifficulty(n) * 0.6 : targetDifficulty(n);
+    // Letters need ~60 cells to read, too big for easy levels.
     final pool = [
       for (final s in Shapes.all)
-        if (!Shapes.isLetter(s) || target >= 32) s,
+        if (!Shapes.isLetter(s) || target >= 35) s,
     ];
     return LevelSpec(
       number: n,
       target: target,
       breather: breather,
+      tier: tierFor(n),
       shape: rng.pick(pool),
       mechanics: MechanicSet(
-        trucks: trucks,
         lights: lights,
         gates: gates,
         ambulance: ambulance,
-        maxTruckLength: n > 300 ? 4 : 3,
       ),
       seed: rng.nextUint32(),
     );
@@ -216,6 +229,7 @@ abstract final class Campaign {
             analyzeLevel(made)!.difficulty.toStringAsFixed(1),
           ),
           breather: isBreather(n),
+          tier: tierFor(n),
         ),
       );
     }
@@ -226,12 +240,11 @@ abstract final class Campaign {
         id: n,
         target: s.target,
         seed: s.seed + attempt * 7919,
-        shape: attempt < 3 ? s.shape : ShapeMask.rect(6, 8),
-        // Last resort: keep only trucks rather than fail the build.
-        mechanics: attempt < 6
-            ? s.mechanics
-            : MechanicSet(trucks: s.mechanics.trucks),
+        shape: attempt < 3 ? s.shape : ShapeMask.rect(8, 10),
+        // Last resort: drop the mechanics rather than fail the build.
+        mechanics: attempt < 6 ? s.mechanics : const MechanicSet(),
         breather: s.breather,
+        tier: s.tier,
       );
       if (level != null) return level;
     }
