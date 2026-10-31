@@ -334,7 +334,11 @@ class LevelGenerator {
           if (c < 0 || !_isFree(c) || _gateAt[c] != null) continue;
           if (_lastCover[c] >= i || ahead.contains(c)) continue;
           if (p.cells.contains(c)) continue;
-          final next = PieceDef(kind: p.kind, dir: p.dir, cells: [...p.cells, c]);
+          final next = PieceDef(
+            kind: p.kind,
+            dir: p.dir,
+            cells: [...p.cells, c],
+          );
           _placed[i] = next;
           _occupant[c] = i;
           _blocked.addAll(_pathPieces[c]);
@@ -363,11 +367,7 @@ class LevelGenerator {
           ? _rng.pick(hot)
           : _rng.pick(maskCells);
       if (!_isFree(head)) continue;
-      final piece = _candidateAt(
-        head,
-        maxLength: config.maxLength,
-        minRoad: 2,
-      );
+      final piece = _candidateAt(head, maxLength: config.maxLength, minRoad: 2);
       if (piece == null) continue;
       valid++;
       // Above all, block arrows that would otherwise start free: every

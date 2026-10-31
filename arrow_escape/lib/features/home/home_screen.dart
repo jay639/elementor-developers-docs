@@ -31,6 +31,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _starsKey = GlobalKey();
   final _coinsKey = GlobalKey();
   final _collectionKey = GlobalKey();
+  final _dailyKey = GlobalKey();
+  final _cityKey = GlobalKey();
+  final _shopKey = GlobalKey();
 
   void _endTour(bool finished) {
     ref.read(saveProvider.notifier).markSeen(Tips.homeTour);
@@ -216,6 +219,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Row(
                       children: [
                         Expanded(
+                          key: _dailyKey,
                           child: _HomeTile(
                             key: const Key('daily'),
                             icon: dailyDone
@@ -250,6 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Row(
                       children: [
                         Expanded(
+                          key: _cityKey,
                           child: _HomeTile(
                             key: const Key('map'),
                             icon: Icons.location_city_rounded,
@@ -261,6 +266,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         ),
                         const SizedBox(width: 12),
                         Expanded(
+                          key: _shopKey,
                           child: _HomeTile(
                             key: const Key('shop'),
                             icon: Icons.storefront_rounded,

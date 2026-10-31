@@ -21,7 +21,7 @@ class SkinsTab extends ConsumerWidget {
         maxCrossAxisExtent: 220,
         mainAxisSpacing: 14,
         crossAxisSpacing: 14,
-        mainAxisExtent: 330,
+        mainAxisExtent: 310,
       ),
       itemCount: Skins.all.length,
       itemBuilder: (context, i) {

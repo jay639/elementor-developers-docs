@@ -71,27 +71,79 @@ void paintArrow(
             ..strokeWidth = stroke * 0.35,
         );
     case SkinEffect.metallic:
+      // The top skin: a warm golden halo, a dark bronze rim, a polished
+      // gradient with repeating highlights, a bright specular core and a
+      // sparkle at the tip.
       final bounds = body.getBounds().expandToInclude(head.getBounds());
+      final span = Offset(stroke * 9, stroke * 9);
       final shader = ui.Gradient.linear(
         bounds.topLeft,
-        bounds.bottomRight,
+        bounds.topLeft + span,
         const [
-          Color(0xFF8A5A00),
-          Color(0xFFFFE9A6),
-          Color(0xFFC8901E),
-          Color(0xFFFFF4C8),
-          Color(0xFF9C6A08),
+          Color(0xFF7A4A00),
+          Color(0xFFFFD86B),
+          Color(0xFFB8780A),
+          Color(0xFFFFF3C4),
+          Color(0xFFE0A21E),
+          Color(0xFF8A5600),
         ],
-        const [0, 0.3, 0.5, 0.7, 1],
+        const [0, 0.22, 0.42, 0.6, 0.8, 1],
+        TileMode.mirror,
       );
+      final halo = Paint()
+        ..color = const Color(0xFFFFC233).withValues(alpha: 0.5)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, stroke * 1.3);
+      final rim = const Color(0xFF4A2C00);
       canvas
+        ..drawPath(
+          body,
+          line()
+            ..color = halo.color
+            ..maskFilter = halo.maskFilter
+            ..strokeWidth = stroke * 2.4,
+        )
+        ..drawPath(head, halo)
+        ..drawPath(
+          body,
+          line()
+            ..color = rim
+            ..strokeWidth = stroke + 2,
+        )
+        ..drawPath(
+          head,
+          Paint()
+            ..color = rim
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2
+            ..strokeJoin = StrokeJoin.round,
+        )
         ..drawPath(body, line()..shader = shader)
         ..drawPath(head, Paint()..shader = shader)
         ..drawPath(
           body,
           line()
-            ..color = Colors.white.withValues(alpha: 0.45)
-            ..strokeWidth = stroke * 0.3,
+            ..color = Colors.white.withValues(alpha: 0.7)
+            ..strokeWidth = stroke * 0.28,
         );
+      _sparkle(canvas, tip, stroke * 1.6);
   }
+}
+
+/// A small four-pointed glint.
+void _sparkle(Canvas canvas, Offset c, double r) {
+  final p = Path()
+    ..moveTo(c.dx, c.dy - r)
+    ..quadraticBezierTo(c.dx, c.dy, c.dx + r, c.dy)
+    ..quadraticBezierTo(c.dx, c.dy, c.dx, c.dy + r)
+    ..quadraticBezierTo(c.dx, c.dy, c.dx - r, c.dy)
+    ..quadraticBezierTo(c.dx, c.dy, c.dx, c.dy - r)
+    ..close();
+  canvas
+    ..drawPath(
+      p,
+      Paint()
+        ..color = const Color(0xFFFFF6D5)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, r * 0.15),
+    )
+    ..drawCircle(c, r * 0.18, Paint()..color = Colors.white);
 }

@@ -150,9 +150,9 @@ abstract final class Skins {
       name: 'Gold',
       price: 2500,
       effect: SkinEffect.metallic,
-      tagline: 'Polished solid gold',
-      light: [Color(0xFFC8901E)],
-      dark: [Color(0xFFE0B341)],
+      tagline: 'Solid gold, our finest',
+      light: [Color(0xFFD99A1C)],
+      dark: [Color(0xFFFFC94D)],
     ),
   ];
 

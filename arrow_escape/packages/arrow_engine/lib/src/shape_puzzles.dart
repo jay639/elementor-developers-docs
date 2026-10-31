@@ -71,46 +71,58 @@ abstract final class ShapePuzzles {
   static String key(String id, int layer) => '$id/$layer';
 
   /// All layers of [shape], each strictly harder than the one before.
+  /// Generates a pool of boards across a range of targets and sizes, then
+  /// takes the easiest, the middle and the hardest; this works even for
+  /// small pictures whose difficulty can't be steered precisely.
   static List<Level> buildLayers(PuzzleShape shape) {
-    final layers = <Level>[];
-    var floor = 0.0;
-    for (var layer = 1; layer <= PuzzleShape.layerCount; layer++) {
-      final level = _build(shape, layer, floor);
-      layers.add(level);
-      floor = level.meta.difficulty;
-    }
-    return layers;
-  }
-
-  static Level _build(PuzzleShape shape, int layer, double floor) {
-    final rng = Rng(seed ^ stableHash(key(shape.id, layer)));
+    final rng = Rng(seed ^ stableHash(shape.id));
     final mask = shape.mask;
-    Level? fallback;
-    for (var attempt = 0; attempt < 24; attempt++) {
+    final pool = <Level>[];
+    for (var i = 0; i < 9; i++) {
+      final layer = 1 + i % PuzzleShape.layerCount;
       final level = generateForTarget(
         id: 0,
-        // Aim higher after a too-easy attempt.
-        target: math.min(99.0, shape.targetFor(layer) + attempt * 2),
+        target: math.min(99.0, shape.targetFor(layer) + (i ~/ 3) * 3),
         seed: rng.nextUint32(),
         shape: mask,
-        // Layers grow bigger rather than only denser.
-        minCells: 110 + layer * 50,
-        tier: switch (layer) {
-          1 => LevelTier.normal,
-          2 => LevelTier.hard,
-          _ => LevelTier.superHard,
-        },
+        minCells: 100 + layer * 50,
       );
       // The mask's name, puzzle_<id>, is the level's shape.
-      if (level == null) continue;
-      if (level.meta.difficulty > floor + 2) return level;
-      if (fallback == null ||
-          level.meta.difficulty > fallback.meta.difficulty) {
-        fallback = level;
-      }
+      if (level != null) pool.add(level);
     }
-    if (fallback != null && fallback.meta.difficulty > floor) return fallback;
-    throw StateError('Could not generate puzzle ${key(shape.id, layer)}');
+    pool.sort((a, b) => a.meta.difficulty.compareTo(b.meta.difficulty));
+    final picks = <Level>[];
+    for (final want in [0, pool.length ~/ 2, pool.length - 1]) {
+      if (want < 0 || want >= pool.length) break;
+      // Next strictly harder board at or after the wanted rank.
+      final next = pool
+          .skip(want)
+          .firstWhere(
+            (l) =>
+                picks.isEmpty || l.meta.difficulty > picks.last.meta.difficulty,
+            orElse: () => pool.last,
+          );
+      if (picks.isNotEmpty &&
+          next.meta.difficulty <= picks.last.meta.difficulty) {
+        break;
+      }
+      picks.add(next);
+    }
+    if (picks.length < PuzzleShape.layerCount) {
+      throw StateError('Could not generate layers for ${shape.id}');
+    }
+    return [
+      for (var i = 0; i < picks.length; i++)
+        picks[i].copyWith(
+          meta: picks[i].meta.copyWith(
+            tier: switch (i) {
+              0 => LevelTier.normal,
+              1 => LevelTier.hard,
+              _ => LevelTier.superHard,
+            },
+          ),
+        ),
+    ];
   }
 
   /// `{"mountain/1": level, …}` as JSON.
@@ -119,16 +131,37 @@ abstract final class ShapePuzzles {
 
   static Map<String, Level> decode(String json) => {
     for (final e in (jsonDecode(json) as Map).entries)
-      e.key as String: Level.fromJson(
-        (e.value as Map).cast<String, Object?>(),
-      ),
+      e.key as String: Level.fromJson((e.value as Map).cast<String, Object?>()),
   };
 
   static final all = <PuzzleShape>[
     PuzzleShape(
+      id: 'ladybug',
+      name: 'Ladybug',
+      starsToUnlock: 15,
+      chapter: 'Garden',
+      aspect: 1.0,
+      inside: (x, y) {
+        final shell = _sq(x / 0.85) + _sq((y - 0.15) / 0.8) <= 1;
+        final head = _sq(x / 0.42) + _sq((y + 0.72) / 0.3) <= 1;
+        // Spots and the line between the wings stay open.
+        final split = x.abs() < 0.06 && y > -0.45;
+        var spot = false;
+        for (final (sx, sy) in const [
+          (-0.42, -0.1),
+          (0.42, -0.1),
+          (-0.48, 0.4),
+          (0.48, 0.4),
+        ]) {
+          if (_sq(x - sx) + _sq(y - sy) < 0.03) spot = true;
+        }
+        return (shell && !split && !spot) || head;
+      },
+    ),
+    PuzzleShape(
       id: 'leaf',
       name: 'Leaf',
-      starsToUnlock: 15,
+      starsToUnlock: 26,
       chapter: 'Garden',
       aspect: 1,
       inside: (x, y) {
@@ -143,7 +176,7 @@ abstract final class ShapePuzzles {
     PuzzleShape(
       id: 'flower',
       name: 'Flower',
-      starsToUnlock: 40,
+      starsToUnlock: 49,
       chapter: 'Garden',
       aspect: 1,
       inside: (x, y) {
@@ -155,7 +188,7 @@ abstract final class ShapePuzzles {
     PuzzleShape(
       id: 'butterfly',
       name: 'Butterfly',
-      starsToUnlock: 70,
+      starsToUnlock: 80,
       chapter: 'Garden',
       aspect: 1.25,
       inside: (x, y) {
@@ -167,9 +200,21 @@ abstract final class ShapePuzzles {
       },
     ),
     PuzzleShape(
+      id: 'mushroom',
+      name: 'Mushroom',
+      starsToUnlock: 119,
+      chapter: 'Garden',
+      aspect: 1.0,
+      inside: (x, y) {
+        final cap = y < 0.05 && _sq(x / 0.98) + _sq((y - 0.05) / 0.9) <= 1;
+        final stem = y >= 0.05 && y < 0.95 && x.abs() < 0.3 + 0.08 * y;
+        return cap || stem;
+      },
+    ),
+    PuzzleShape(
       id: 'onion',
       name: 'Onion',
-      starsToUnlock: 110,
+      starsToUnlock: 163,
       chapter: 'Garden',
       aspect: 0.8,
       inside: (x, y) {
@@ -181,9 +226,27 @@ abstract final class ShapePuzzles {
       },
     ),
     PuzzleShape(
+      id: 'cactus',
+      name: 'Cactus',
+      starsToUnlock: 213,
+      chapter: 'Land',
+      aspect: 0.85,
+      inside: (x, y) {
+        final trunk = x.abs() < 0.24 && y > -0.95;
+        final left =
+            (x > -0.8 && x < -0.5 && y > -0.55 && y < 0.15) ||
+            (x > -0.8 && x < -0.2 && y > 0.0 && y < 0.25);
+        final right =
+            (x > 0.5 && x < 0.8 && y > -0.75 && y < -0.05) ||
+            (x > 0.2 && x < 0.8 && y > -0.2 && y < 0.05);
+        final pot = y > 0.6 && x.abs() < 0.55 - (y - 0.6) * 0.3;
+        return trunk || left || right || pot;
+      },
+    ),
+    PuzzleShape(
       id: 'tree',
       name: 'Pine tree',
-      starsToUnlock: 160,
+      starsToUnlock: 269,
       chapter: 'Land',
       aspect: 0.75,
       inside: (x, y) {
@@ -199,9 +262,23 @@ abstract final class ShapePuzzles {
       },
     ),
     PuzzleShape(
+      id: 'volcano',
+      name: 'Volcano',
+      starsToUnlock: 329,
+      chapter: 'Land',
+      aspect: 1.3,
+      inside: (x, y) {
+        // A cone with a crater, and a plume above it.
+        final cone = y > -0.35 && x.abs() <= 0.18 + (y + 0.35) * 0.62;
+        final crater = y < -0.2 && x.abs() < 0.12;
+        final plume = _sq((x + 0.1) / 0.32) + _sq((y + 0.75) / 0.2) <= 1;
+        return (cone && !crater) || plume;
+      },
+    ),
+    PuzzleShape(
       id: 'mountain',
       name: 'Mountain',
-      starsToUnlock: 220,
+      starsToUnlock: 394,
       chapter: 'Land',
       aspect: 1.3,
       inside: (x, y) {
@@ -213,9 +290,21 @@ abstract final class ShapePuzzles {
       },
     ),
     PuzzleShape(
+      id: 'raindrop',
+      name: 'Raindrop',
+      starsToUnlock: 464,
+      chapter: 'Sky',
+      aspect: 0.75,
+      inside: (x, y) {
+        final round = _sq(x / 0.95) + _sq((y - 0.35) / 0.62) <= 1;
+        final point = y < 0.35 && y > -1 && x.abs() <= (y + 1) * 0.72;
+        return round || point;
+      },
+    ),
+    PuzzleShape(
       id: 'snowflake',
       name: 'Snowflake',
-      starsToUnlock: 290,
+      starsToUnlock: 538,
       chapter: 'Sky',
       aspect: 1,
       inside: (x, y) {
@@ -240,7 +329,7 @@ abstract final class ShapePuzzles {
     PuzzleShape(
       id: 'cloud',
       name: 'Cloud',
-      starsToUnlock: 370,
+      starsToUnlock: 616,
       chapter: 'Sky',
       aspect: 1.6,
       inside: (x, y) =>
@@ -252,7 +341,7 @@ abstract final class ShapePuzzles {
     PuzzleShape(
       id: 'bolt',
       name: 'Lightning',
-      starsToUnlock: 460,
+      starsToUnlock: 698,
       chapter: 'Sky',
       aspect: 0.7,
       inside: (x, y) => _inPolygon(x, y, const [
@@ -268,7 +357,7 @@ abstract final class ShapePuzzles {
     PuzzleShape(
       id: 'rainbow',
       name: 'Rainbow',
-      starsToUnlock: 560,
+      starsToUnlock: 784,
       chapter: 'Sky',
       aspect: 1.1,
       inside: (x, y) {
@@ -278,34 +367,33 @@ abstract final class ShapePuzzles {
       },
     ),
     PuzzleShape(
-      id: 'earth',
-      name: 'Earth',
-      starsToUnlock: 680,
-      chapter: 'Space',
-      aspect: 1,
+      id: 'tornado',
+      name: 'Tornado',
+      starsToUnlock: 874,
+      chapter: 'Sky',
+      aspect: 0.9,
       inside: (x, y) {
-        if (_sq(x) + _sq(y) > 0.97) return false;
-        // Oceans between the continents are left open.
-        final america = _sq((x + 0.42) / 0.3) + _sq((y + 0.1) / 0.62) <= 1;
-        final eurasia = _sq((x - 0.35) / 0.42) + _sq((y + 0.35) / 0.28) <= 1;
-        final africa = _sq((x - 0.25) / 0.22) + _sq((y - 0.3) / 0.36) <= 1;
-        return america || eurasia || africa || _sq(x) + _sq(y) > 0.62;
+        // Stacked bands that narrow towards the ground and wander.
+        final t = (y + 1) / 2;
+        final centre = 0.25 * math.sin(t * 7);
+        final half = 0.95 - 0.8 * t;
+        final band = ((t * 7) % 1) < 0.78;
+        return (x - centre).abs() <= half && band;
       },
     ),
     PuzzleShape(
       id: 'moon',
       name: 'Moon',
-      starsToUnlock: 820,
+      starsToUnlock: 967,
       chapter: 'Space',
       aspect: 1,
       inside: (x, y) =>
-          _sq(x) + _sq(y) <= 0.95 &&
-          _sq(x - 0.45) + _sq(y + 0.2) > 0.6,
+          _sq(x) + _sq(y) <= 0.95 && _sq(x - 0.45) + _sq(y + 0.2) > 0.6,
     ),
     PuzzleShape(
       id: 'mars',
       name: 'Mars',
-      starsToUnlock: 980,
+      starsToUnlock: 1064,
       chapter: 'Space',
       aspect: 1,
       inside: (x, y) {
@@ -318,9 +406,24 @@ abstract final class ShapePuzzles {
       },
     ),
     PuzzleShape(
+      id: 'earth',
+      name: 'Earth',
+      starsToUnlock: 1165,
+      chapter: 'Space',
+      aspect: 1,
+      inside: (x, y) {
+        if (_sq(x) + _sq(y) > 0.97) return false;
+        // Oceans between the continents are left open.
+        final america = _sq((x + 0.42) / 0.3) + _sq((y + 0.1) / 0.62) <= 1;
+        final eurasia = _sq((x - 0.35) / 0.42) + _sq((y + 0.35) / 0.28) <= 1;
+        final africa = _sq((x - 0.25) / 0.22) + _sq((y - 0.3) / 0.36) <= 1;
+        return america || eurasia || africa || _sq(x) + _sq(y) > 0.62;
+      },
+    ),
+    PuzzleShape(
       id: 'saturn',
       name: 'Saturn',
-      starsToUnlock: 1160,
+      starsToUnlock: 1269,
       chapter: 'Space',
       aspect: 1.5,
       inside: (x, y) {
@@ -335,13 +438,28 @@ abstract final class ShapePuzzles {
     PuzzleShape(
       id: 'sun',
       name: 'Sun',
-      starsToUnlock: 1360,
+      starsToUnlock: 1376,
       chapter: 'Space',
       aspect: 1,
       inside: (x, y) {
         final r = math.sqrt(_sq(x) + _sq(y));
         final a = math.atan2(y, x);
         return r < 0.55 || (r < 0.98 && math.cos(a * 12) > 0.35);
+      },
+    ),
+    PuzzleShape(
+      id: 'nebula',
+      name: 'Nebula',
+      starsToUnlock: 1486,
+      chapter: 'Space',
+      aspect: 1.25,
+      inside: (x, y) {
+        final a = _sq((x + 0.35) / 0.6) + _sq((y + 0.15) / 0.55) <= 1;
+        final b = _sq((x - 0.35) / 0.55) + _sq((y - 0.2) / 0.6) <= 1;
+        final c = _sq((x - 0.05) / 0.35) + _sq((y + 0.6) / 0.3) <= 1;
+        // Dark lanes of dust cut through the cloud.
+        final lane = (y - 0.4 * x).abs() < 0.07;
+        return (a || b || c) && !lane;
       },
     ),
     PuzzleShape(

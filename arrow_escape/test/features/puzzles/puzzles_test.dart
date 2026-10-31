@@ -16,41 +16,41 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../helpers.dart';
 
 void main() {
+  final ladybug = ShapePuzzles.byId('ladybug');
   final leaf = ShapePuzzles.byId('leaf');
-  final flower = ShapePuzzles.byId('flower');
 
   group('unlock rules', () {
     test('points count campaign, daily and puzzle stars', () {
       const p = Progress(
         stars: {1: 3, 2: 2},
         dailyStars: {'2026-10-29': 3},
-        puzzleStars: {'leaf/1': 1},
+        puzzleStars: {'ladybug/1': 1},
       );
       expect(p.points, 9);
     });
 
     test('pictures open at their star count; layers in order', () {
       const none = Progress();
-      expect(none.puzzleUnlocked(leaf), isFalse);
+      expect(none.puzzleUnlocked(ladybug), isFalse);
       final p = Progress(
         stars: {for (var i = 1; i <= 5; i++) i: 3},
-        puzzleStars: const {'leaf/1': 2},
+        puzzleStars: const {'ladybug/1': 2},
       );
-      expect(p.puzzleUnlocked(leaf), isTrue);
-      expect(p.puzzleUnlocked(flower), isFalse);
-      expect(p.layerOpen(leaf, 1), isTrue);
-      expect(p.layerOpen(leaf, 2), isTrue);
-      expect(p.layerOpen(leaf, 3), isFalse);
-      expect(p.layersDone(leaf), 1);
-      expect(nextLockedPuzzle(p), flower);
+      expect(p.puzzleUnlocked(ladybug), isTrue);
+      expect(p.puzzleUnlocked(leaf), isFalse);
+      expect(p.layerOpen(ladybug, 1), isTrue);
+      expect(p.layerOpen(ladybug, 2), isTrue);
+      expect(p.layerOpen(ladybug, 3), isFalse);
+      expect(p.layersDone(ladybug), 1);
+      expect(nextLockedPuzzle(p), leaf);
     });
 
     test('thresholds rise and crossing one is reported', () {
       final goals = [for (final s in ShapePuzzles.all) s.starsToUnlock];
       expect(goals, [...goals]..sort());
       expect(goals.toSet().length, goals.length);
-      expect(puzzlesOpenedBetween(14, 15), [leaf]);
-      expect(puzzlesOpenedBetween(15, 39), isEmpty);
+      expect(puzzlesOpenedBetween(14, 15), [ladybug]);
+      expect(puzzlesOpenedBetween(15, 25), isEmpty);
     });
   });
 
@@ -72,14 +72,14 @@ void main() {
       final container = ProviderContainer(
         overrides: testOverrides(
           levels: [level],
-          // 14 points: the next star opens the Leaf.
+          // 14 points: the next star opens the Ladybug.
           save: SaveData(
             progress: Progress(stars: {for (var i = 1; i <= 7; i++) i: 2}),
           ),
         ),
       );
       addTearDown(container.dispose);
-      const ref = LevelRef.puzzle('flower', 1);
+      const ref = LevelRef.puzzle('leaf', 1);
       await container.read(levelProvider(ref).future);
       container.listen(gameControllerProvider(ref), (_, _) {});
       container.read(gameControllerProvider(ref).notifier)
@@ -87,11 +87,8 @@ void main() {
         ..tap(1);
       final state = container.read(gameControllerProvider(ref));
       expect(state.status, SessionStatus.won);
-      expect(
-        container.read(saveProvider).progress.puzzleStarsFor('flower/1'),
-        3,
-      );
-      expect(state.unlockedPuzzles, ['leaf']);
+      expect(container.read(saveProvider).progress.puzzleStarsFor('leaf/1'), 3);
+      expect(state.unlockedPuzzles, ['ladybug']);
     },
   );
 

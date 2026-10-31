@@ -104,6 +104,20 @@ void main() {
       then: (t) => t.tap(find.byKey(const Key('tab-skins'))),
     );
   });
+  testWidgets('skins bottom', (t) {
+    return shot(
+      t,
+      'skins_bottom',
+      Routes.collection,
+      then: (t) async {
+        await t.tap(find.byKey(const Key('tab-skins')));
+        for (var i = 0; i < 10; i++) {
+          await t.pump(const Duration(milliseconds: 100));
+        }
+        await t.drag(find.text('Clean pen lines'), const Offset(0, -1500));
+      },
+    );
+  });
   testWidgets('skins dark', (t) {
     return shot(
       t,
@@ -114,6 +128,9 @@ void main() {
     );
   });
   testWidgets('daily', (t) => shot(t, 'daily', Routes.daily));
-  testWidgets('puzzle', (t) => shot(t, 'puzzle', Routes.puzzleGame('mountain', 1)));
+  testWidgets(
+    'puzzle',
+    (t) => shot(t, 'puzzle', Routes.puzzleGame('mountain', 1)),
+  );
   testWidgets('settings', (t) => shot(t, 'settings', Routes.settings));
 }
