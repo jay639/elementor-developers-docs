@@ -173,3 +173,32 @@ String drawLevel(Level level) {
       grid.sublist(y * level.width, (y + 1) * level.width).join(),
   ].join('\n');
 }
+
+/// Every puzzle layer exists, is solvable, fits, and layers get harder.
+List<String> verifyPuzzles(Map<String, Level> levels) {
+  final problems = <String>[];
+  for (final shape in ShapePuzzles.all) {
+    var previous = -1.0;
+    for (var layer = 1; layer <= PuzzleShape.layerCount; layer++) {
+      final key = ShapePuzzles.key(shape.id, layer);
+      final level = levels[key];
+      if (level == null) {
+        problems.add('$key: missing');
+        continue;
+      }
+      if (level.width > maxBoardWidth || level.height > maxBoardHeight) {
+        problems.add('$key: board ${level.width}x${level.height} is too big');
+      }
+      final s = analyzeLevel(level);
+      if (s == null) {
+        problems.add('$key: unsolvable');
+        continue;
+      }
+      if (s.difficulty <= previous) {
+        problems.add('$key: not harder than the layer before');
+      }
+      previous = s.difficulty;
+    }
+  }
+  return problems;
+}

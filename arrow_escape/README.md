@@ -2,7 +2,8 @@
 
 A calm, minimal traffic puzzle for iOS and Android. Tap a car to drive it off
 the board, but only if its road is clear. 1,500 hand-tuned levels, a daily
-challenge, a city that grows as you play, unlockable skins.
+challenge, a city that grows as you play, arrow skins and a
+collection of picture puzzles (mountain, onion, galaxy…) unlocked with stars.
 
 Flutter · Riverpod · go_router · freezed · CustomPainter (no game engine).
 Spec, architecture and decisions: [`CLAUDE.md`](CLAUDE.md).
@@ -76,8 +77,8 @@ one typed method per event; `docs/growth_plan.html` has the full plan.
 
 | Area | Events | Key parameters |
 | --- | --- | --- |
-| Levels | `level_start`, `level_complete`, `level_fail`, `level_quit`, `level_continue` | level, mode, tier, attempt, arrows, predicted_difficulty, seconds, stars, mistakes, progress_pct, hints, undos, paths_used, first_try |
-| Help | `help_used` | type (hint/undo/paths), level, source |
+| Levels | `level_start`, `level_complete`, `level_fail`, `level_quit`, `level_continue` | level, mode, tier, attempt, arrows, predicted_difficulty, seconds, stars, mistakes, progress_pct, hints, paths_used, first_try |
+| Help | `help_used` | type (hint/paths), level, source |
 | Onboarding | `tutorial_begin`, `tutorial_step`, `tutorial_skip`, `tutorial_complete`, `tip_shown` | step, tip |
 | Economy | `earn_virtual_currency`, `spend_virtual_currency`, `daily_reward_claim`, `skin_unlock`, `city_block_built`, `streak_update` | value, reason / item_name, source |
 | Ads | `ad_show`, `ad_reward`, `ad_fail`, `ad_impression` (AdMob paid event → revenue) | format, placement, value, currency, ad_source |

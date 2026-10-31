@@ -5,6 +5,7 @@ import 'package:arrow_escape/app/routes.dart';
 import 'package:arrow_escape/features/ads/data/ad_service.dart';
 import 'package:arrow_escape/features/ads/presentation/rewarded.dart';
 import 'package:arrow_escape/core/services/sound.dart';
+import 'package:arrow_escape/core/widgets/ui.dart';
 import 'package:arrow_escape/features/game/application/game_controller.dart';
 import 'package:arrow_escape/features/game/application/game_state.dart';
 import 'package:arrow_escape/features/game/data/level_repository.dart';
@@ -30,6 +31,8 @@ class GameScreen extends ConsumerWidget {
   static String titleFor(LevelRef ref) => switch (ref) {
     CampaignLevelRef(:final number) => 'Level $number',
     DailyLevelRef(:final dateKey) => 'Daily · ${_shortDate(dateKey)}',
+    PuzzleLevelRef(:final shape, :final layer) =>
+      '${ShapePuzzles.byId(shape).name} · Layer $layer',
   };
 
   static String _shortDate(String key) {
@@ -181,9 +184,7 @@ class _GameViewState extends ConsumerState<_GameView> {
     }
   }
 
-  void _goToLevel(int number) {
-    context.pushReplacement(Routes.game(number));
-  }
+  void _goTo(String route) => context.pushReplacement(route);
 
   @override
   Widget build(BuildContext context) {
@@ -193,92 +194,121 @@ class _GameViewState extends ConsumerState<_GameView> {
     final state = ref.watch(provider);
     final controller = ref.read(provider.notifier);
     final levelCount = ref.watch(levelRepositoryProvider).count;
-    final next = switch (levelRef) {
-      CampaignLevelRef(:final number) when number < levelCount => number + 1,
+    final String? next = switch (levelRef) {
+      CampaignLevelRef(:final number) when number < levelCount => Routes.game(
+        number + 1,
+      ),
+      PuzzleLevelRef(:final shape, :final layer)
+          when layer < PuzzleShape.layerCount =>
+        Routes.puzzleGame(shape, layer + 1),
       _ => null,
     };
+    final doneRoute = switch (levelRef) {
+      DailyLevelRef() => Routes.daily,
+      PuzzleLevelRef() => Routes.collection,
+      CampaignLevelRef() => Routes.home,
+    };
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: 'Back',
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go(Routes.home),
-        ),
-        title: Text(GameScreen.titleFor(levelRef)),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: HeartsBar(
-              hearts: state.session.hearts,
-              max: state.session.maxHearts,
-            ),
+    return Backdrop(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          leading: IconButton(
+            tooltip: 'Back',
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () =>
+                context.canPop() ? context.pop() : context.go(Routes.home),
           ),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                if (state.tutorial != TutorialStep.none)
-                  _TutorialCallout(
-                    step: state.tutorial,
-                    onSkip: controller.skipTutorial,
-                  )
-                else
-                  _MechanicBanner(state: state),
-                Expanded(child: BoardView(levelRef: levelRef)),
-                GameToolbar(
-                  canUndo: state.session.canUndo,
-                  undosLeft: state.session.undosLeft,
-                  showPaths: state.showPaths,
-                  onUndo: controller.undo,
-                  onTogglePaths: controller.togglePaths,
-                  onRestart: controller.restart,
-                  onHint: state.session.isOver ? null : _hint,
-                ),
-              ],
+          title: Text(GameScreen.titleFor(levelRef)),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: HeartsBar(
+                hearts: state.session.hearts,
+                max: state.session.maxHearts,
+              ),
             ),
-            if (_showTierIntro) _TierIntro(tier: state.level.meta.tier),
-            if (_mechanicIntro case final m?)
-              Positioned.fill(
-                child: _MechanicIntroCard(
-                  mechanic: m,
-                  onClose: _closeMechanicIntro,
-                ),
-              ),
-            if (_showResult && state.status == SessionStatus.won)
-              Positioned.fill(
-                child: ResultOverlay.win(
-                  title: levelRef.isDaily
-                      ? 'Daily challenge done!'
-                      : '${GameScreen.titleFor(levelRef)} cleared!',
-                  stars: state.session.stars,
-                  coins: state.coinsEarned,
-                  onDoubleCoins: state.coinsDoubled || state.coinsEarned == 0
-                      ? null
-                      : _doubleCoins,
-                  hasNext: next != null,
-                  onPrimary: () => next != null
-                      ? _goToLevel(next)
-                      : context.go(
-                          levelRef.isDaily ? Routes.daily : Routes.home,
-                        ),
-                  onHome: () => context.go(Routes.home),
-                ),
-              ),
-            if (_showResult && state.status == SessionStatus.lost)
-              Positioned.fill(
-                child: ResultOverlay.lose(
-                  onExtraHeart: _extraHeart,
-                  onPrimary: controller.restart,
-                  onHome: () => context.go(Routes.home),
-                ),
-              ),
           ],
+        ),
+        body: SafeArea(
+          top: false,
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  if (state.tutorial != TutorialStep.none)
+                    _TutorialCallout(
+                      step: state.tutorial,
+                      onSkip: controller.skipTutorial,
+                    )
+                  else
+                    _MechanicBanner(state: state),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: SoftCard(
+                        padding: const EdgeInsets.all(6),
+                        radius: 28,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(22),
+                          child: BoardView(levelRef: levelRef),
+                        ),
+                      ),
+                    ),
+                  ),
+                  GameToolbar(
+                    showPaths: state.showPaths,
+                    onTogglePaths: controller.togglePaths,
+                    onRestart: controller.restart,
+                    onHint: state.session.isOver ? null : _hint,
+                  ),
+                ],
+              ),
+              if (_showTierIntro) _TierIntro(tier: state.level.meta.tier),
+              if (_mechanicIntro case final m?)
+                Positioned.fill(
+                  child: _MechanicIntroCard(
+                    mechanic: m,
+                    onClose: _closeMechanicIntro,
+                  ),
+                ),
+              if (_showResult && state.status == SessionStatus.won)
+                Positioned.fill(
+                  child: ResultOverlay.win(
+                    title: switch (levelRef) {
+                      DailyLevelRef() => 'Daily challenge done!',
+                      PuzzleLevelRef(:final layer) => 'Layer $layer cleared!',
+                      CampaignLevelRef() =>
+                        '${GameScreen.titleFor(levelRef)} cleared!',
+                    },
+                    stars: state.session.stars,
+                    coins: state.coinsEarned,
+                    onDoubleCoins: state.coinsDoubled || state.coinsEarned == 0
+                        ? null
+                        : _doubleCoins,
+                    hasNext: next != null,
+                    nextLabel: levelRef is PuzzleLevelRef
+                        ? 'Next layer'
+                        : 'Next level',
+                    unlocked: [
+                      for (final id in state.unlockedPuzzles)
+                        ShapePuzzles.byId(id).name,
+                    ],
+                    onPrimary: () =>
+                        next != null ? _goTo(next) : context.go(doneRoute),
+                    onHome: () => context.go(Routes.home),
+                  ),
+                ),
+              if (_showResult && state.status == SessionStatus.lost)
+                Positioned.fill(
+                  child: ResultOverlay.lose(
+                    onExtraHeart: _extraHeart,
+                    onPrimary: controller.restart,
+                    onHome: () => context.go(Routes.home),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );

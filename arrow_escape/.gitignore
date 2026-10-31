@@ -58,3 +58,4 @@ GoogleService-Info.plist
 .env.*
 !.env.example
 /build/symbols/
+test_screens/out/

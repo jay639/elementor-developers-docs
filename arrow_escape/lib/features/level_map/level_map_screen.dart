@@ -8,6 +8,7 @@ import 'package:arrow_escape/features/game/data/level_repository.dart';
 import 'package:arrow_escape/features/level_map/city_block_painter.dart';
 import 'package:arrow_escape/features/progress/application/progress_controller.dart';
 import 'package:arrow_escape/features/progress/domain/progress.dart';
+import 'package:arrow_escape/core/widgets/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -83,33 +84,36 @@ class _LevelMapScreenState extends ConsumerState<LevelMapScreen> {
         if (_blockComplete(progress, b, count)) b,
     ].length;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('City map'),
-        actions: const [CoinChip(), SizedBox(width: 12)],
-      ),
-      bottomNavigationBar: const MapBanner(),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-            child: Text(
-              '$builtBlocks of $blocks blocks built · '
-              '${progress.totalStars} stars',
-              style: Theme.of(context).textTheme.bodyMedium,
+    return Backdrop(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('City map'),
+          actions: const [CoinChip(), SizedBox(width: 12)],
+        ),
+        bottomNavigationBar: const MapBanner(),
+        body: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text(
+                '$builtBlocks of $blocks blocks built · '
+                '${progress.totalStars} stars',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              controller: _scroll,
-              itemExtent: LevelMapScreen.blockExtent,
-              itemCount: blocks,
-              padding: const EdgeInsets.only(bottom: 24),
-              itemBuilder: (context, b) =>
-                  _BlockCard(block: b, progress: progress, levelCount: count),
+            Expanded(
+              child: ListView.builder(
+                controller: _scroll,
+                itemExtent: LevelMapScreen.blockExtent,
+                itemCount: blocks,
+                padding: const EdgeInsets.only(bottom: 24),
+                itemBuilder: (context, b) =>
+                    _BlockCard(block: b, progress: progress, levelCount: count),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -288,7 +292,7 @@ class _LevelNode extends StatelessWidget {
                             '$number',
                             style: TextStyle(
                               color: fg,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),

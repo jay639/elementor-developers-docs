@@ -112,6 +112,19 @@ class SaveController extends Notifier<SaveData> {
     return coins;
   }
 
+  int winPuzzle(String shape, int layer, int stars) {
+    var coins = 0;
+    final streak = state.streak;
+    apply((s) {
+      final r = Economy.winPuzzle(s, '$shape/$layer', layer, stars, _now);
+      coins = r.coins;
+      return r.save;
+    });
+    _earned(coins, 'puzzle_win');
+    _logStreak(streak);
+    return coins;
+  }
+
   int claimDailyReward({int multiplier = 1}) {
     var coins = 0;
     apply((s) {

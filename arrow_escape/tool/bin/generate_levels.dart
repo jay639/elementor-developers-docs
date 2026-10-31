@@ -56,8 +56,39 @@ Future<void> main(List<String> args) async {
     ..writeln()
     ..writeln(campaignReport(levels));
 
+  final puzzleJson = await Future.wait([
+    for (final shape in ShapePuzzles.all)
+      Isolate.run(
+        () => [
+          for (final l in ShapePuzzles.buildLayers(
+            ShapePuzzles.byId(shape.id),
+          ))
+            l.toJson(),
+        ],
+      ),
+  ]);
+  final puzzles = <String, Level>{
+    for (var i = 0; i < ShapePuzzles.all.length; i++)
+      for (var layer = 1; layer <= PuzzleShape.layerCount; layer++)
+        ShapePuzzles.key(ShapePuzzles.all[i].id, layer): Level.fromJson(
+          puzzleJson[i][layer - 1],
+        ),
+  };
+  writePuzzles(out, puzzles);
+  stdout.writeln('Wrote ${puzzles.length} puzzle layers.');
+  for (final e in puzzles.entries) {
+    stdout.writeln(
+      '  ${e.key.padRight(14)} ${e.value.width}x${e.value.height} '
+      'arrows=${e.value.pieces.length} '
+      'difficulty=${e.value.meta.difficulty}',
+    );
+  }
+
   if (opts.flag('verify')) {
-    final problems = verifyCampaign(readPacks(out));
+    final problems = [
+      ...verifyCampaign(readPacks(out)),
+      ...verifyPuzzles(readPuzzles(out)),
+    ];
     if (problems.isEmpty) {
       stdout.writeln('Verification passed.');
     } else {

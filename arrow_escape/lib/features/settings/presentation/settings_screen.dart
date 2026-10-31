@@ -1,6 +1,7 @@
 import 'package:arrow_escape/app/routes.dart';
 import 'package:arrow_escape/features/ads/data/ad_service.dart';
 import 'package:arrow_escape/features/settings/application/settings_controller.dart';
+import 'package:arrow_escape/core/widgets/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,7 +21,7 @@ class SettingsScreen extends ConsumerWidget {
         text,
         style: theme.textTheme.titleSmall?.copyWith(
           color: theme.colorScheme.primary,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -40,112 +41,117 @@ class SettingsScreen extends ConsumerWidget {
       contentPadding: const EdgeInsets.symmetric(horizontal: 20),
     );
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 32),
-        children: [
-          header('Appearance'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: SegmentedButton<ThemeMode>(
-              key: const Key('theme-mode'),
-              segments: const [
-                ButtonSegment(
-                  value: ThemeMode.system,
-                  icon: Icon(Icons.brightness_auto_rounded),
-                  label: Text('Auto'),
-                ),
-                ButtonSegment(
-                  value: ThemeMode.light,
-                  icon: Icon(Icons.light_mode_rounded),
-                  label: Text('Light'),
-                ),
-                ButtonSegment(
-                  value: ThemeMode.dark,
-                  icon: Icon(Icons.dark_mode_rounded),
-                  label: Text('Dark'),
-                ),
-              ],
-              selected: {s.themeMode},
-              onSelectionChanged: (v) => c.setThemeMode(v.first),
+    return Backdrop(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(title: const Text('Settings')),
+        body: ListView(
+          padding: const EdgeInsets.only(bottom: 32),
+          children: [
+            header('Appearance'),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: SegmentedButton<ThemeMode>(
+                key: const Key('theme-mode'),
+                segments: const [
+                  ButtonSegment(
+                    value: ThemeMode.system,
+                    icon: Icon(Icons.brightness_auto_rounded),
+                    label: Text('Auto'),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.light,
+                    icon: Icon(Icons.light_mode_rounded),
+                    label: Text('Light'),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.dark,
+                    icon: Icon(Icons.dark_mode_rounded),
+                    label: Text('Dark'),
+                  ),
+                ],
+                selected: {s.themeMode},
+                onSelectionChanged: (v) => c.setThemeMode(v.first),
+              ),
             ),
-          ),
-          header('Accessibility'),
-          toggle(
-            'thick-arrows',
-            'Thick arrows',
-            'Bolder vehicles that are easier to see and tap.',
-            s.thickArrows,
-            c.setThickArrows,
-          ),
-          toggle(
-            'high-contrast',
-            'High contrast',
-            'Stronger colours and outlines.',
-            s.highContrast,
-            c.setHighContrast,
-          ),
-          toggle(
-            'colorblind',
-            'Colorblind mode',
-            'Colour-safe palette plus symbols on lights and paths.',
-            s.colorblind,
-            c.setColorblind,
-          ),
-          toggle(
-            'reduce-motion',
-            'Reduce motion',
-            'Shorter, calmer animations.',
-            s.reduceMotion,
-            c.setReduceMotion,
-          ),
-          header('Feedback'),
-          toggle(
-            'sound',
-            'Sound',
-            'Soft effects when cars move.',
-            s.sound,
-            c.setSound,
-          ),
-          toggle(
-            'haptics',
-            'Vibration',
-            'Gentle haptics on moves and bumps.',
-            s.haptics,
-            c.setHaptics,
-          ),
-          header('Privacy'),
-          toggle(
-            'share-analytics',
-            'Share usage analytics',
-            'Anonymous gameplay stats that help us tune levels.',
-            s.shareAnalytics,
-            c.setShareAnalytics,
-          ),
-          header('Account'),
-          ListTile(
-            key: const Key('open-shop'),
-            leading: const Icon(Icons.restore_rounded),
-            title: const Text('Shop & restore purchases'),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-            onTap: () => context.push(Routes.shop),
-          ),
-          FutureBuilder<bool>(
-            future: ref.read(adServiceProvider).privacyOptionsRequired(),
-            builder: (context, snap) => snap.data == true
-                ? ListTile(
-                    key: const Key('privacy-options'),
-                    leading: const Icon(Icons.privacy_tip_rounded),
-                    title: const Text('Privacy options'),
-                    subtitle: const Text('Change your ad consent choices.'),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-                    onTap: () =>
-                        ref.read(adServiceProvider).showPrivacyOptions(),
-                  )
-                : const SizedBox.shrink(),
-          ),
-        ],
+            header('Accessibility'),
+            toggle(
+              'thick-arrows',
+              'Thick arrows',
+              'Bolder vehicles that are easier to see and tap.',
+              s.thickArrows,
+              c.setThickArrows,
+            ),
+            toggle(
+              'high-contrast',
+              'High contrast',
+              'Stronger colours and outlines.',
+              s.highContrast,
+              c.setHighContrast,
+            ),
+            toggle(
+              'colorblind',
+              'Colorblind mode',
+              'Colour-safe palette plus symbols on lights and paths.',
+              s.colorblind,
+              c.setColorblind,
+            ),
+            toggle(
+              'reduce-motion',
+              'Reduce motion',
+              'Shorter, calmer animations.',
+              s.reduceMotion,
+              c.setReduceMotion,
+            ),
+            header('Feedback'),
+            toggle(
+              'sound',
+              'Sound',
+              'Soft effects when cars move.',
+              s.sound,
+              c.setSound,
+            ),
+            toggle(
+              'haptics',
+              'Vibration',
+              'Gentle haptics on moves and bumps.',
+              s.haptics,
+              c.setHaptics,
+            ),
+            header('Privacy'),
+            toggle(
+              'share-analytics',
+              'Share usage analytics',
+              'Anonymous gameplay stats that help us tune levels.',
+              s.shareAnalytics,
+              c.setShareAnalytics,
+            ),
+            header('Account'),
+            ListTile(
+              key: const Key('open-shop'),
+              leading: const Icon(Icons.restore_rounded),
+              title: const Text('Shop & restore purchases'),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+              onTap: () => context.push(Routes.shop),
+            ),
+            FutureBuilder<bool>(
+              future: ref.read(adServiceProvider).privacyOptionsRequired(),
+              builder: (context, snap) => snap.data == true
+                  ? ListTile(
+                      key: const Key('privacy-options'),
+                      leading: const Icon(Icons.privacy_tip_rounded),
+                      title: const Text('Privacy options'),
+                      subtitle: const Text('Change your ad consent choices.'),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                      ),
+                      onTap: () =>
+                          ref.read(adServiceProvider).showPrivacyOptions(),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
       ),
     );
   }

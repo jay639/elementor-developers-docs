@@ -1,52 +1,64 @@
 import 'package:flutter/material.dart';
 
-/// Soft pastel brand colours plus accessible alternatives.
+/// Vivid, candy-like brand colours plus accessible alternatives.
 abstract final class Palette {
   // Brand
-  static const primary = Color(0xFF7C6CF2); // soft violet
-  static const secondary = Color(0xFFFF9F8E); // peach
-  static const tertiary = Color(0xFF5CC9B0); // mint
+  static const primary = Color(0xFF6C4CF5); // electric violet
+  static const primaryDeep = Color(0xFF4B2FD1);
+  static const secondary = Color(0xFFFF6B5B); // coral
+  static const tertiary = Color(0xFF14C3A2); // teal
+  static const pink = Color(0xFFFF5FA2);
+  static const sky = Color(0xFF3FA9FF);
+  static const sun = Color(0xFFFFB627);
 
-  // Light surfaces
-  static const cream = Color(0xFFFFF8F1);
-  static const tileLight = Color(0xFFF1EAF9);
-  static const tileLightEdge = Color(0xFFE2D8F0);
+  // Light surfaces: a lilac-to-peach wash behind white cards.
+  static const cream = Color(0xFFF7F3FF);
+  static const washTop = Color(0xFFEDE6FF);
+  static const washBottom = Color(0xFFFFF0E6);
+  static const tileLight = Color(0xFFF2EEFC);
+  static const tileLightEdge = Color(0xFFCFC5EE);
 
   // Dark surfaces
-  static const night = Color(0xFF17161D);
-  static const tileDark = Color(0xFF2A2833);
-  static const tileDarkEdge = Color(0xFF3A3746);
+  static const night = Color(0xFF141026);
+  static const nightTop = Color(0xFF231A4A);
+  static const nightBottom = Color(0xFF0E0B1A);
+  static const tileDark = Color(0xFF221D3A);
+  static const tileDarkEdge = Color(0xFF3D3563);
+
+  /// Hero gradients for big buttons and headers.
+  static const heroGradient = [Color(0xFF7B5CFF), Color(0xFFB04DFF)];
+  static const playGradient = [Color(0xFFEE5A1E), Color(0xFFDB1F5E)];
 
   static const heart = Color(0xFFFF6F7D);
-  static const star = Color(0xFFFFC94D);
+  static const star = Color(0xFFFFC02E);
   static const success = Color(0xFF4CC38A);
   static const danger = Color(0xFFF0616D);
 
   static const lightRed = Color(0xFFF0616D);
   static const lightGreen = Color(0xFF4CC38A);
 
-  /// Pastel vehicle colours (light mode).
+  /// Saturated arrow colours: thin lines need strong colour to read.
   static const vehiclesLight = [
-    Color(0xFFF4978E),
-    Color(0xFF8EC5FC),
-    Color(0xFF84DCC6),
-    Color(0xFFB9A6F2),
-    Color(0xFFF9C96E),
-    Color(0xFFF5A3C7),
-    Color(0xFF9AD0EC),
-    Color(0xFFA8D88E),
+    Color(0xFFF2425B),
+    Color(0xFF2F7BF5),
+    Color(0xFF0FAF86),
+    Color(0xFF7A4DF0),
+    Color(0xFFF08A00),
+    Color(0xFFE23D93),
+    Color(0xFF0597B8),
+    Color(0xFF4BA82E),
   ];
 
-  /// Slightly deeper versions that read well on dark tiles.
+  /// Brighter versions that read well on dark tiles.
   static const vehiclesDark = [
-    Color(0xFFFF8F84),
-    Color(0xFF7DB8F7),
-    Color(0xFF6FD3BA),
-    Color(0xFFA997F0),
-    Color(0xFFF7C25A),
-    Color(0xFFF291BD),
-    Color(0xFF86C6E8),
-    Color(0xFF95CF78),
+    Color(0xFFFF6B7E),
+    Color(0xFF6AA6FF),
+    Color(0xFF3FE0B0),
+    Color(0xFFA98BFF),
+    Color(0xFFFFB13D),
+    Color(0xFFFF7CC0),
+    Color(0xFF4FD3F0),
+    Color(0xFF8BE06A),
   ];
 
   /// Okabe–Ito palette: distinguishable with the common colour-vision

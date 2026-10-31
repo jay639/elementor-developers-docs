@@ -1,5 +1,5 @@
 import 'package:arrow_escape/core/theme/palette.dart';
-import 'package:arrow_escape/core/widgets/coin_chip.dart';
+import 'package:arrow_escape/core/widgets/ui.dart';
 import 'package:arrow_escape/features/ads/data/ad_service.dart';
 import 'package:arrow_escape/features/ads/presentation/rewarded.dart';
 import 'package:arrow_escape/features/save/application/save_controller.dart';
@@ -7,36 +7,31 @@ import 'package:arrow_escape/features/skins/skins.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class SkinsScreen extends ConsumerWidget {
-  const SkinsScreen({super.key});
+/// Arrow colour themes, bought with coins or a video.
+class SkinsTab extends ConsumerWidget {
+  const SkinsTab({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final save = ref.watch(saveProvider);
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Vehicle skins'),
-        actions: const [CoinChip(), SizedBox(width: 12)],
+    return GridView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 220,
+        mainAxisSpacing: 14,
+        crossAxisSpacing: 14,
+        childAspectRatio: 0.7,
       ),
-      body: GridView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 220,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 0.72,
-        ),
-        itemCount: Skins.all.length,
-        itemBuilder: (context, i) {
-          final skin = Skins.all[i];
-          return _SkinCard(
-            skin: skin,
-            owned: save.owns(skin.id),
-            selected: save.selectedSkin == skin.id,
-            affordable: save.coins >= skin.price,
-          );
-        },
-      ),
+      itemCount: Skins.all.length,
+      itemBuilder: (context, i) {
+        final skin = Skins.all[i];
+        return _SkinCard(
+          skin: skin,
+          owned: save.owns(skin.id),
+          selected: save.selectedSkin == skin.id,
+          affordable: save.coins >= skin.price,
+        );
+      },
     );
   }
 }
@@ -67,15 +62,15 @@ class _SkinCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final save = ref.read(saveProvider.notifier);
-    return Card(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
           color: selected ? scheme.primary : Colors.transparent,
           width: 3,
         ),
       ),
-      child: Padding(
+      child: SoftCard(
         padding: const EdgeInsets.all(12),
         child: Column(
           children: [

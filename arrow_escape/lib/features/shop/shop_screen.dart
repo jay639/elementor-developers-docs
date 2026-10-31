@@ -3,6 +3,7 @@ import 'package:arrow_escape/core/widgets/coin_chip.dart';
 import 'package:arrow_escape/features/purchases/application/entitlements.dart';
 import 'package:arrow_escape/features/purchases/data/purchase_service.dart';
 import 'package:arrow_escape/features/purchases/domain/products.dart';
+import 'package:arrow_escape/core/widgets/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -94,53 +95,56 @@ class _ShopScreenState extends ConsumerState<ShopScreen> {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Shop'),
-        actions: const [CoinChip(openShop: false), SizedBox(width: 12)],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-        children: [
-          tile(
-            Products.starterBundle,
-            icon: Icons.card_giftcard_rounded,
-            owned: entitlements.starter,
-          ),
-          const SizedBox(height: 8),
-          tile(
-            Products.removeAds,
-            icon: Icons.block_rounded,
-            owned: entitlements.noAds,
-          ),
-          const SizedBox(height: 20),
-          Text('Coins', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
-          tile(Products.coinsSmall, icon: Icons.monetization_on_outlined),
-          const SizedBox(height: 8),
-          tile(Products.coinsMedium, icon: Icons.monetization_on_rounded),
-          const SizedBox(height: 8),
-          tile(Products.coinsLarge, icon: Icons.savings_rounded),
-          const SizedBox(height: 20),
-          Center(
-            child: TextButton.icon(
-              key: const Key('restore'),
-              onPressed: _busy == null
-                  ? () => _run('restore', controller.restore)
-                  : null,
-              icon: const Icon(Icons.restore_rounded),
-              label: const Text('Restore purchases'),
+    return Backdrop(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Shop'),
+          actions: const [CoinChip(openShop: false), SizedBox(width: 12)],
+        ),
+        body: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          children: [
+            tile(
+              Products.starterBundle,
+              icon: Icons.card_giftcard_rounded,
+              owned: entitlements.starter,
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Payment is charged to your App Store or Google Play account. '
-            'Coin packs are consumable; Remove ads and the Starter bundle '
-            'are one-time purchases you can restore on any device.',
-            style: theme.textTheme.bodySmall,
-            textAlign: TextAlign.center,
-          ),
-        ],
+            const SizedBox(height: 8),
+            tile(
+              Products.removeAds,
+              icon: Icons.block_rounded,
+              owned: entitlements.noAds,
+            ),
+            const SizedBox(height: 20),
+            Text('Coins', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            tile(Products.coinsSmall, icon: Icons.monetization_on_outlined),
+            const SizedBox(height: 8),
+            tile(Products.coinsMedium, icon: Icons.monetization_on_rounded),
+            const SizedBox(height: 8),
+            tile(Products.coinsLarge, icon: Icons.savings_rounded),
+            const SizedBox(height: 20),
+            Center(
+              child: TextButton.icon(
+                key: const Key('restore'),
+                onPressed: _busy == null
+                    ? () => _run('restore', controller.restore)
+                    : null,
+                icon: const Icon(Icons.restore_rounded),
+                label: const Text('Restore purchases'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Payment is charged to your App Store or Google Play account. '
+              'Coin packs are consumable; Remove ads and the Starter bundle '
+              'are one-time purchases you can restore on any device.',
+              style: theme.textTheme.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

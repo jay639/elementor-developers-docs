@@ -49,8 +49,7 @@ void main() {
         ..tap(1) // bump
         ..tap(0)
         ..tap(2)
-        ..undo()
-        ..tap(2)
+        ..showHint()
         ..tap(1);
       final s = analytics.last('level_start');
       expect(s['level'], '1');
@@ -61,7 +60,7 @@ void main() {
       final c = analytics.last('level_complete');
       expect(c['stars'], 2);
       expect(c['mistakes'], 1);
-      expect(c['undos'], 1);
+      expect(c['hints'], 1);
       expect(c['first_try'], 0);
       expect(analytics.names, isNot(contains('level_quit')));
     });

@@ -1,4 +1,5 @@
 import 'package:arrow_escape/core/theme/palette.dart';
+import 'package:arrow_escape/core/widgets/ui.dart';
 import 'package:flutter/material.dart';
 
 /// Win / lose card shown over the board.
@@ -12,6 +13,8 @@ class ResultOverlay extends StatelessWidget {
     required this.onHome,
     required this.hasNext,
     this.onDoubleCoins,
+    this.nextLabel = 'Next level',
+    this.unlocked = const [],
   }) : won = true,
        onExtraHeart = null;
 
@@ -25,13 +28,21 @@ class ResultOverlay extends StatelessWidget {
        stars = null,
        coins = 0,
        hasNext = false,
-       onDoubleCoins = null;
+       onDoubleCoins = null,
+       nextLabel = '',
+       unlocked = const [];
 
   final bool won;
   final String? title;
   final int? stars;
   final int coins;
   final bool hasNext;
+
+  /// Primary button text when there is a next level.
+  final String nextLabel;
+
+  /// Names of pictures this win unlocked.
+  final List<String> unlocked;
 
   /// Next level when won, retry when lost.
   final VoidCallback onPrimary;
@@ -55,16 +66,19 @@ class ResultOverlay extends StatelessWidget {
             curve: Curves.easeOutBack,
             builder: (context, scale, child) =>
                 Transform.scale(scale: scale, child: child),
-            child: Card(
-              margin: const EdgeInsets.all(28),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: SoftCard(
+                padding: const EdgeInsets.fromLTRB(22, 26, 22, 14),
+                radius: 32,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       won ? title! : 'Out of hearts',
-                      style: theme.textTheme.headlineSmall,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: won ? Palette.primaryDeep : Palette.secondary,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 16),
@@ -106,6 +120,37 @@ class ResultOverlay extends StatelessWidget {
                         style: theme.textTheme.bodyLarge,
                         textAlign: TextAlign.center,
                       ),
+                    for (final name in unlocked) ...[
+                      const SizedBox(height: 14),
+                      SoftCard(
+                        key: Key('unlocked-$name'),
+                        gradient: const LinearGradient(
+                          colors: Palette.heroGradient,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 10,
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.auto_awesome_rounded,
+                              color: Palette.star,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'New picture unlocked: $name!',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     if (onDoubleCoins != null || onExtraHeart != null) ...[
                       SizedBox(
@@ -121,15 +166,13 @@ class ResultOverlay extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
                     ],
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        key: const Key('result-primary'),
-                        onPressed: onPrimary,
-                        child: Text(
-                          won ? (hasNext ? 'Next level' : 'Done') : 'Try again',
-                        ),
-                      ),
+                    CandyButton(
+                      key: const Key('result-primary'),
+                      height: 58,
+                      fontSize: 20,
+                      colors: won ? Palette.playGradient : Palette.heroGradient,
+                      onPressed: onPrimary,
+                      label: won ? (hasNext ? nextLabel : 'Done') : 'Try again',
                     ),
                     const SizedBox(height: 8),
                     TextButton(

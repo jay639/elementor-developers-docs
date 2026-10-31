@@ -85,7 +85,7 @@ void main() {
     ('settings', Routes.settings),
     ('daily', Routes.daily),
     ('shop', Routes.shop),
-    ('skins', Routes.skins),
+    ('collection', Routes.collection),
   ]) {
     testWidgets('$name meets tap-target and labelling guidelines', (
       tester,

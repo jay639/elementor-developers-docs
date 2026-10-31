@@ -81,6 +81,36 @@ abstract final class Economy {
     return (save: _recordWinDay(next, now), coins: coins);
   }
 
+  /// Coins for a picture-puzzle layer: more for deeper layers.
+  static int puzzleCoins({
+    required bool firstClear,
+    required int layer,
+    required int stars,
+  }) => firstClear ? 20 + 20 * layer + 10 * stars : 3;
+
+  static WinResult winPuzzle(
+    SaveData s,
+    String key,
+    int layer,
+    int stars,
+    DateTime now,
+  ) {
+    final p = s.progress;
+    final before = p.puzzleStarsFor(key);
+    final coins = puzzleCoins(
+      firstClear: before == 0,
+      layer: layer,
+      stars: stars,
+    );
+    final next = s.copyWith(
+      coins: s.coins + coins,
+      progress: p.copyWith(
+        puzzleStars: {...p.puzzleStars, key: stars > before ? stars : before},
+      ),
+    );
+    return (save: _recordWinDay(next, now), coins: coins);
+  }
+
   static bool canClaimDailyReward(SaveData s, DateTime now) =>
       s.lastRewardDay != dayKey(now);
 

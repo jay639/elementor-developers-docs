@@ -78,28 +78,9 @@ void main() {
     expect(hearts(tester).hearts, 3);
   });
 
-  testWidgets('undo is enabled after an exit and only once', (tester) async {
+  testWidgets('there is no undo button', (tester) async {
     await openGame(tester);
-    IconButton undoButton() => tester.widget<IconButton>(
-      find.descendant(
-        of: find.byKey(const Key('undo')),
-        matching: find.byType(IconButton),
-      ),
-    );
-    expect(undoButton().onPressed, isNull);
-    await tapPiece(tester, level, 1);
-    await settle(tester);
-    expect(undoButton().onPressed, isNotNull);
-    await tester.tap(find.byKey(const Key('undo')));
-    await settle(tester);
-    expect(undoButton().onPressed, isNull);
-    expect(
-      find.descendant(
-        of: find.byKey(const Key('undo')),
-        matching: find.byType(Badge),
-      ),
-      findsNothing,
-    );
+    expect(find.byKey(const Key('undo')), findsNothing);
   });
 
   testWidgets('show paths toggles', (tester) async {

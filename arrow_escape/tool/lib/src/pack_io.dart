@@ -76,3 +76,18 @@ List<Level> readPacks(Directory dir) {
       ...decompressPack(File('${dir.path}/$name').readAsBytesSync()),
   ];
 }
+
+void writePuzzles(Directory dir, Map<String, Level> levels) {
+  dir.createSync(recursive: true);
+  File(
+    '${dir.path}/${ShapePuzzles.assetFile}',
+  ).writeAsBytesSync(_gzip.encode(utf8.encode(ShapePuzzles.encode(levels))));
+}
+
+Map<String, Level> readPuzzles(Directory dir) => ShapePuzzles.decode(
+  utf8.decode(
+    _gzip.decode(
+      File('${dir.path}/${ShapePuzzles.assetFile}').readAsBytesSync(),
+    ),
+  ),
+);

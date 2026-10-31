@@ -166,6 +166,9 @@ class FakeLevelRepository implements LevelRepository {
 
   @override
   Future<Level> load(int number) async => levels[number - 1];
+
+  @override
+  Future<Level> loadPuzzle(String key) async => levels.first;
 }
 
 /// Fixed "now" for tests: Thursday 29 Oct 2026, 21:30.

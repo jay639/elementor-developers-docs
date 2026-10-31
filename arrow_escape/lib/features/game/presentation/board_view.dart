@@ -199,39 +199,17 @@ class _BoardViewState extends ConsumerState<BoardView>
     setState(() {});
   }
 
-  /// Animates vehicles that came back through undo, and clears everything
-  /// on restart.
+  /// Clears running animations when the board is reset (restart).
   void _onStateChanged(GameViewState? prev, GameViewState next) {
     if (prev == null || !mounted) return;
     final before = prev.session.board;
     final after = next.session.board;
     // Exits are animated by the tap handler; bumps keep the same board.
     if (identical(before, after) || after.exits == before.exits + 1) return;
-    if (after.exits != before.exits - 1) {
-      // Restart: snap everything back into place.
-      setState(() {
-        _animations = const {};
-        _flashes = const [];
-      });
-      return;
-    }
-    final returned = [
-      for (final p in after.remaining)
-        if (!before.isOnBoard(p)) p,
-    ];
-    if (returned.isEmpty) return;
-    final level = next.level;
-    _animations = {
-      ..._animations,
-      for (final p in returned)
-        p: ReturnAnimation(
-          p,
-          Track.forPiece(level, p, next.session.rules.pathOf(p)),
-          _now,
-        ),
-    };
-    _ensureTicking();
-    setState(() {});
+    setState(() {
+      _animations = const {};
+      _flashes = const [];
+    });
   }
 
   List<Track> _tracks(Level level) {

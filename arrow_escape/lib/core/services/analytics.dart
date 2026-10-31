@@ -66,7 +66,7 @@ abstract class AnalyticsService {
   Future<void> levelContinue(LevelInfo info, {required String source}) =>
       log('level_continue', {...info.params, 'source': source});
 
-  /// Hint, undo, show paths or a booster.
+  /// Hint, show paths or a booster.
   Future<void> helpUsed(
     String type, {
     required String level,
@@ -157,21 +157,16 @@ class LevelInfo {
 /// Help used during one attempt.
 @immutable
 class HelpCounts {
-  const HelpCounts({this.hints = 0, this.undos = 0, this.paths = false});
+  const HelpCounts({this.hints = 0, this.paths = false});
 
   final int hints;
-  final int undos;
   final bool paths;
 
-  HelpCounts copyWith({int? hints, int? undos, bool? paths}) => HelpCounts(
-    hints: hints ?? this.hints,
-    undos: undos ?? this.undos,
-    paths: paths ?? this.paths,
-  );
+  HelpCounts copyWith({int? hints, bool? paths}) =>
+      HelpCounts(hints: hints ?? this.hints, paths: paths ?? this.paths);
 
   Map<String, Object> get params => {
     'hints': hints,
-    'undos': undos,
     'paths_used': paths ? 1 : 0,
   };
 }

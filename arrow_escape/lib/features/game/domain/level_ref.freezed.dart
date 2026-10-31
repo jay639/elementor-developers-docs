@@ -56,12 +56,13 @@ extension LevelRefPatterns on LevelRef {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( CampaignLevelRef value)?  campaign,TResult Function( DailyLevelRef value)?  daily,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( CampaignLevelRef value)?  campaign,TResult Function( DailyLevelRef value)?  daily,TResult Function( PuzzleLevelRef value)?  puzzle,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case CampaignLevelRef() when campaign != null:
 return campaign(_that);case DailyLevelRef() when daily != null:
-return daily(_that);case _:
+return daily(_that);case PuzzleLevelRef() when puzzle != null:
+return puzzle(_that);case _:
   return orElse();
 
 }
@@ -79,12 +80,13 @@ return daily(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( CampaignLevelRef value)  campaign,required TResult Function( DailyLevelRef value)  daily,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( CampaignLevelRef value)  campaign,required TResult Function( DailyLevelRef value)  daily,required TResult Function( PuzzleLevelRef value)  puzzle,}){
 final _that = this;
 switch (_that) {
 case CampaignLevelRef():
 return campaign(_that);case DailyLevelRef():
-return daily(_that);}
+return daily(_that);case PuzzleLevelRef():
+return puzzle(_that);}
 }
 /// A variant of `map` that fallback to returning `null`.
 ///
@@ -98,12 +100,13 @@ return daily(_that);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( CampaignLevelRef value)?  campaign,TResult? Function( DailyLevelRef value)?  daily,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( CampaignLevelRef value)?  campaign,TResult? Function( DailyLevelRef value)?  daily,TResult? Function( PuzzleLevelRef value)?  puzzle,}){
 final _that = this;
 switch (_that) {
 case CampaignLevelRef() when campaign != null:
 return campaign(_that);case DailyLevelRef() when daily != null:
-return daily(_that);case _:
+return daily(_that);case PuzzleLevelRef() when puzzle != null:
+return puzzle(_that);case _:
   return null;
 
 }
@@ -120,11 +123,12 @@ return daily(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( int number)?  campaign,TResult Function( String dateKey)?  daily,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( int number)?  campaign,TResult Function( String dateKey)?  daily,TResult Function( String shape,  int layer)?  puzzle,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case CampaignLevelRef() when campaign != null:
 return campaign(_that.number);case DailyLevelRef() when daily != null:
-return daily(_that.dateKey);case _:
+return daily(_that.dateKey);case PuzzleLevelRef() when puzzle != null:
+return puzzle(_that.shape,_that.layer);case _:
   return orElse();
 
 }
@@ -142,11 +146,12 @@ return daily(_that.dateKey);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( int number)  campaign,required TResult Function( String dateKey)  daily,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( int number)  campaign,required TResult Function( String dateKey)  daily,required TResult Function( String shape,  int layer)  puzzle,}) {final _that = this;
 switch (_that) {
 case CampaignLevelRef():
 return campaign(_that.number);case DailyLevelRef():
-return daily(_that.dateKey);}
+return daily(_that.dateKey);case PuzzleLevelRef():
+return puzzle(_that.shape,_that.layer);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -160,11 +165,12 @@ return daily(_that.dateKey);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( int number)?  campaign,TResult? Function( String dateKey)?  daily,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( int number)?  campaign,TResult? Function( String dateKey)?  daily,TResult? Function( String shape,  int layer)?  puzzle,}) {final _that = this;
 switch (_that) {
 case CampaignLevelRef() when campaign != null:
 return campaign(_that.number);case DailyLevelRef() when daily != null:
-return daily(_that.dateKey);case _:
+return daily(_that.dateKey);case PuzzleLevelRef() when puzzle != null:
+return puzzle(_that.shape,_that.layer);case _:
   return null;
 
 }
@@ -302,6 +308,76 @@ class _$DailyLevelRefCopyWithImpl<$Res>
   return _then(DailyLevelRef(
 null == dateKey ? _self.dateKey : dateKey // ignore: cast_nullable_to_non_nullable
 as String,
+  ));
+}
+
+
+}
+
+/// @nodoc
+
+
+class PuzzleLevelRef extends LevelRef {
+  const PuzzleLevelRef(this.shape, this.layer): super._();
+  
+
+ final  String shape;
+ final  int layer;
+
+/// Create a copy of LevelRef
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$PuzzleLevelRefCopyWith<PuzzleLevelRef> get copyWith => _$PuzzleLevelRefCopyWithImpl<PuzzleLevelRef>(this, _$identity);
+
+
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is PuzzleLevelRef&&(identical(other.shape, shape) || other.shape == shape)&&(identical(other.layer, layer) || other.layer == layer));
+}
+
+
+@override
+int get hashCode {
+    return Object.hash(runtimeType,shape,layer);
+}
+
+@override
+String toString() {
+    return 'LevelRef.puzzle(shape: $shape, layer: $layer)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $PuzzleLevelRefCopyWith<$Res> implements $LevelRefCopyWith<$Res> {
+  factory $PuzzleLevelRefCopyWith(PuzzleLevelRef value, $Res Function(PuzzleLevelRef) _then) = _$PuzzleLevelRefCopyWithImpl;
+@useResult
+$Res call({
+ String shape, int layer
+});
+
+
+
+
+}
+/// @nodoc
+class _$PuzzleLevelRefCopyWithImpl<$Res>
+    implements $PuzzleLevelRefCopyWith<$Res> {
+  _$PuzzleLevelRefCopyWithImpl(this._self, this._then);
+
+  final PuzzleLevelRef _self;
+  final $Res Function(PuzzleLevelRef) _then;
+
+/// Create a copy of LevelRef
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? shape = null,Object? layer = null,}) {
+  return _then(PuzzleLevelRef(
+null == shape ? _self.shape : shape // ignore: cast_nullable_to_non_nullable
+as String,null == layer ? _self.layer : layer // ignore: cast_nullable_to_non_nullable
+as int,
   ));
 }
 

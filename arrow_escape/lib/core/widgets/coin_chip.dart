@@ -1,5 +1,6 @@
 import 'package:arrow_escape/app/routes.dart';
 import 'package:arrow_escape/core/theme/palette.dart';
+import 'package:arrow_escape/core/widgets/ui.dart';
 import 'package:arrow_escape/features/save/application/save_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,16 +19,16 @@ class CoinChip extends ConsumerWidget {
       button: openShop,
       label: '$coins coins${openShop ? ', open shop' : ''}',
       excludeSemantics: true,
-      child: ActionChip(
+      child: StatPill(
         key: const Key('coin-chip'),
-        avatar: const Icon(Icons.monetization_on_rounded, color: Palette.star),
-        label: TweenAnimationBuilder<int>(
+        icon: Icons.monetization_on_rounded,
+        iconColor: Palette.sun,
+        value: TweenAnimationBuilder<int>(
           tween: IntTween(end: coins),
           duration: const Duration(milliseconds: 500),
-          builder: (context, v, _) =>
-              Text('$v', style: const TextStyle(fontWeight: FontWeight.w800)),
+          builder: (context, v, _) => Text('$v'),
         ),
-        onPressed: openShop ? () => context.push(Routes.shop) : null,
+        onTap: openShop ? () => context.push(Routes.shop) : null,
       ),
     );
   }

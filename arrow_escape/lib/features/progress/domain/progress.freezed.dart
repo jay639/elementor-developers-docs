@@ -19,7 +19,8 @@ mixin _$Progress {
 /// Highest level the player may open (1-based).
  int get unlocked;/// Best star rating per completed level, keyed by level number.
  Map<int, int> get stars;/// Best stars per completed daily challenge, keyed by `yyyy-mm-dd`.
- Map<String, int> get dailyStars;
+ Map<String, int> get dailyStars;/// Best stars per picture-puzzle layer, keyed `shape/layer`.
+ Map<String, int> get puzzleStars;
 /// Create a copy of Progress
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -33,20 +34,20 @@ $ProgressCopyWith<Progress> get copyWith => _$ProgressCopyWithImpl<Progress>(thi
 @override
 bool operator ==(Object other) {
   final _this = this as Progress;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Progress&&(identical(other.unlocked, _this.unlocked) || other.unlocked == _this.unlocked)&&const DeepCollectionEquality().equals(other.stars, _this.stars)&&const DeepCollectionEquality().equals(other.dailyStars, _this.dailyStars));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Progress&&(identical(other.unlocked, _this.unlocked) || other.unlocked == _this.unlocked)&&const DeepCollectionEquality().equals(other.stars, _this.stars)&&const DeepCollectionEquality().equals(other.dailyStars, _this.dailyStars)&&const DeepCollectionEquality().equals(other.puzzleStars, _this.puzzleStars));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as Progress;
-  return Object.hash(runtimeType,_this.unlocked,const DeepCollectionEquality().hash(_this.stars),const DeepCollectionEquality().hash(_this.dailyStars));
+  return Object.hash(runtimeType,_this.unlocked,const DeepCollectionEquality().hash(_this.stars),const DeepCollectionEquality().hash(_this.dailyStars),const DeepCollectionEquality().hash(_this.puzzleStars));
 }
 
 @override
 String toString() {
   final _this = this as Progress;
-  return 'Progress(unlocked: ${_this.unlocked}, stars: ${_this.stars}, dailyStars: ${_this.dailyStars})';
+  return 'Progress(unlocked: ${_this.unlocked}, stars: ${_this.stars}, dailyStars: ${_this.dailyStars}, puzzleStars: ${_this.puzzleStars})';
 }
 
 
@@ -57,7 +58,7 @@ abstract mixin class $ProgressCopyWith<$Res>  {
   factory $ProgressCopyWith(Progress value, $Res Function(Progress) _then) = _$ProgressCopyWithImpl;
 @useResult
 $Res call({
- int unlocked, Map<int, int> stars, Map<String, int> dailyStars
+ int unlocked, Map<int, int> stars, Map<String, int> dailyStars, Map<String, int> puzzleStars
 });
 
 
@@ -74,11 +75,12 @@ class _$ProgressCopyWithImpl<$Res>
 
 /// Create a copy of Progress
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? unlocked = null,Object? stars = null,Object? dailyStars = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? unlocked = null,Object? stars = null,Object? dailyStars = null,Object? puzzleStars = null,}) {
   return _then(Progress(
 unlocked: null == unlocked ? _self.unlocked : unlocked // ignore: cast_nullable_to_non_nullable
 as int,stars: null == stars ? _self.stars : stars // ignore: cast_nullable_to_non_nullable
 as Map<int, int>,dailyStars: null == dailyStars ? _self.dailyStars : dailyStars // ignore: cast_nullable_to_non_nullable
+as Map<String, int>,puzzleStars: null == puzzleStars ? _self.puzzleStars : puzzleStars // ignore: cast_nullable_to_non_nullable
 as Map<String, int>,
   ));
 }
@@ -164,10 +166,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int unlocked,  Map<int, int> stars,  Map<String, int> dailyStars)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int unlocked,  Map<int, int> stars,  Map<String, int> dailyStars,  Map<String, int> puzzleStars)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Progress() when $default != null:
-return $default(_that.unlocked,_that.stars,_that.dailyStars);case _:
+return $default(_that.unlocked,_that.stars,_that.dailyStars,_that.puzzleStars);case _:
   return orElse();
 
 }
@@ -185,10 +187,10 @@ return $default(_that.unlocked,_that.stars,_that.dailyStars);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int unlocked,  Map<int, int> stars,  Map<String, int> dailyStars)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int unlocked,  Map<int, int> stars,  Map<String, int> dailyStars,  Map<String, int> puzzleStars)  $default,) {final _that = this;
 switch (_that) {
 case _Progress():
-return $default(_that.unlocked,_that.stars,_that.dailyStars);case _:
+return $default(_that.unlocked,_that.stars,_that.dailyStars,_that.puzzleStars);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -205,10 +207,10 @@ return $default(_that.unlocked,_that.stars,_that.dailyStars);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int unlocked,  Map<int, int> stars,  Map<String, int> dailyStars)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int unlocked,  Map<int, int> stars,  Map<String, int> dailyStars,  Map<String, int> puzzleStars)?  $default,) {final _that = this;
 switch (_that) {
 case _Progress() when $default != null:
-return $default(_that.unlocked,_that.stars,_that.dailyStars);case _:
+return $default(_that.unlocked,_that.stars,_that.dailyStars,_that.puzzleStars);case _:
   return null;
 
 }
@@ -220,7 +222,7 @@ return $default(_that.unlocked,_that.stars,_that.dailyStars);case _:
 @JsonSerializable()
 
 class _Progress extends Progress {
-  const _Progress({this.unlocked = 1,  Map<int, int> stars = const <int, int>{},  Map<String, int> dailyStars = const <String, int>{}}): _stars = stars,_dailyStars = dailyStars,super._();
+  const _Progress({this.unlocked = 1,  Map<int, int> stars = const <int, int>{},  Map<String, int> dailyStars = const <String, int>{},  Map<String, int> puzzleStars = const <String, int>{}}): _stars = stars,_dailyStars = dailyStars,_puzzleStars = puzzleStars,super._();
   factory _Progress.fromJson(Map<String, dynamic> json) => _$ProgressFromJson(json);
 
 /// Highest level the player may open (1-based).
@@ -243,6 +245,15 @@ class _Progress extends Progress {
   return EqualUnmodifiableMapView(_dailyStars);
 }
 
+/// Best stars per picture-puzzle layer, keyed `shape/layer`.
+ final  Map<String, int> _puzzleStars;
+/// Best stars per picture-puzzle layer, keyed `shape/layer`.
+@override@JsonKey() Map<String, int> get puzzleStars {
+  if (_puzzleStars is EqualUnmodifiableMapView) return _puzzleStars;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableMapView(_puzzleStars);
+}
+
 
 /// Create a copy of Progress
 /// with the given fields replaced by the non-null parameter values.
@@ -257,18 +268,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Progress&&(identical(other.unlocked, unlocked) || other.unlocked == unlocked)&&const DeepCollectionEquality().equals(other.stars, _stars)&&const DeepCollectionEquality().equals(other.dailyStars, _dailyStars));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _Progress&&(identical(other.unlocked, unlocked) || other.unlocked == unlocked)&&const DeepCollectionEquality().equals(other.stars, _stars)&&const DeepCollectionEquality().equals(other.dailyStars, _dailyStars)&&const DeepCollectionEquality().equals(other.puzzleStars, _puzzleStars));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,unlocked,const DeepCollectionEquality().hash(_stars),const DeepCollectionEquality().hash(_dailyStars));
+    return Object.hash(runtimeType,unlocked,const DeepCollectionEquality().hash(_stars),const DeepCollectionEquality().hash(_dailyStars),const DeepCollectionEquality().hash(_puzzleStars));
 }
 
 @override
 String toString() {
-    return 'Progress(unlocked: $unlocked, stars: $stars, dailyStars: $dailyStars)';
+    return 'Progress(unlocked: $unlocked, stars: $stars, dailyStars: $dailyStars, puzzleStars: $puzzleStars)';
 }
 
 
@@ -279,7 +290,7 @@ abstract mixin class _$ProgressCopyWith<$Res> implements $ProgressCopyWith<$Res>
   factory _$ProgressCopyWith(_Progress value, $Res Function(_Progress) _then) = __$ProgressCopyWithImpl;
 @override @useResult
 $Res call({
- int unlocked, Map<int, int> stars, Map<String, int> dailyStars
+ int unlocked, Map<int, int> stars, Map<String, int> dailyStars, Map<String, int> puzzleStars
 });
 
 
@@ -296,11 +307,12 @@ class __$ProgressCopyWithImpl<$Res>
 
 /// Create a copy of Progress
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? unlocked = null,Object? stars = null,Object? dailyStars = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? unlocked = null,Object? stars = null,Object? dailyStars = null,Object? puzzleStars = null,}) {
   return _then(_Progress(
 unlocked: null == unlocked ? _self.unlocked : unlocked // ignore: cast_nullable_to_non_nullable
 as int,stars: null == stars ? _self._stars : stars // ignore: cast_nullable_to_non_nullable
 as Map<int, int>,dailyStars: null == dailyStars ? _self._dailyStars : dailyStars // ignore: cast_nullable_to_non_nullable
+as Map<String, int>,puzzleStars: null == puzzleStars ? _self._puzzleStars : puzzleStars // ignore: cast_nullable_to_non_nullable
 as Map<String, int>,
   ));
 }

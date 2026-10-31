@@ -18,10 +18,16 @@ _Progress _$ProgressFromJson(Map<String, dynamic> json) => _Progress(
         (k, e) => MapEntry(k, (e as num).toInt()),
       ) ??
       const <String, int>{},
+  puzzleStars:
+      (json['puzzleStars'] as Map<String, dynamic>?)?.map(
+        (k, e) => MapEntry(k, (e as num).toInt()),
+      ) ??
+      const <String, int>{},
 );
 
 Map<String, dynamic> _$ProgressToJson(_Progress instance) => <String, dynamic>{
   'unlocked': instance.unlocked,
   'stars': instance.stars.map((k, e) => MapEntry(k.toString(), e)),
   'dailyStars': instance.dailyStars,
+  'puzzleStars': instance.puzzleStars,
 };

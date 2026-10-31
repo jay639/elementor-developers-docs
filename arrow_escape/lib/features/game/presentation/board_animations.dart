@@ -94,24 +94,6 @@ class BumpAnimation extends PieceAnimation {
   };
 }
 
-/// Reverses an exit when the player undoes it.
-class ReturnAnimation extends PieceAnimation {
-  ReturnAnimation(int piece, Track track, Duration start)
-    : super(
-        piece,
-        track,
-        start,
-        Duration(milliseconds: (track.exitTravel * 30).clamp(240, 560).round()),
-      );
-
-  @override
-  double offsetAt(Duration now) =>
-      track.exitTravel * (1 - Curves.easeOutCubic.transform(progress(now)));
-
-  @override
-  bool get remainsOnBoard => true;
-}
-
 /// Red pulse on whatever stopped a vehicle.
 class FlashAnimation {
   FlashAnimation({this.piece, this.cell, required this.start})

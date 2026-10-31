@@ -1,22 +1,17 @@
+import 'package:arrow_escape/core/theme/palette.dart';
 import 'package:flutter/material.dart';
 
-/// Bottom controls: undo, show paths, restart. Large targets throughout.
+/// Bottom controls: show paths, hint, restart. Large targets throughout.
 class GameToolbar extends StatelessWidget {
   const GameToolbar({
     super.key,
-    required this.canUndo,
-    required this.undosLeft,
     required this.showPaths,
-    required this.onUndo,
     required this.onTogglePaths,
     required this.onRestart,
     required this.onHint,
   });
 
-  final bool canUndo;
-  final int undosLeft;
   final bool showPaths;
-  final VoidCallback onUndo;
   final VoidCallback onTogglePaths;
   final VoidCallback onRestart;
 
@@ -31,14 +26,6 @@ class GameToolbar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _ToolButton(
-            key: const Key('undo'),
-            icon: Icons.undo_rounded,
-            label: 'Undo',
-            semanticLabel: undosLeft > 0 ? 'Undo, $undosLeft free' : 'Undo',
-            badge: undosLeft > 0 ? '$undosLeft' : null,
-            onPressed: canUndo ? onUndo : null,
-          ),
-          _ToolButton(
             key: const Key('paths'),
             icon: showPaths ? Icons.route_rounded : Icons.alt_route_rounded,
             label: showPaths ? 'Hide paths' : 'Show paths',
@@ -49,14 +36,16 @@ class GameToolbar extends StatelessWidget {
             _ToolButton(
               key: const Key('hint'),
               icon: Icons.lightbulb_rounded,
+              color: Palette.sun,
               label: 'Hint',
               semanticLabel: 'Hint, watch a video',
-              badge: '▶',
+              videoBadge: true,
               onPressed: onHint,
             ),
           _ToolButton(
             key: const Key('restart'),
             icon: Icons.refresh_rounded,
+            color: Palette.secondary,
             label: 'Restart',
             onPressed: onRestart,
           ),
@@ -66,6 +55,20 @@ class GameToolbar extends StatelessWidget {
   }
 }
 
+Widget _shadowed(Widget child) => DecoratedBox(
+  decoration: BoxDecoration(
+    borderRadius: BorderRadius.circular(22),
+    boxShadow: [
+      BoxShadow(
+        color: Palette.primary.withValues(alpha: 0.18),
+        blurRadius: 12,
+        offset: const Offset(0, 5),
+      ),
+    ],
+  ),
+  child: child,
+);
+
 class _ToolButton extends StatelessWidget {
   const _ToolButton({
     super.key,
@@ -73,13 +76,18 @@ class _ToolButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.selected = false,
-    this.badge,
+    this.videoBadge = false,
     this.semanticLabel,
+    this.color = Palette.primary,
   });
+
+  final Color color;
 
   final IconData icon;
   final String label;
-  final String? badge;
+
+  /// Marks actions that play a rewarded video.
+  final bool videoBadge;
   final String? semanticLabel;
   final VoidCallback? onPressed;
   final bool selected;
@@ -87,13 +95,18 @@ class _ToolButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final button = IconButton.filledTonal(
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final button = IconButton(
       onPressed: onPressed,
       isSelected: selected,
-      iconSize: 28,
+      iconSize: 30,
       style: IconButton.styleFrom(
-        minimumSize: const Size(64, 56),
-        backgroundColor: selected ? scheme.primaryContainer : null,
+        minimumSize: const Size(64, 58),
+        backgroundColor: selected
+            ? Palette.primary
+            : (dark ? Palette.tileDark : Colors.white),
+        foregroundColor: selected ? Colors.white : color,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       ),
       icon: Icon(icon),
     );
@@ -107,14 +120,18 @@ class _ToolButton extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (badge == null)
-              button
+            if (!videoBadge)
+              _shadowed(button)
             else
               Badge(
-                label: Text(badge!),
+                label: const Icon(
+                  Icons.play_arrow_rounded,
+                  size: 12,
+                  color: Colors.white,
+                ),
                 backgroundColor: scheme.tertiary,
                 textColor: scheme.onTertiary,
-                child: button,
+                child: _shadowed(button),
               ),
             const SizedBox(height: 4),
             Text(

@@ -13,7 +13,10 @@ void main(List<String> args) {
   stdout
     ..writeln('Checking ${levels.length} levels…')
     ..writeln(campaignReport(levels));
-  final problems = verifyCampaign(levels);
+  final problems = [
+    ...verifyCampaign(levels),
+    ...verifyPuzzles(readPuzzles(Directory(opts.option('dir')!))),
+  ];
   if (problems.isEmpty) {
     stdout.writeln('All checks passed.');
     return;

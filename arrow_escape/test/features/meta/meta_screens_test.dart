@@ -93,12 +93,19 @@ void main() {
   });
 
   group('Skins', () {
+    Future<ProviderContainer> openSkins(
+      WidgetTester tester, {
+      SaveData? save,
+      FakeAdService? ads,
+    }) async {
+      final c = await open(tester, Routes.collection, save: save, ads: ads);
+      await tester.tap(find.byKey(const Key('tab-skins')));
+      await tester.pumpAndSettle();
+      return c;
+    }
+
     testWidgets('buy with coins, then select another', (tester) async {
-      final c = await open(
-        tester,
-        Routes.skins,
-        save: const SaveData(coins: 600),
-      );
+      final c = await openSkins(tester, save: const SaveData(coins: 600));
       await tester.tap(find.byKey(const Key('skin-candy-buy')));
       await tester.pumpAndSettle();
       expect(c.read(saveProvider).selectedSkin, 'candy');
@@ -109,7 +116,7 @@ void main() {
     });
 
     testWidgets('unaffordable skins cannot be bought', (tester) async {
-      await open(tester, Routes.skins);
+      await openSkins(tester);
       final buy = tester.widget<ButtonStyleButton>(
         find.byKey(const Key('skin-candy-buy')),
       );
@@ -118,7 +125,7 @@ void main() {
 
     testWidgets('rewarded video unlocks an ad skin', (tester) async {
       final ads = FakeAdService();
-      final c = await open(tester, Routes.skins, ads: ads);
+      final c = await openSkins(tester, ads: ads);
       await tester.tap(find.byKey(const Key('skin-candy-ad')));
       await tester.pumpAndSettle();
       expect(ads.rewarded, [RewardKind.unlockSkin]);
@@ -127,7 +134,7 @@ void main() {
 
     testWidgets('no video: nothing granted, friendly message', (tester) async {
       final ads = FakeAdService()..earn = false;
-      final c = await open(tester, Routes.skins, ads: ads);
+      final c = await openSkins(tester, ads: ads);
       await tester.tap(find.byKey(const Key('skin-candy-ad')));
       await tester.pump();
       expect(c.read(saveProvider).owns('candy'), isFalse);
@@ -219,11 +226,11 @@ void main() {
       );
     });
 
-    testWidgets('tiles open map, skins and shop', (tester) async {
+    testWidgets('tiles open map, collection and shop', (tester) async {
       await open(tester, Routes.home);
       for (final (key, title) in [
         ('map', 'City map'),
-        ('skins', 'Vehicle skins'),
+        ('collection', 'Collection'),
         ('shop', 'Shop'),
       ]) {
         await tester.tap(find.byKey(Key(key)));

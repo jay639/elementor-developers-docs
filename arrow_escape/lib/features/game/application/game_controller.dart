@@ -8,6 +8,7 @@ import 'package:arrow_escape/features/game/application/game_state.dart';
 import 'package:arrow_escape/features/game/data/level_repository.dart';
 import 'package:arrow_escape/features/game/domain/level_ref.dart';
 import 'package:arrow_escape/features/onboarding/tips.dart';
+import 'package:arrow_escape/features/puzzles/puzzle_progress.dart';
 import 'package:arrow_escape/features/save/application/save_controller.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -43,6 +44,7 @@ class GameController extends Notifier<GameViewState> {
   String get _label => switch (levelRef) {
     CampaignLevelRef(:final number) => '$number',
     DailyLevelRef(:final dateKey) => 'daily_$dateKey',
+    PuzzleLevelRef(:final shape, :final layer) => 'puzzle_${shape}_$layer',
   };
 
   @override
@@ -77,7 +79,11 @@ class GameController extends Notifier<GameViewState> {
     );
     _info = LevelInfo(
       level: _label,
-      mode: levelRef.isDaily ? 'daily' : 'campaign',
+      mode: switch (levelRef) {
+        CampaignLevelRef() => 'campaign',
+        DailyLevelRef() => 'daily',
+        PuzzleLevelRef() => 'puzzle',
+      },
       tier: level.meta.tier.name,
       attempt: attempt,
       arrows: level.pieces.length,
@@ -168,6 +174,7 @@ class GameController extends Notifier<GameViewState> {
       case SessionStatus.won:
         final save = ref.read(saveProvider.notifier);
         final stars = result.session.stars;
+        final pointsBefore = save.current.progress.points;
         final coins = switch (levelRef) {
           CampaignLevelRef(:final number) => save.winLevel(
             number,
@@ -175,8 +182,23 @@ class GameController extends Notifier<GameViewState> {
             rewardMultiplier: state.level.meta.tier.rewardMultiplier,
           ),
           DailyLevelRef(:final dateKey) => save.winDaily(dateKey, stars),
+          PuzzleLevelRef(:final shape, :final layer) => save.winPuzzle(
+            shape,
+            layer,
+            stars,
+          ),
         };
-        state = state.copyWith(coinsEarned: coins);
+        final opened = puzzlesOpenedBetween(
+          pointsBefore,
+          save.current.progress.points,
+        );
+        state = state.copyWith(
+          coinsEarned: coins,
+          unlockedPuzzles: [for (final p in opened) p.id],
+        );
+        for (final p in opened) {
+          ref.read(analyticsProvider).log('puzzle_unlock', {'puzzle': p.id});
+        }
         _ended = true;
         ref
             .read(analyticsProvider)
@@ -208,21 +230,6 @@ class GameController extends Notifier<GameViewState> {
     }
     _advanceTutorial(outcome, result.session.status);
     return outcome;
-  }
-
-  /// Reverts the last exit; returns the piece that came back, if any.
-  int? undo() {
-    final before = state.session;
-    final after = before.undo();
-    if (identical(before, after)) return null;
-    state = state.copyWith(session: after, hintPiece: null);
-    ref.read(hapticsProvider).play(HapticKind.tap);
-    _help = _help.copyWith(undos: _help.undos + 1);
-    ref.read(analyticsProvider).helpUsed('undo', level: _label, source: 'free');
-    for (final p in after.board.remaining) {
-      if (!before.board.isOnBoard(p)) return p;
-    }
-    return null;
   }
 
   void togglePaths() {

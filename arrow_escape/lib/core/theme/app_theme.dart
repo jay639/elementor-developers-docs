@@ -1,10 +1,10 @@
 import 'package:arrow_escape/core/theme/palette.dart';
 import 'package:flutter/material.dart';
 
-/// Material 3 theme: rounded, soft, pastel. Font is the bundled Nunito.
+/// Material 3 theme: rounded, vivid, playful. Font is the bundled Fredoka.
 abstract final class AppTheme {
-  static const fontFamily = 'Nunito';
-  static const radius = 20.0;
+  static const fontFamily = 'Fredoka';
+  static const radius = 22.0;
 
   static ThemeData build(Brightness brightness, {bool highContrast = false}) {
     final dark = brightness == Brightness.dark;
@@ -16,6 +16,13 @@ abstract final class AppTheme {
       surface: dark ? Palette.night : Palette.cream,
       error: Palette.danger,
       contrastLevel: highContrast ? 1.0 : 0.0,
+    );
+    // Keep the brand colours vivid rather than the seed's muted tones.
+    scheme = scheme.copyWith(
+      primary: dark ? const Color(0xFF9B87FF) : Palette.primary,
+      onPrimary: Colors.white,
+      secondary: Palette.secondary,
+      onSecondary: Colors.white,
     );
     if (highContrast) {
       scheme = scheme.copyWith(
@@ -46,12 +53,12 @@ abstract final class AppTheme {
 
     return base.copyWith(
       textTheme: text.copyWith(
-        displaySmall: text.displaySmall?.copyWith(fontWeight: FontWeight.w800),
+        displaySmall: text.displaySmall?.copyWith(fontWeight: FontWeight.w700),
         headlineMedium: text.headlineMedium?.copyWith(
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
         ),
         headlineSmall: text.headlineSmall?.copyWith(
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
         ),
         titleLarge: text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         titleMedium: text.titleMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -66,7 +73,7 @@ abstract final class AppTheme {
         elevation: 0,
         centerTitle: true,
         foregroundColor: scheme.onSurface,
-        titleTextStyle: text.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+        titleTextStyle: text.titleLarge?.copyWith(fontWeight: FontWeight.w700),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -75,7 +82,7 @@ abstract final class AppTheme {
           shape: rounded,
           textStyle: const TextStyle(
             fontFamily: fontFamily,
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             fontSize: 18,
           ),
         ),

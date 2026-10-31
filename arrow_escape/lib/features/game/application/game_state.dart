@@ -25,6 +25,9 @@ abstract class GameViewState with _$GameViewState {
 
     /// Level-1 tutorial progress (none outside the tutorial).
     @Default(TutorialStep.none) TutorialStep tutorial,
+
+    /// Picture puzzles this win unlocked (ids), announced on the win card.
+    @Default(<String>[]) List<String> unlockedPuzzles,
   }) = _GameViewState;
 
   Level get level => session.level;

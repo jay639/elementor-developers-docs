@@ -19,7 +19,8 @@ mixin _$GameViewState {
  int get coinsEarned;/// Whether the win reward was already doubled by a rewarded ad.
  bool get coinsDoubled;/// Vehicle highlighted by a hint until the next move.
  int? get hintPiece;/// Level-1 tutorial progress (none outside the tutorial).
- TutorialStep get tutorial;
+ TutorialStep get tutorial;/// Picture puzzles this win unlocked (ids), announced on the win card.
+ List<String> get unlockedPuzzles;
 /// Create a copy of GameViewState
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -31,20 +32,20 @@ $GameViewStateCopyWith<GameViewState> get copyWith => _$GameViewStateCopyWithImp
 @override
 bool operator ==(Object other) {
   final _this = this as GameViewState;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is GameViewState&&(identical(other.levelRef, _this.levelRef) || other.levelRef == _this.levelRef)&&(identical(other.session, _this.session) || other.session == _this.session)&&(identical(other.showPaths, _this.showPaths) || other.showPaths == _this.showPaths)&&(identical(other.coinsEarned, _this.coinsEarned) || other.coinsEarned == _this.coinsEarned)&&(identical(other.coinsDoubled, _this.coinsDoubled) || other.coinsDoubled == _this.coinsDoubled)&&(identical(other.hintPiece, _this.hintPiece) || other.hintPiece == _this.hintPiece)&&(identical(other.tutorial, _this.tutorial) || other.tutorial == _this.tutorial));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is GameViewState&&(identical(other.levelRef, _this.levelRef) || other.levelRef == _this.levelRef)&&(identical(other.session, _this.session) || other.session == _this.session)&&(identical(other.showPaths, _this.showPaths) || other.showPaths == _this.showPaths)&&(identical(other.coinsEarned, _this.coinsEarned) || other.coinsEarned == _this.coinsEarned)&&(identical(other.coinsDoubled, _this.coinsDoubled) || other.coinsDoubled == _this.coinsDoubled)&&(identical(other.hintPiece, _this.hintPiece) || other.hintPiece == _this.hintPiece)&&(identical(other.tutorial, _this.tutorial) || other.tutorial == _this.tutorial)&&const DeepCollectionEquality().equals(other.unlockedPuzzles, _this.unlockedPuzzles));
 }
 
 
 @override
 int get hashCode {
   final _this = this as GameViewState;
-  return Object.hash(runtimeType,_this.levelRef,_this.session,_this.showPaths,_this.coinsEarned,_this.coinsDoubled,_this.hintPiece,_this.tutorial);
+  return Object.hash(runtimeType,_this.levelRef,_this.session,_this.showPaths,_this.coinsEarned,_this.coinsDoubled,_this.hintPiece,_this.tutorial,const DeepCollectionEquality().hash(_this.unlockedPuzzles));
 }
 
 @override
 String toString() {
   final _this = this as GameViewState;
-  return 'GameViewState(levelRef: ${_this.levelRef}, session: ${_this.session}, showPaths: ${_this.showPaths}, coinsEarned: ${_this.coinsEarned}, coinsDoubled: ${_this.coinsDoubled}, hintPiece: ${_this.hintPiece}, tutorial: ${_this.tutorial})';
+  return 'GameViewState(levelRef: ${_this.levelRef}, session: ${_this.session}, showPaths: ${_this.showPaths}, coinsEarned: ${_this.coinsEarned}, coinsDoubled: ${_this.coinsDoubled}, hintPiece: ${_this.hintPiece}, tutorial: ${_this.tutorial}, unlockedPuzzles: ${_this.unlockedPuzzles})';
 }
 
 
@@ -55,7 +56,7 @@ abstract mixin class $GameViewStateCopyWith<$Res>  {
   factory $GameViewStateCopyWith(GameViewState value, $Res Function(GameViewState) _then) = _$GameViewStateCopyWithImpl;
 @useResult
 $Res call({
- LevelRef levelRef, PlaySession session, bool showPaths, int coinsEarned, bool coinsDoubled, int? hintPiece, TutorialStep tutorial
+ LevelRef levelRef, PlaySession session, bool showPaths, int coinsEarned, bool coinsDoubled, int? hintPiece, TutorialStep tutorial, List<String> unlockedPuzzles
 });
 
 
@@ -72,7 +73,7 @@ class _$GameViewStateCopyWithImpl<$Res>
 
 /// Create a copy of GameViewState
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? levelRef = null,Object? session = null,Object? showPaths = null,Object? coinsEarned = null,Object? coinsDoubled = null,Object? hintPiece = freezed,Object? tutorial = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? levelRef = null,Object? session = null,Object? showPaths = null,Object? coinsEarned = null,Object? coinsDoubled = null,Object? hintPiece = freezed,Object? tutorial = null,Object? unlockedPuzzles = null,}) {
   return _then(GameViewState(
 levelRef: null == levelRef ? _self.levelRef : levelRef // ignore: cast_nullable_to_non_nullable
 as LevelRef,session: null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
@@ -81,7 +82,8 @@ as bool,coinsEarned: null == coinsEarned ? _self.coinsEarned : coinsEarned // ig
 as int,coinsDoubled: null == coinsDoubled ? _self.coinsDoubled : coinsDoubled // ignore: cast_nullable_to_non_nullable
 as bool,hintPiece: freezed == hintPiece ? _self.hintPiece : hintPiece // ignore: cast_nullable_to_non_nullable
 as int?,tutorial: null == tutorial ? _self.tutorial : tutorial // ignore: cast_nullable_to_non_nullable
-as TutorialStep,
+as TutorialStep,unlockedPuzzles: null == unlockedPuzzles ? _self.unlockedPuzzles : unlockedPuzzles // ignore: cast_nullable_to_non_nullable
+as List<String>,
   ));
 }
 /// Create a copy of GameViewState
@@ -175,10 +177,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LevelRef levelRef,  PlaySession session,  bool showPaths,  int coinsEarned,  bool coinsDoubled,  int? hintPiece,  TutorialStep tutorial)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( LevelRef levelRef,  PlaySession session,  bool showPaths,  int coinsEarned,  bool coinsDoubled,  int? hintPiece,  TutorialStep tutorial,  List<String> unlockedPuzzles)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _GameViewState() when $default != null:
-return $default(_that.levelRef,_that.session,_that.showPaths,_that.coinsEarned,_that.coinsDoubled,_that.hintPiece,_that.tutorial);case _:
+return $default(_that.levelRef,_that.session,_that.showPaths,_that.coinsEarned,_that.coinsDoubled,_that.hintPiece,_that.tutorial,_that.unlockedPuzzles);case _:
   return orElse();
 
 }
@@ -196,10 +198,10 @@ return $default(_that.levelRef,_that.session,_that.showPaths,_that.coinsEarned,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LevelRef levelRef,  PlaySession session,  bool showPaths,  int coinsEarned,  bool coinsDoubled,  int? hintPiece,  TutorialStep tutorial)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( LevelRef levelRef,  PlaySession session,  bool showPaths,  int coinsEarned,  bool coinsDoubled,  int? hintPiece,  TutorialStep tutorial,  List<String> unlockedPuzzles)  $default,) {final _that = this;
 switch (_that) {
 case _GameViewState():
-return $default(_that.levelRef,_that.session,_that.showPaths,_that.coinsEarned,_that.coinsDoubled,_that.hintPiece,_that.tutorial);case _:
+return $default(_that.levelRef,_that.session,_that.showPaths,_that.coinsEarned,_that.coinsDoubled,_that.hintPiece,_that.tutorial,_that.unlockedPuzzles);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -216,10 +218,10 @@ return $default(_that.levelRef,_that.session,_that.showPaths,_that.coinsEarned,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LevelRef levelRef,  PlaySession session,  bool showPaths,  int coinsEarned,  bool coinsDoubled,  int? hintPiece,  TutorialStep tutorial)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( LevelRef levelRef,  PlaySession session,  bool showPaths,  int coinsEarned,  bool coinsDoubled,  int? hintPiece,  TutorialStep tutorial,  List<String> unlockedPuzzles)?  $default,) {final _that = this;
 switch (_that) {
 case _GameViewState() when $default != null:
-return $default(_that.levelRef,_that.session,_that.showPaths,_that.coinsEarned,_that.coinsDoubled,_that.hintPiece,_that.tutorial);case _:
+return $default(_that.levelRef,_that.session,_that.showPaths,_that.coinsEarned,_that.coinsDoubled,_that.hintPiece,_that.tutorial,_that.unlockedPuzzles);case _:
   return null;
 
 }
@@ -231,7 +233,7 @@ return $default(_that.levelRef,_that.session,_that.showPaths,_that.coinsEarned,_
 
 
 class _GameViewState extends GameViewState {
-  const _GameViewState({required this.levelRef, required this.session, this.showPaths = false, this.coinsEarned = 0, this.coinsDoubled = false, this.hintPiece, this.tutorial = TutorialStep.none}): super._();
+  const _GameViewState({required this.levelRef, required this.session, this.showPaths = false, this.coinsEarned = 0, this.coinsDoubled = false, this.hintPiece, this.tutorial = TutorialStep.none,  List<String> unlockedPuzzles = const <String>[]}): _unlockedPuzzles = unlockedPuzzles,super._();
   
 
 @override final  LevelRef levelRef;
@@ -245,6 +247,15 @@ class _GameViewState extends GameViewState {
 @override final  int? hintPiece;
 /// Level-1 tutorial progress (none outside the tutorial).
 @override@JsonKey() final  TutorialStep tutorial;
+/// Picture puzzles this win unlocked (ids), announced on the win card.
+ final  List<String> _unlockedPuzzles;
+/// Picture puzzles this win unlocked (ids), announced on the win card.
+@override@JsonKey() List<String> get unlockedPuzzles {
+  if (_unlockedPuzzles is EqualUnmodifiableListView) return _unlockedPuzzles;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_unlockedPuzzles);
+}
+
 
 /// Create a copy of GameViewState
 /// with the given fields replaced by the non-null parameter values.
@@ -256,18 +267,18 @@ _$GameViewStateCopyWith<_GameViewState> get copyWith => __$GameViewStateCopyWith
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _GameViewState&&(identical(other.levelRef, levelRef) || other.levelRef == levelRef)&&(identical(other.session, session) || other.session == session)&&(identical(other.showPaths, showPaths) || other.showPaths == showPaths)&&(identical(other.coinsEarned, coinsEarned) || other.coinsEarned == coinsEarned)&&(identical(other.coinsDoubled, coinsDoubled) || other.coinsDoubled == coinsDoubled)&&(identical(other.hintPiece, hintPiece) || other.hintPiece == hintPiece)&&(identical(other.tutorial, tutorial) || other.tutorial == tutorial));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _GameViewState&&(identical(other.levelRef, levelRef) || other.levelRef == levelRef)&&(identical(other.session, session) || other.session == session)&&(identical(other.showPaths, showPaths) || other.showPaths == showPaths)&&(identical(other.coinsEarned, coinsEarned) || other.coinsEarned == coinsEarned)&&(identical(other.coinsDoubled, coinsDoubled) || other.coinsDoubled == coinsDoubled)&&(identical(other.hintPiece, hintPiece) || other.hintPiece == hintPiece)&&(identical(other.tutorial, tutorial) || other.tutorial == tutorial)&&const DeepCollectionEquality().equals(other.unlockedPuzzles, _unlockedPuzzles));
 }
 
 
 @override
 int get hashCode {
-    return Object.hash(runtimeType,levelRef,session,showPaths,coinsEarned,coinsDoubled,hintPiece,tutorial);
+    return Object.hash(runtimeType,levelRef,session,showPaths,coinsEarned,coinsDoubled,hintPiece,tutorial,const DeepCollectionEquality().hash(_unlockedPuzzles));
 }
 
 @override
 String toString() {
-    return 'GameViewState(levelRef: $levelRef, session: $session, showPaths: $showPaths, coinsEarned: $coinsEarned, coinsDoubled: $coinsDoubled, hintPiece: $hintPiece, tutorial: $tutorial)';
+    return 'GameViewState(levelRef: $levelRef, session: $session, showPaths: $showPaths, coinsEarned: $coinsEarned, coinsDoubled: $coinsDoubled, hintPiece: $hintPiece, tutorial: $tutorial, unlockedPuzzles: $unlockedPuzzles)';
 }
 
 
@@ -278,7 +289,7 @@ abstract mixin class _$GameViewStateCopyWith<$Res> implements $GameViewStateCopy
   factory _$GameViewStateCopyWith(_GameViewState value, $Res Function(_GameViewState) _then) = __$GameViewStateCopyWithImpl;
 @override @useResult
 $Res call({
- LevelRef levelRef, PlaySession session, bool showPaths, int coinsEarned, bool coinsDoubled, int? hintPiece, TutorialStep tutorial
+ LevelRef levelRef, PlaySession session, bool showPaths, int coinsEarned, bool coinsDoubled, int? hintPiece, TutorialStep tutorial, List<String> unlockedPuzzles
 });
 
 
@@ -295,7 +306,7 @@ class __$GameViewStateCopyWithImpl<$Res>
 
 /// Create a copy of GameViewState
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? levelRef = null,Object? session = null,Object? showPaths = null,Object? coinsEarned = null,Object? coinsDoubled = null,Object? hintPiece = freezed,Object? tutorial = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? levelRef = null,Object? session = null,Object? showPaths = null,Object? coinsEarned = null,Object? coinsDoubled = null,Object? hintPiece = freezed,Object? tutorial = null,Object? unlockedPuzzles = null,}) {
   return _then(_GameViewState(
 levelRef: null == levelRef ? _self.levelRef : levelRef // ignore: cast_nullable_to_non_nullable
 as LevelRef,session: null == session ? _self.session : session // ignore: cast_nullable_to_non_nullable
@@ -304,7 +315,8 @@ as bool,coinsEarned: null == coinsEarned ? _self.coinsEarned : coinsEarned // ig
 as int,coinsDoubled: null == coinsDoubled ? _self.coinsDoubled : coinsDoubled // ignore: cast_nullable_to_non_nullable
 as bool,hintPiece: freezed == hintPiece ? _self.hintPiece : hintPiece // ignore: cast_nullable_to_non_nullable
 as int?,tutorial: null == tutorial ? _self.tutorial : tutorial // ignore: cast_nullable_to_non_nullable
-as TutorialStep,
+as TutorialStep,unlockedPuzzles: null == unlockedPuzzles ? _self._unlockedPuzzles : unlockedPuzzles // ignore: cast_nullable_to_non_nullable
+as List<String>,
   ));
 }
 

@@ -32,6 +32,7 @@ SaveData mergeSaves(SaveData local, SaveData remote) {
     unlocked: math.max(local.progress.unlocked, remote.progress.unlocked),
     stars: best(local.progress.stars, remote.progress.stars),
     dailyStars: best(local.progress.dailyStars, remote.progress.dailyStars),
+    puzzleStars: best(local.progress.puzzleStars, remote.progress.puzzleStars),
   );
   final owned = {...local.ownedSkins, ...remote.ownedSkins}.toList()..sort();
   final bundles = {...local.claimedBundles, ...remote.claimedBundles}.toList()

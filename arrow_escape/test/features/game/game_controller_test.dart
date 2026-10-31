@@ -102,15 +102,6 @@ void main() {
     expect(sound.played.last, Sfx.lose);
   });
 
-  test('undo returns the piece that came back', () {
-    keepAlive();
-    controller()
-      ..tap(0)
-      ..tap(2);
-    expect(controller().undo(), 2);
-    expect(controller().undo(), isNull); // only one free undo
-  });
-
   test('restart resets the session but keeps the paths toggle', () {
     keepAlive();
     controller()

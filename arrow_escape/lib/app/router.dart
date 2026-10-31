@@ -1,11 +1,12 @@
+import 'package:arrow_engine/arrow_engine.dart';
 import 'package:arrow_escape/app/routes.dart';
+import 'package:arrow_escape/features/collection/collection_screen.dart';
 import 'package:arrow_escape/features/daily/daily_screen.dart';
 import 'package:arrow_escape/features/game/domain/level_ref.dart';
 import 'package:arrow_escape/features/game/presentation/game_screen.dart';
 import 'package:arrow_escape/features/home/home_screen.dart';
 import 'package:arrow_escape/features/level_map/level_map_screen.dart';
 import 'package:arrow_escape/features/shop/shop_screen.dart';
-import 'package:arrow_escape/features/skins/skins_screen.dart';
 import 'package:arrow_escape/features/settings/presentation/settings_screen.dart';
 import 'package:arrow_escape/features/splash/splash_screen.dart';
 import 'package:flutter/material.dart';
@@ -29,8 +30,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const LevelMapScreen(),
       ),
       GoRoute(
-        path: Routes.skins,
-        builder: (context, state) => const SkinsScreen(),
+        path: Routes.collection,
+        builder: (context, state) => const CollectionScreen(),
       ),
       GoRoute(
         path: Routes.shop,
@@ -49,6 +50,24 @@ final routerProvider = Provider<GoRouter>((ref) {
             child: level == null || level < 1
                 ? const HomeScreen()
                 : GameScreen(levelRef: LevelRef.campaign(level)),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/puzzle/:shape/:layer',
+        pageBuilder: (context, state) {
+          final shape = state.pathParameters['shape'] ?? '';
+          final layer = int.tryParse(state.pathParameters['layer'] ?? '');
+          final valid =
+              ShapePuzzles.all.any((s) => s.id == shape) &&
+              layer != null &&
+              layer >= 1 &&
+              layer <= PuzzleShape.layerCount;
+          return MaterialPage(
+            key: state.pageKey,
+            child: valid
+                ? GameScreen(levelRef: LevelRef.puzzle(shape, layer))
+                : const CollectionScreen(),
           );
         },
       ),

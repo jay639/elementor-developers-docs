@@ -7,10 +7,13 @@ import 'package:arrow_escape/features/game/domain/level_ref.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-/// Source of campaign levels, numbered from 1.
+/// Source of campaign levels, numbered from 1, and picture puzzles.
 abstract interface class LevelRepository {
   int get count;
   Future<Level> load(int number);
+
+  /// A picture-puzzle layer by `shape/layer` key.
+  Future<Level> loadPuzzle(String key);
 }
 
 /// Reads the generated, gzip-compressed packs in `assets/levels/`
@@ -50,6 +53,23 @@ class AssetLevelRepository implements LevelRepository {
       throw StateError('Pack $pack is out of order: ${level.id} != $number');
     }
     return level;
+  }
+
+  Future<Map<String, Level>>? _puzzles;
+
+  @override
+  Future<Level> loadPuzzle(String key) async {
+    final all = await (_puzzles ??= _decodePuzzles());
+    return all[key] ?? (throw ArgumentError.value(key, 'key', 'no puzzle'));
+  }
+
+  Future<Map<String, Level>> _decodePuzzles() async {
+    final data = await _bundle.load('$dir/${ShapePuzzles.assetFile}');
+    final bytes = data.buffer.asUint8List(
+      data.offsetInBytes,
+      data.lengthInBytes,
+    );
+    return ShapePuzzles.decode(await _gunzipOnIsolate(bytes));
   }
 
   Future<List<Level>> _fetch(int pack) =>
@@ -101,5 +121,9 @@ final levelProvider = FutureProvider.autoDispose.family<Level, LevelRef>(
     DailyLevelRef(:final dateKey) => ref.watch(dailyLevelGeneratorProvider)(
       dateKey,
     ),
+    PuzzleLevelRef(:final shape, :final layer) =>
+      ref
+          .watch(levelRepositoryProvider)
+          .loadPuzzle(ShapePuzzles.key(shape, layer)),
   },
 );

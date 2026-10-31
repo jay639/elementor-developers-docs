@@ -14,5 +14,6 @@ export 'src/play_session.dart';
 export 'src/rng.dart';
 export 'src/rules.dart';
 export 'src/samples.dart';
+export 'src/shape_puzzles.dart';
 export 'src/shapes.dart';
 export 'src/solver.dart';

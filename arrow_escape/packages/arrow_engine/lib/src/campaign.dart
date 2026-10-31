@@ -66,20 +66,21 @@ Level? generateForTarget({
   bool breather = false,
   LevelTier tier = LevelTier.normal,
   int candidates = 10,
+  int minCells = 0,
 }) {
   final rng = Rng(seed);
   // `scale` drives board size, density and arrow length together. It starts
   // from a calibrated guess and is corrected after every candidate, so the
   // search homes in on the target instead of sampling blindly.
   var scale = math.max(3.0, target - mechanics.expectedBonus);
-  final minCells = Shapes.isLetter(shape) ? 60 : 0;
+  final floor = math.max(minCells, Shapes.isLetter(shape) ? 60 : 0);
   Level? best;
   var bestError = double.infinity;
   for (var i = 0; i < candidates; i++) {
     final jitter = 0.92 + 0.16 * rng.nextDouble();
     final p = _shapeFor(scale * jitter, target);
     final fitted = shape.fitTo(
-      math.max(p.cells, minCells),
+      math.max(p.cells, floor),
       maxWidth: maxBoardWidth,
       maxHeight: maxBoardHeight,
     );
