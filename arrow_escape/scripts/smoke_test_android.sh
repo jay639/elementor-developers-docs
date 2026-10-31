@@ -9,15 +9,24 @@ pkg="$2"
 adb wait-for-device
 adb logcat -c
 adb install -r "$apk" || exit 1
-adb shell monkey -p "$pkg" -c android.intent.category.LAUNCHER 1 >/dev/null
+# Stream the log to disk from the start, so it survives even if the
+# emulator itself goes down (a dump at the end would get nothing).
+adb logcat -v threadtime > logcat.txt 2>&1 &
+logcat_pid=$!
+timeout 60 adb shell monkey -p "$pkg" -c android.intent.category.LAUNCHER 1 >/dev/null
 
 alive=1
 for i in $(seq 1 30); do
   sleep 1
-  if ! adb shell pidof "$pkg" >/dev/null; then alive=0; break; fi
+  if ! timeout 10 adb shell pidof "$pkg" >/dev/null; then alive=0; break; fi
 done
-
-adb logcat -d > logcat.txt
+if ! timeout 10 adb shell true >/dev/null 2>&1; then
+  echo "::error::The emulator stopped responding after the app launched"
+  echo "===== last log lines ====="
+  tail -n 150 logcat.txt
+  exit 1
+fi
+kill "$logcat_pid" 2>/dev/null || true
 echo "===== crash / error lines ====="
 grep -E "FATAL|AndroidRuntime|E flutter|Exception|Error|libc  |DEBUG   :|ActivityManager: Process .* has died|ActivityManager: Force" logcat.txt | grep -v "GoogleApiManager\|ConnectionResult" | head -200
 
@@ -26,10 +35,10 @@ grep -E " (I|W|E) flutter" logcat.txt | head -80
 
 if [ "$alive" = 1 ]; then
   echo "App stayed up for 30s."
-  adb exec-out screencap -p > screenshot.png
+  timeout 30 adb exec-out screencap -p > screenshot.png
   # The UI tree proves the app got past the splash and rendered home.
-  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
-  adb pull /sdcard/ui.xml ui.xml >/dev/null 2>&1
+  timeout 60 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+  timeout 30 adb pull /sdcard/ui.xml ui.xml >/dev/null 2>&1
   if grep -q "Play" ui.xml; then
     echo "Home screen rendered (found the Play button)."
     exit 0
