@@ -22,6 +22,8 @@ for i in $(seq 1 30); do
 done
 if ! timeout 10 adb shell true >/dev/null 2>&1; then
   echo "::error::The emulator stopped responding after the app launched"
+  echo "===== app / graphics lines ====="
+  grep -iE "arrow_escape|flutter|impeller|vulkan|EGL_emulation|FATAL|libc  " logcat.txt | tail -n 80
   echo "===== last log lines ====="
   tail -n 150 logcat.txt
   exit 1

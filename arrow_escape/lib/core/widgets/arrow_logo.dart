@@ -109,23 +109,30 @@ void paintLogo(
       ..lineTo(end.dx + n.dx * len * 0.62, end.dy + n.dy * len * 0.62)
       ..lineTo(end.dx - n.dx * len * 0.62, end.dy - n.dy * len * 0.62)
       ..close();
-    final shadow = Paint()
-      ..color = Colors.black.withValues(alpha: 0.32)
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, s * 0.02);
+    // Soft drop shadow from two offset, translucent copies; no blur
+    // filter, which some software GPUs (emulators) can't handle.
+    canvas.save();
+    for (final (dy, alpha, grow) in const [
+      (0.028, 0.12, 0.03),
+      (0.016, 0.2, 0.0),
+    ]) {
+      final shadow = Colors.black.withValues(alpha: alpha);
+      canvas
+        ..save()
+        ..translate(0, s * dy)
+        ..drawPath(
+          body,
+          Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = s * (0.085 + grow)
+            ..strokeCap = StrokeCap.round
+            ..strokeJoin = StrokeJoin.round
+            ..color = shadow,
+        )
+        ..drawPath(head, Paint()..color = shadow)
+        ..restore();
+    }
     canvas
-      ..save()
-      ..translate(0, s * 0.02)
-      ..drawPath(
-        body,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = s * 0.085
-          ..strokeCap = StrokeCap.round
-          ..strokeJoin = StrokeJoin.round
-          ..color = shadow.color
-          ..maskFilter = shadow.maskFilter,
-      )
-      ..drawPath(head, shadow)
       ..restore()
       ..drawPath(
         body,
