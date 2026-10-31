@@ -88,7 +88,8 @@ jobs:
           for f in build/app/outputs/flutter-apk/*.apk; do
             echo "== $f"
             "$BT/aapt2" dump badging "$f" | grep -E "^package:|^sdkVersion|^native-code"
-            "$BT/apksigner" verify --print-certs "$f" | grep -E "Signer #1 certificate (DN|SHA-256)"
+            "$BT/apksigner" verify --verbose --print-certs "$f" 2>&1 | head -20
+            "$BT/apksigner" verify "$f"
             sha256sum "$f"
           done
 
