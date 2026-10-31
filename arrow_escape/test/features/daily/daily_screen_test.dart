@@ -26,7 +26,7 @@ void main() {
     await openDaily(tester);
     expect(find.byType(DailyScreen), findsOneWidget);
     expect(find.text('Thursday, October 29, 2026'), findsOneWidget);
-    expect(find.text('Medium'), findsOneWidget);
+    expect(find.text('Hard'), findsOneWidget);
     expect(find.text('Next challenge in 2:30:00'), findsOneWidget);
     expect(find.text('Play today'), findsOneWidget);
   });
@@ -60,8 +60,9 @@ void main() {
     expect(find.byType(DailyScreen), findsOneWidget);
   });
 
-  test('difficulty labels rise through the week', () {
-    expect(DailyScreen.difficultyLabel(DateTime(2026, 11, 2)), 'Easy');
-    expect(DailyScreen.difficultyLabel(DateTime(2026, 11, 8)), 'Expert');
+  test('difficulty labels rise over time', () {
+    expect(DailyScreen.difficultyLabel(DateTime(2026, 11, 2)), 'Hard');
+    expect(DailyScreen.difficultyLabel(DateTime(2027, 3, 1)), 'Expert');
+    expect(DailyScreen.difficultyLabel(DateTime(2027, 9, 1)), 'Master');
   });
 }

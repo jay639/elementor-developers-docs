@@ -8,18 +8,24 @@ import 'shapes.dart';
 abstract final class DailyChallenge {
   /// Part of the seed. Bump when generator changes would alter past dailies
   /// anyway, so the change is deliberate.
-  static const version = 4;
+  static const version = 5;
 
-  /// Easier early in the week, hardest on Sunday.
-  static const weekdayTargets = {
-    DateTime.monday: 58.0,
-    DateTime.tuesday: 61.0,
-    DateTime.wednesday: 64.0,
-    DateTime.thursday: 67.0,
-    DateTime.friday: 70.0,
-    DateTime.saturday: 74.0,
-    DateTime.sunday: 78.0,
-  };
+  /// First day of the current daily series.
+  static final launch = DateTime.utc(2026, 11, 1);
+
+  /// Always harder than campaign level 20, and harder every day: +0.1 a
+  /// day (about +3 a month) up to an expert ceiling, plus a small weekend
+  /// bump.
+  static double targetFor(DateTime date) {
+    final day = DateTime.utc(date.year, date.month, date.day);
+    final days = day.difference(launch).inDays.clamp(0, 100000);
+    final weekend = date.weekday >= DateTime.saturday ? 2.0 : 0.0;
+    return (66 + days * 0.1 + weekend).clamp(66.0, 90.0);
+  }
+
+  /// Board size grows with the difficulty: always a crowded board.
+  static int minCellsFor(DateTime date) =>
+      (190 + (targetFor(date) - 66) * 4).round().clamp(190, 290);
 
   /// `yyyy-mm-dd` of the player's local calendar day.
   static String keyFor(DateTime date) =>
@@ -41,16 +47,11 @@ abstract final class DailyChallenge {
     );
   }
 
-  static double targetFor(DateTime date) => weekdayTargets[date.weekday]!;
-
   static Level levelFor(DateTime date) {
     final day = DateTime(date.year, date.month, date.day);
     final rng = Rng(stableHash('daily-v$version-${keyFor(day)}'));
-    final shapes = [
-      for (final s in Shapes.all)
-        if (!Shapes.isLetter(s)) s,
-    ];
-    final shape = rng.pick(shapes);
+    // Always a full rectangle: the most crowded board, every cell in play.
+    final shape = ShapeMask.rect(13 + rng.nextInt(3), 15 + rng.nextInt(4));
     final mechanics = MechanicSet(
       lights: rng.nextBool(0.4) ? 1 + rng.nextInt(2) : 0,
       gates: rng.nextBool(0.35) ? 1 + rng.nextInt(2) : 0,
@@ -66,8 +67,8 @@ abstract final class DailyChallenge {
         shape: attempt < 3 ? shape : ShapeMask.rect(14, 18),
         mechanics: attempt < 4 ? mechanics : const MechanicSet(),
         candidates: 14,
-        // Bigger boards later in the week.
-        minCells: 100 + day.weekday * 12,
+        // Bigger boards as the daily gets harder.
+        minCells: minCellsFor(day),
       );
       if (level != null) return level;
     }

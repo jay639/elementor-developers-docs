@@ -15,13 +15,12 @@ import 'package:go_router/go_router.dart';
 class DailyScreen extends ConsumerStatefulWidget {
   const DailyScreen({super.key});
 
-  /// Label shown for each weekday's target difficulty.
+  /// Label for a day's target difficulty (the daily only gets harder).
   static String difficultyLabel(DateTime day) =>
       switch (DailyChallenge.targetFor(day)) {
-        < 60 => 'Easy',
-        < 68 => 'Medium',
-        < 76 => 'Hard',
-        _ => 'Expert',
+        < 78 => 'Hard',
+        < 88 => 'Expert',
+        _ => 'Master',
       };
 
   @override
@@ -159,8 +158,9 @@ class _DailyScreenState extends ConsumerState<DailyScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Everyone gets the same puzzle each day. Puzzles get harder '
-              'through the week, with the toughest on Sunday.',
+              'Everyone gets the same puzzle each day. It is always tougher '
+              'than the early campaign and gets a little harder every day, '
+              'with an extra push at weekends.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: scheme.onSurfaceVariant,
               ),

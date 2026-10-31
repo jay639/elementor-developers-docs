@@ -212,8 +212,10 @@ arrow_escape/
   bit-identical on every device. Golden hashes in
   `packages/arrow_engine/test/generator_test.dart` catch accidental
   changes; bump `DailyChallenge.version` when a change is intended.
-- Daily: local calendar day, target by weekday (Mon 34 → Sun 62),
-  generated on a background isolate. Progress stores best stars per day.
+- Daily: local calendar day, always a full crowded rectangle; target starts
+  above campaign level 20 (66 on 2026-11-01) and rises 0.1 a day (+2 at
+  weekends) to 90, with bigger boards as it rises. Generated on a
+  background isolate. Progress stores best stars per day.
 - iOS schemes for flavors need Xcode and are set up in phase 7.
 - Double-tap protection: a vehicle that is bumping/returning ignores taps,
   repeat taps on one vehicle within 280 ms count once, and taps on the cell
@@ -267,6 +269,16 @@ arrow_escape/
   boards (65%), max 15x20 so boards fit the screen; level 3 on is hard.
   Sharper, larger arrowheads; dark mode is true black; collection tabs
   stay fixed while content scrolls.
+- Sprint 4: boards are dense knots: longer snakes from early levels
+  (up to 36 cells), placement rewards bodies that sit right in front of
+  another arrow's head (head-into-tail chains), tails grow up to 10 cells
+  into pockets, then a fill pass drops short arrows into remaining gaps.
+  Bigger minimum boards (150→280 cells; breathers smaller). Curve
+  recalibrated (60→~76); verifier tolerances widened for per-level noise.
+  Bold pointed arrowheads (`headPose`, ~0.62 cell). Settings redesigned
+  as boxes (theme cards with previews, two-column toggle tiles). The logo
+  is shown from assets/branding/logo.png (painting it live crashed the CI
+  emulator's GPU).
 - This dev container cannot reach dl.google.com (Android SDK), so APKs are
   built in CI, not locally.
 

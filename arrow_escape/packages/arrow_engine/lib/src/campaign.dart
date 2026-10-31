@@ -54,9 +54,9 @@ _shapeFor(double s, double target) => (
   greed: (2 + s / 7).round().clamp(2, 20),
   fill: 0.9,
   // Longer, more winding snakes as levels go up (up to 30 cells).
-  maxLength: (6 + s / 4).round().clamp(6, 30),
-  longShare: (s / 700).clamp(0.02, 0.14),
-  turnChance: (0.25 + s / 400).clamp(0.25, 0.5),
+  maxLength: (8 + s / 3).round().clamp(8, 36),
+  longShare: (0.06 + s / 500).clamp(0.06, 0.2),
+  turnChance: (0.35 + s / 400).clamp(0.35, 0.55),
 );
 
 /// Largest board the campaign uses (cells stay ~24 dp wide on a phone, so
@@ -187,8 +187,8 @@ abstract final class Campaign {
   static double targetDifficulty(int n) {
     if (n <= 2) return 48;
     final rise = 1 - math.exp(-(n - 3) / 380);
-    final base = 64 + 22 * rise + 2.0 * math.sin(n * 0.9);
-    if (isBreather(n)) return base * 0.72;
+    final base = 60 + 16 * rise + 2.0 * math.sin(n * 0.9);
+    if (isBreather(n)) return base * 0.65;
     return switch (tierFor(n)) {
       LevelTier.normal => base,
       LevelTier.hard => math.min(98, base + 6),
@@ -196,9 +196,11 @@ abstract final class Campaign {
     };
   }
 
-  /// Smallest board for level [n]: ~110 cells early, ~230 late.
-  static int minCellsFor(int n) =>
-      isBreather(n) ? 50 : (110 + 120 * (1 - math.exp(-n / 300))).round();
+  /// Smallest board for level [n]: crowded from the start (~150 cells,
+  /// ~280 late; breathers a bit smaller).
+  static int minCellsFor(int n) => isBreather(n)
+      ? (80 + 50 * (1 - math.exp(-n / 400))).round()
+      : (150 + 130 * (1 - math.exp(-n / 300))).round();
 
   static LevelSpec spec(int n) {
     final rng = Rng(seed ^ stableHash('campaign-$n'));
@@ -283,7 +285,7 @@ abstract final class Campaign {
         // Boards grow with the level rather than staying small and dense.
         minCells: minCellsFor(n),
         // Breathers must land below the curve: search harder.
-        candidates: s.breather ? 28 : 14,
+        candidates: s.breather ? 40 : 24,
       );
       if (level != null) return level;
     }

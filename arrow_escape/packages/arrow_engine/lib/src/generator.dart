@@ -79,6 +79,7 @@ class LevelGenerator {
     _cover = List.filled(n, 0);
     _lastCover = List.filled(n, -1);
     _pathPieces = List.generate(n, (_) => <int>[]);
+    _frontOf = List.generate(n, (_) => <int>[]);
   }
 
   /// Generates a solvable level, or null if this seed can't make one.
@@ -102,6 +103,9 @@ class LevelGenerator {
 
   /// Vehicles whose path crosses each cell.
   late final List<List<int>> _pathPieces;
+
+  /// Vehicles whose head points straight at each cell (first road cell).
+  late final List<List<int>> _frontOf;
 
   /// Vehicles whose path is already blocked by a later vehicle's body.
   final _blocked = <int>{};
@@ -174,7 +178,13 @@ class LevelGenerator {
       if (added == 0) return null;
     }
     if (_placed.length < 2) return null;
-    if (config.pack) _extendTails();
+    if (config.pack) {
+      _extendTails();
+      // Fill what is still empty with short arrows so the board reads as
+      // one crowded knot, then let tails take any last single cells.
+      _fillGaps(maskCells);
+      _extendTails();
+    }
 
     final gates = <OneWayGate>[
       for (var c = 0; c < _gateAt.length; c++)
@@ -302,6 +312,16 @@ class LevelGenerator {
     }
   }
 
+  void _fillGaps(List<int> maskCells) {
+    final order = [...maskCells];
+    _rng.shuffle(order);
+    for (final c in order) {
+      if (!_isFree(c) || _gateAt[c] != null) continue;
+      final piece = _candidateAt(c, maxLength: math.min(5, config.maxLength));
+      if (piece != null && piece.cells.length >= 2) _place(piece);
+    }
+  }
+
   bool _nextToTail(int c) {
     for (final d in Dir.values) {
       final x = _neighbor(c, d);
@@ -317,9 +337,10 @@ class LevelGenerator {
   /// unchanged; a cell is taken only if every arrow whose path crosses it
   /// leaves after this one (was placed before it).
   void _extendTails() {
-    // A few cells per arrow at most: longer growth turns arrows into blobs.
+    // Long enough to fill leftover pockets (crowded boards), short enough
+    // that arrows stay lines rather than blobs.
     final cap = [
-      for (final p in _placed) math.min(p.cells.length + 3, config.maxLength),
+      for (final p in _placed) math.min(p.cells.length + 10, config.maxLength),
     ];
     var grown = true;
     while (grown) {
@@ -374,14 +395,22 @@ class LevelGenerator {
       // free arrow left at the end is a move the player can make blindly.
       final newlyBlocked = <int>{};
       var cover = 0;
+      var nose = 0;
       for (final c in piece.cells) {
         cover += _cover[c];
         for (final i in _pathPieces[c]) {
           if (!_blocked.contains(i)) newlyBlocked.add(i);
         }
+        // An arrow's head pressed right against this body: the tight
+        // head-into-tail chains that make boards read as one knot.
+        nose += _frontOf[c].length;
       }
       final score =
-          3.0 * newlyBlocked.length + 0.3 * cover + _rng.nextDouble() * 0.5;
+          3.0 * newlyBlocked.length +
+          1.5 * nose +
+          0.3 * cover +
+          0.08 * piece.cells.length +
+          _rng.nextDouble() * 0.5;
       if (score > bestScore) {
         bestScore = score;
         best = piece;
@@ -511,10 +540,12 @@ class LevelGenerator {
       _occupant[c] = index;
       _blocked.addAll(_pathPieces[c]);
     }
-    for (final c in _trace(def).cells) {
+    final road = _trace(def).cells;
+    for (final c in road) {
       _cover[c]++;
       _lastCover[c] = index;
       _pathPieces[c].add(index);
     }
+    if (road.isNotEmpty) _frontOf[road.first].add(index);
   }
 }

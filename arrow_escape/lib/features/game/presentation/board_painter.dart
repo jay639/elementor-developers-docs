@@ -172,7 +172,7 @@ class BoardPiecesPainter extends CustomPainter {
     // Thin lines whatever the cell size: big cells (small boards) would
     // otherwise get bulky arrows.
     final stroke =
-        (cell * style.strokeFactor).clamp(2.2, style.maxStroke) *
+        (cell * style.strokeFactor).clamp(2.6, style.maxStroke) *
         (def.kind == PieceKind.ambulance ? 1.7 : 1);
     // Thin line from just behind the tail to the head; the arrowhead sits
     // past the head centre so a 1-cell arrow still reads as an arrow.
@@ -187,14 +187,18 @@ class BoardPiecesPainter extends CustomPainter {
     }
     final (:base, :tangent) = headPose(track, offset, layout);
     // A sharp, clearly pointed head: longer than it is wide.
-    final headLength = math.max(stroke * 3.2, cell * 0.34).clamp(8.0, 15.0);
-    final halfWidth = headLength * 0.52;
-    final tip = base + tangent * headLength;
+    // A bold, sharp head on every board size: it starts a little behind
+    // the head cell's centre and reaches almost to the next cell, so the
+    // point is unmistakable even on big, crowded boards.
+    final headLength = math.max(stroke * 4, cell * 0.62).clamp(11.0, 22.0);
+    final halfWidth = headLength * 0.46;
+    final headBase = base - tangent * (headLength * 0.25);
+    final tip = headBase + tangent * headLength;
     final normal = Offset(-tangent.dy, tangent.dx) * halfWidth;
     final head = Path()
       ..moveTo(tip.dx, tip.dy)
-      ..lineTo(base.dx + normal.dx, base.dy + normal.dy)
-      ..lineTo(base.dx - normal.dx, base.dy - normal.dy)
+      ..lineTo(headBase.dx + normal.dx, headBase.dy + normal.dy)
+      ..lineTo(headBase.dx - normal.dx, headBase.dy - normal.dy)
       ..close();
 
     final isAmbulance = def.kind == PieceKind.ambulance;
