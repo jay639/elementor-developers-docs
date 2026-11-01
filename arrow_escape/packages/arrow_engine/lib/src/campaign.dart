@@ -286,18 +286,18 @@ abstract final class Campaign {
   static final Map<int, Level> handmade = {1: tutorialLevel};
 
   /// How many arrows level [n] has: the main progression axis. Level 2
-  /// is a 12-arrow warm-up, level 8 ~30, level 100 ~49, level 500 ~77
-  /// and level 1500 ~111. It never goes down between regular levels;
+  /// is a 14-arrow warm-up, then it climbs fast: level 3 ~27, level 5
+  /// ~40, level 8 ~47, level 100 ~60, level 500 ~91, level 1000 ~110. It never goes down between regular levels;
   /// breathers dip a little (to about the count 3 levels earlier), Hard
   /// levels have 12% more and Super Hard 25% more. Only used by the
   /// offline tool, so platform `exp` is fine here.
   static int arrowTarget(int n) {
     if (n <= 1) return 6;
     final base =
-        12 +
-        24 * (1 - math.exp(-(n - 2) / 5)) +
-        30 * (1 - math.exp(-n / 250)) +
-        0.03 * n;
+        14 +
+        32 * (1 - math.exp(-(n - 2) / 2)) +
+        40 * (1 - math.exp(-n / 300)) +
+        0.025 * n;
     final factor = isBreather(n)
         ? 0.92
         : switch (tierFor(n)) {

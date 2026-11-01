@@ -300,11 +300,20 @@ arrow_escape/
   17 dp open zoomed out, then zoom in to ~25 dp cells (pinch out / Fit
   to see all). "Halfway there 😄" cheer at 50% on 20+ arrow boards
   (and "Almost there 🤩" at 90% on Hard levels). Store rating:
-  `ReviewPolicy` (3-star campaign win from L12, no interstitial that
+  `ReviewPolicy` (3-star campaign win from L6, no interstitial that
   win, 40 levels + 30 days apart, max 3 asks) via `in_app_review`; the
   stores never reveal whether/what a player rated, and pre-asking to
   filter happy players is forbidden, so that can't be targeted.
   Settings has "Rate Arrow Escape" (store listing).
+- Sprint 6: harder from L3. Arrow targets climb fast (L2 14, L3 ~27,
+  L5 ~36, L8 ~46, L100 ~60, L500 ~91, cap 120). No trivial patterns:
+  placement, gap fill, tail growth and ambulance-lane arrows reject
+  same-direction queues (a same-way arrow right in front of a head) and
+  rows (same-way heads side by side); a test guards it. Gap arrows are
+  slotted into the play order as late as possible (`_insertRank`, ranks
+  instead of placement index) so they start blocked instead of being
+  free edge stubs. The splash animation starts once the logo image is
+  decoded (first launch after install showed it mid-zoom).
 - This dev container cannot reach dl.google.com (Android SDK), so APKs are
   built in CI, not locally.
 

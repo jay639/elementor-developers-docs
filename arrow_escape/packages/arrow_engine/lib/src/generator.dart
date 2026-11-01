@@ -93,7 +93,6 @@ class LevelGenerator {
     _reserved = List.filled(n, false);
     _gateAt = List.filled(n, null);
     _cover = List.filled(n, 0);
-    _lastCover = List.filled(n, -1);
     _pathPieces = List.generate(n, (_) => <int>[]);
     _frontOf = List.generate(n, (_) => <int>[]);
   }
@@ -114,9 +113,6 @@ class LevelGenerator {
   /// How many placed vehicles' paths cross each cell.
   late final List<int> _cover;
 
-  /// Index of the last placed vehicle whose path crosses each cell.
-  late final List<int> _lastCover;
-
   /// Vehicles whose path crosses each cell.
   late final List<List<int>> _pathPieces;
 
@@ -126,6 +122,12 @@ class LevelGenerator {
   /// Vehicles whose path is already blocked by a later vehicle's body.
   final _blocked = <int>{};
   final _placed = <PieceDef>[];
+
+  /// Play order of each placed vehicle: higher leaves earlier. Normally
+  /// the placement index, but gap arrows are slotted in earlier in the
+  /// order (see [_insertRank]) so they start blocked.
+  final _rank = <double>[];
+  double _topRank = -1;
 
   List<bool> get _mask => config.shape.cells;
 
@@ -168,7 +170,6 @@ class LevelGenerator {
     }
     // Holes are filled by growing tails (see _extendTails), not by extra
     // arrows: arrows placed last always start free, which makes boards easy.
-    if (config.pack) _packRemaining(maskCells, onlyIsolated: true);
 
     if (ambulance != null) {
       for (final c in [...ambulance.cells, ...lane]) {
@@ -186,7 +187,7 @@ class LevelGenerator {
         // An earlier lane arrow's body may have taken this cell.
         if (!_isFree(c)) continue;
         final piece = _candidateAt(c, maxLength: 3);
-        if (piece != null) {
+        if (piece != null && _sameDirNeighbours(piece) == 0) {
           _place(piece);
           added++;
         }
@@ -312,41 +313,82 @@ class LevelGenerator {
     return null;
   }
 
-  /// Fills leftover space with any arrow that can still leave, longest
-  /// first, so boards read as one dense drawing. These arrows are placed
-  /// last, so in play they are the first ones free.
-  void _packRemaining(List<int> maskCells, {bool onlyIsolated = false}) {
-    final order = [...maskCells];
-    _rng.shuffle(order);
-    for (final c in order) {
-      if (!_isFree(c)) continue;
-      // Leave cells next to an arrow's tail for tail growth.
-      if (onlyIsolated && _nextToTail(c)) continue;
-      final piece =
-          _candidateAt(c, maxLength: config.maxLength) ??
-          _candidateAt(c, maxLength: config.minLength + 1);
-      if (piece != null) _place(piece);
-    }
-  }
-
+  /// Fills leftover cells with short arrows slotted into the play order
+  /// as late as possible, so they start blocked instead of being free
+  /// first moves. Prefers arrows whose road is already occupied, never
+  /// lines them up behind or beside a same-direction arrow.
   void _fillGaps(List<int> maskCells) {
     final order = [...maskCells];
     _rng.shuffle(order);
+    final maxLength = math.min(6, config.maxLength);
     for (final c in order) {
       if (!_isFree(c) || _gateAt[c] != null) continue;
-      final piece = _candidateAt(c, maxLength: math.min(5, config.maxLength));
-      if (piece != null && piece.cells.length >= 2) _place(piece);
+      PieceDef? best;
+      double? bestRank;
+      var bestScore = double.negativeInfinity;
+      for (var t = 0; t < 8; t++) {
+        final dir = Dir.values[t % 4];
+        final length = 2 + _rng.nextInt(maxLength - 1);
+        final ahead = <int>{};
+        for (var x = _neighbor(c, dir); x >= 0; x = _neighbor(x, dir)) {
+          ahead.add(x);
+        }
+        final cells = [c];
+        _growBody(cells, dir, length, ahead);
+        if (cells.length < 2) continue;
+        final def = PieceDef(kind: PieceKind.car, dir: dir, cells: cells);
+        final trace = _trace(def);
+        if (_sameDirNeighbours(def) > 0) continue;
+        final rank = _insertRank(def, trace);
+        if (rank == null) continue;
+        var blockers = 0;
+        for (final x in trace.cells) {
+          if (_occupant[x] >= 0) blockers++;
+        }
+        final score =
+            (blockers > 0 ? 4.0 + blockers : -6.0) +
+            0.1 * cells.length +
+            _rng.nextDouble() * 0.3;
+        if (score > bestScore) {
+          bestScore = score;
+          best = def;
+          bestRank = rank;
+        }
+      }
+      if (best != null) _place(best, rank: bestRank);
     }
   }
 
-  bool _nextToTail(int c) {
-    for (final d in Dir.values) {
-      final x = _neighbor(c, d);
+  /// Same-direction arrows right in front of this head (a queue that
+  /// clears itself) or right beside it (soldiers in a row). Both read as
+  /// "tap them all", so placement avoids them.
+  int _sameDirNeighbours(PieceDef def) {
+    var n = 0;
+    final front = _neighbor(def.head, def.dir);
+    if (front >= 0) {
+      final o = _occupant[front];
+      if (o >= 0 && _placed[o].dir == def.dir) n++;
+    }
+    for (final side in [def.dir.clockwise, def.dir.counterClockwise]) {
+      final x = _neighbor(def.head, side);
       if (x < 0) continue;
       final o = _occupant[x];
-      if (o >= 0 && _placed[o].cells.last == x) return true;
+      if (o >= 0 && _placed[o].head == x && _placed[o].dir == def.dir) n++;
     }
-    return false;
+    // An arrow pressing its head into this one's tail, same way.
+    final behind = _neighbor(def.cells.last, def.dir.opposite);
+    if (behind >= 0) {
+      final o = _occupant[behind];
+      if (o >= 0 && _placed[o].head == behind && _placed[o].dir == def.dir) {
+        n++;
+      }
+    }
+    for (final c in def.cells) {
+      for (final i in _frontOf[c]) {
+        if (_placed[i].dir == def.dir) n++;
+      }
+    }
+    return n;
   }
 
   /// Grows arrows' tails into cells nothing else could use, so the board
@@ -375,8 +417,13 @@ class LevelGenerator {
         for (final d in p.cells.length == 1 ? [p.dir.opposite] : Dir.values) {
           final c = _neighbor(tail, d);
           if (c < 0 || !_isFree(c) || _gateAt[c] != null) continue;
-          if (_lastCover[c] >= i || ahead.contains(c)) continue;
+          if (ahead.contains(c) || _leavesBefore(c, i)) continue;
           if (p.cells.contains(c)) continue;
+          // Don't grow into the cell right in front of a same-way head:
+          // that turns two arrows into a queue that clears itself.
+          if (_frontOf[c].any((j) => j != i && _placed[j].dir == p.dir)) {
+            continue;
+          }
           final next = PieceDef(
             kind: p.kind,
             dir: p.dir,
@@ -411,24 +458,33 @@ class LevelGenerator {
           : _rng.pick(maskCells);
       if (!_isFree(head)) continue;
       final piece = _candidateAt(head, maxLength: config.maxLength, minRoad: 2);
-      if (piece == null) continue;
+      if (piece == null || _sameDirNeighbours(piece) > 0) continue;
       valid++;
       // Above all, block arrows that would otherwise start free: every
       // free arrow left at the end is a move the player can make blindly.
       final newlyBlocked = <int>{};
       var cover = 0;
       var nose = 0;
+      // (Same-way queues and rows were rejected above.)
       for (final c in piece.cells) {
         cover += _cover[c];
         for (final i in _pathPieces[c]) {
           if (!_blocked.contains(i)) newlyBlocked.add(i);
         }
         // An arrow's head pressed right against this body: the tight
-        // head-into-tail chains that make boards read as one knot.
-        nose += _frontOf[c].length;
+        // head-into-tail chains that make boards read as one knot (only
+        // when they point different ways; same way is a trivial queue).
+        for (final i in _frontOf[c]) {
+          if (_placed[i].dir != piece.dir) nose++;
+        }
+      }
+      // Blocking an arrow that points the same way just makes a queue.
+      var blockScore = 0.0;
+      for (final i in newlyBlocked) {
+        blockScore += _placed[i].dir == piece.dir ? 0.8 : 3.0;
       }
       final score =
-          3.0 * newlyBlocked.length +
+          blockScore +
           1.5 * nose +
           0.3 * cover +
           0.08 * piece.cells.length +
@@ -571,8 +627,52 @@ class LevelGenerator {
     return true;
   }
 
-  void _place(PieceDef def) {
+  /// Whether a vehicle that leaves before [i] drives over [c].
+  bool _leavesBefore(int c, int i) {
+    for (final j in _pathPieces[c]) {
+      if (j != i && _rank[j] > _rank[i]) return true;
+    }
+    return false;
+  }
+
+  /// Where [def] can go in the play order, or null: it must leave after
+  /// every vehicle whose road crosses its body and before every vehicle
+  /// standing on its own road (and before the ambulance, which only lets
+  /// lane arrows go first). Returns the latest such slot, so the arrow
+  /// starts as blocked as possible.
+  double? _insertRank(PieceDef def, PathTrace trace) {
+    if (!trace.exits) return null;
+    var lo = double.negativeInfinity;
+    for (final c in def.cells) {
+      for (final j in _pathPieces[c]) {
+        if (_rank[j] > lo) lo = _rank[j];
+      }
+    }
+    var hi = double.infinity;
+    for (final c in trace.cells) {
+      final o = _occupant[c];
+      if (o >= 0 && _rank[o] < hi) hi = _rank[o];
+    }
+    for (var j = 0; j < _placed.length; j++) {
+      if (_placed[j].kind == PieceKind.ambulance && _rank[j] < hi) {
+        hi = _rank[j];
+      }
+    }
+    if (lo >= hi) return null;
+    if (lo == double.negativeInfinity) {
+      return hi == double.infinity ? _topRank + 1 : hi - 1;
+    }
+    if (hi == double.infinity) return lo + 0.5;
+    final r = lo + (hi - lo) / 2;
+    // Out of floating-point room between the two neighbours.
+    return (r > lo && r < hi) ? r : null;
+  }
+
+  void _place(PieceDef def, {double? rank}) {
     final index = _placed.length;
+    final r = rank ?? _topRank + 1;
+    _rank.add(r);
+    if (r > _topRank) _topRank = r;
     _placed.add(def);
     for (final c in def.cells) {
       _occupant[c] = index;
@@ -581,7 +681,6 @@ class LevelGenerator {
     final road = _trace(def).cells;
     for (final c in road) {
       _cover[c]++;
-      _lastCover[c] = index;
       _pathPieces[c].add(index);
     }
     if (road.isNotEmpty) _frontOf[road.first].add(index);

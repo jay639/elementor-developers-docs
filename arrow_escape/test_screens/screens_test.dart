@@ -96,6 +96,7 @@ void main() {
   testWidgets('game 9', (t) => shot(t, 'game_9', Routes.game(9)));
   testWidgets('game 11', (t) => shot(t, 'game_11', Routes.game(11)));
   testWidgets('game 5', (t) => shot(t, 'game_5', Routes.game(5)));
+  testWidgets('game 4', (t) => shot(t, 'game_4', Routes.game(4)));
   testWidgets('map', (t) => shot(t, 'map', Routes.map));
   testWidgets('collection', (t) => shot(t, 'collection', Routes.collection));
   testWidgets('skins', (t) {

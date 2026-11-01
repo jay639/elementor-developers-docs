@@ -9,6 +9,11 @@ class SplashScreen extends StatefulWidget {
 
   static const duration = Duration(milliseconds: 1500);
 
+  /// Wait for the logo image to decode before animating. Widget tests
+  /// turn this off: assets never finish decoding in fake time.
+  @visibleForTesting
+  static bool waitForLogo = true;
+
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
@@ -20,9 +25,29 @@ class _SplashScreenState extends State<SplashScreen>
     duration: SplashScreen.duration,
   );
 
+  bool _started = false;
+
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (!SplashScreen.waitForLogo) {
+      _start();
+      return;
+    }
+    // Start only once the logo image is decoded. On the first launch after
+    // an install decoding is slow, and the logo would otherwise first show
+    // up mid-animation (already zooming, so it looked too big).
+    precacheImage(
+      const AssetImage(ArrowLogo.asset),
+      context,
+    ).timeout(const Duration(seconds: 1), onTimeout: () {}).whenComplete(() {
+      if (mounted) _start();
+    });
+  }
+
+  void _start() {
     _controller.forward().whenComplete(() {
       if (mounted) context.go(Routes.home);
     });

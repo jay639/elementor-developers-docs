@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:arrow_engine/arrow_engine.dart';
+import 'package:arrow_escape/features/splash/splash_screen.dart';
 import 'package:arrow_escape/features/review/data/review_service.dart';
 import 'package:arrow_escape/app/app.dart';
 import 'package:arrow_escape/core/services/analytics.dart';
@@ -229,6 +230,7 @@ Future<void> pumpApp(
   PurchaseService? purchases,
   SaveData? save,
 }) async {
+  SplashScreen.waitForLogo = false;
   tester.view.physicalSize = const Size(1080, 2340);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);

@@ -12,7 +12,7 @@
 /// - at most [maxAsks] times ever (iOS itself allows 3 per 365 days and
 ///   Google Play quietly rate-limits too).
 abstract final class ReviewPolicy {
-  static const firstLevel = 12;
+  static const firstLevel = 6;
   static const gapLevels = 40;
   static const gapDays = 30;
   static const maxAsks = 3;

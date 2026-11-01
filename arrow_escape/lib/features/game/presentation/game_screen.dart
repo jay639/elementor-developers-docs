@@ -470,7 +470,7 @@ class _MechanicBanner extends StatelessWidget {
     if (level.hasAmbulance) {
       text = 'Ambulance first! Only arrows in its lane may move before it.';
     } else if (level.gates.isNotEmpty) {
-      text = 'Gates are turn signs: arrows turn where they point.';
+      text = 'One-way gates turn arrows in the gate\'s direction.';
     } else if (level.lights.isNotEmpty) {
       text = 'Lights switch every time an arrow leaves. Red means wait.';
     } else {

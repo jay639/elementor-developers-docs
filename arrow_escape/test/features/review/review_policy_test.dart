@@ -21,9 +21,10 @@ void main() {
     now: at ?? now,
   );
 
-  test('asks after a great win from level 12, never mid-ad or early', () {
+  test('asks after a great win from level 6, never mid-ad or early', () {
     expect(ask(), isTrue);
-    expect(ask(level: 11), isFalse);
+    expect(ask(level: 5), isFalse);
+    expect(ask(level: 6), isTrue);
     expect(ask(stars: 2), isFalse);
     expect(ask(interstitial: true), isFalse);
   });

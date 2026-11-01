@@ -377,8 +377,8 @@ v..
         'here (bump DailyChallenge.version on purpose instead)', () {
       int hashOf(DateTime d) =>
           stableHash(jsonEncode(DailyChallenge.levelFor(d).toJson()));
-      expect(hashOf(DateTime(2026, 10, 29)), 1420019555);
-      expect(hashOf(DateTime(2027, 3, 14)), 2419140433);
+      expect(hashOf(DateTime(2026, 10, 29)), 891433173);
+      expect(hashOf(DateTime(2027, 3, 14)), 191394179);
     });
 
     test('keys', () {
@@ -399,6 +399,41 @@ v..
         greaterThan(Campaign.arrowTarget(100)),
       );
     });
+  });
+
+  test('no same-way queues or rows of parallel heads', () {
+    for (final level in [
+      Campaign.build(3),
+      Campaign.build(11),
+      Campaign.build(260),
+      DailyChallenge.levelFor(DateTime(2026, 11, 3)),
+    ]) {
+      final at = <int, PieceDef>{
+        for (final p in level.pieces)
+          for (final c in p.cells) c: p,
+      };
+      int? next(int c, Dir d) {
+        final x = level.xOf(c) + d.dx, y = level.yOf(c) + d.dy;
+        return level.inBounds(x, y) ? level.indexOf(x, y) : null;
+      }
+
+      for (final p in level.pieces) {
+        if (p.kind == PieceKind.ambulance) continue;
+        // Nothing pointing the same way right in front of a head…
+        final f = next(p.head, p.dir);
+        expect(at[f]?.dir == p.dir, isFalse, reason: 'queue L${level.id}');
+        // …and no same-way head right beside it.
+        for (final side in [p.dir.clockwise, p.dir.counterClockwise]) {
+          final s = next(p.head, side);
+          final o = at[s];
+          expect(
+            o != null && o.head == s && o.dir == p.dir,
+            isFalse,
+            reason: 'row L${level.id}',
+          );
+        }
+      }
+    }
   });
 
   test('every arrow runs straight into its head (no turn at the head)', () {

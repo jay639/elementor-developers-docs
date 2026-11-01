@@ -53,8 +53,8 @@ enum Mechanic {
   gates(
     Icons.turn_right_rounded,
     'One-way gates',
-    'A gate is a turn sign: an arrow that drives over it turns and follows '
-        'the gate\'s arrow. Arrows can\'t drive against it.',
+    'An arrow that drives into a gate turns and continues the way the gate '
+        'points. It can never enter a gate from the front.',
   ),
   ambulance(
     Icons.local_hospital_rounded,

@@ -91,8 +91,8 @@ List<String> verifyCampaign(
   }
 
   // More arrows as levels go up: the rolling mean of regular levels never
-  // drops below its best so far (3 arrows of slack: Hard levels and
-  // the board-size cap make 20-level windows noisy).
+  // drops below its best so far (3 arrows or 5% of slack: Hard levels
+  // and the 120-arrow board cap make 20-level windows noisy).
   const window = 20;
   final regular = [
     for (var n = 1; n <= levels.length; n++)
@@ -102,7 +102,7 @@ List<String> verifyCampaign(
   for (var i = 0; i + window <= regular.length; i += window) {
     final mean =
         regular.sublist(i, i + window).reduce((a, b) => a + b) / window;
-    if (best != null && mean < best - 3) {
+    if (best != null && mean < best - math.max(3, best * 0.05)) {
       fail(
         'Arrow count dips around regular level #${i + 1}: '
         '${best.toStringAsFixed(1)} -> ${mean.toStringAsFixed(1)}',
