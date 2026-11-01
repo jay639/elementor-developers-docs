@@ -200,6 +200,13 @@ class SaveController extends Notifier<SaveData> {
     (s) => s.hasSeen(tip) ? s : s.copyWith(seenTips: [...s.seenTips, tip]),
   );
 
+  void recordReviewAsk(int level, DateTime at) => apply(
+    (s) => s.copyWith(
+      reviewAsks: [...s.reviewAsks, at.millisecondsSinceEpoch],
+      lastReviewLevel: level,
+    ),
+  );
+
   /// [reason] names the source for analytics (double_coins, iap…).
   void addCoins(int amount, {required String reason}) {
     apply((s) => Economy.addCoins(s, amount));

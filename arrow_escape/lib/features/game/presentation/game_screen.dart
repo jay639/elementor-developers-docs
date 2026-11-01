@@ -13,10 +13,15 @@ import 'package:arrow_escape/features/game/domain/level_ref.dart';
 import 'package:arrow_escape/core/services/analytics.dart';
 import 'package:arrow_escape/features/game/presentation/board_view.dart';
 import 'package:arrow_escape/features/onboarding/tips.dart';
+import 'package:arrow_escape/features/review/data/review_service.dart';
+import 'package:arrow_escape/features/review/domain/review_policy.dart';
+import 'package:arrow_escape/core/utils/clock.dart';
 import 'package:arrow_escape/features/save/application/save_controller.dart';
 import 'package:arrow_escape/features/save/domain/economy.dart';
 import 'package:arrow_escape/features/game/presentation/widgets/game_toolbar.dart';
 import 'package:arrow_escape/features/game/presentation/widgets/hearts_bar.dart';
+import 'package:arrow_escape/features/game/presentation/widgets/progress_cheer.dart';
+import 'package:arrow_escape/features/settings/application/settings_controller.dart';
 import 'package:arrow_escape/features/game/presentation/widgets/result_overlay.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -151,11 +156,45 @@ class _GameViewState extends ConsumerState<_GameView> {
       final levelRef = widget.levelRef;
       // Interstitials only ever follow a finished campaign level (the
       // frequency policy decides), never precede one.
+      var interstitial = false;
       if (next == SessionStatus.won && levelRef is CampaignLevelRef) {
-        await ref.read(adServiceProvider).onLevelCompleted(levelRef.number);
+        interstitial = await ref
+            .read(adServiceProvider)
+            .onLevelCompleted(levelRef.number);
       }
-      if (mounted) setState(() => _showResult = true);
+      if (!mounted) return;
+      setState(() => _showResult = true);
+      if (next == SessionStatus.won && levelRef is CampaignLevelRef) {
+        _maybeAskReview(levelRef.number, showedInterstitial: interstitial);
+      }
     });
+  }
+
+  /// A great win, now and then: ask for a store rating (see
+  /// [ReviewPolicy]). Shown over the result card so it never interrupts
+  /// play.
+  void _maybeAskReview(int level, {required bool showedInterstitial}) {
+    final save = ref.read(saveProvider);
+    final now = ref.read(clockProvider)();
+    final stars = ref
+        .read(gameControllerProvider(widget.levelRef))
+        .session
+        .stars;
+    if (!ReviewPolicy.shouldAsk(
+      level: level,
+      stars: stars,
+      showedInterstitial: showedInterstitial,
+      asks: save.reviewAsks,
+      lastAskLevel: save.lastReviewLevel,
+      now: now,
+    )) {
+      return;
+    }
+    ref.read(saveProvider.notifier).recordReviewAsk(level, now);
+    unawaited(
+      ref.read(analyticsProvider).log('review_prompt', {'level': level}),
+    );
+    unawaited(ref.read(reviewServiceProvider).requestReview());
   }
 
   Future<void> _hint() async {
@@ -330,6 +369,21 @@ class _GameViewState extends ConsumerState<_GameView> {
                   ),
                 ],
               ),
+              Positioned(
+                left: 0,
+                right: 0,
+                top: 72,
+                child: Center(
+                  child: ProgressCheer(
+                    total: state.level.pieces.length,
+                    remaining: state.session.board.remainingCount,
+                    tier: state.level.meta.tier,
+                    reduceMotion: ref.watch(
+                      settingsProvider.select((s) => s.reduceMotion),
+                    ),
+                  ),
+                ),
+              ),
               if (_showTierIntro) _TierIntro(tier: state.level.meta.tier),
               if (_mechanicIntro case final m?)
                 Positioned.fill(
@@ -416,7 +470,7 @@ class _MechanicBanner extends StatelessWidget {
     if (level.hasAmbulance) {
       text = 'Ambulance first! Only arrows in its lane may move before it.';
     } else if (level.gates.isNotEmpty) {
-      text = 'One-way gates turn arrows in the gate\'s direction.';
+      text = 'Gates are turn signs: arrows turn where they point.';
     } else if (level.lights.isNotEmpty) {
       text = 'Lights switch every time an arrow leaves. Red means wait.';
     } else {

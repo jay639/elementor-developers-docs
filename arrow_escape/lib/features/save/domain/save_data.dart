@@ -41,6 +41,11 @@ abstract class SaveData with _$SaveData {
     /// One-time tips already shown (tutorial, pinch hint, mechanic intros).
     @Default(<String>[]) List<String> seenTips,
 
+    /// When the store rating sheet was requested (ms since epoch) and at
+    /// which campaign level, for `ReviewPolicy`.
+    @Default(<int>[]) List<int> reviewAsks,
+    @Default(0) int lastReviewLevel,
+
     /// Set once this install's save has been merged with the cloud copy.
     @Default(false) bool cloudSynced,
 

@@ -288,6 +288,23 @@ arrow_escape/
   iOS and Android. The logo
   is shown from assets/branding/logo.png (painting it live crashed the CI
   emulator's GPU).
+- Sprint 5: arrow COUNT is the progression axis (`Campaign.arrowTarget`):
+  L2 12, L8 ~30, L100 ~49, L500 ~77, L1500 ~110 (cap 120); breathers
+  0.92x, Hard 1.12x, Super Hard 1.25x. `generateForArrows` sizes the
+  board to the count (up to 24x32), length mix in four bands (tiny 2,
+  short 3-4, medium 5-9, long 10+), keeps the hardest candidate by
+  `hardness` (the 0-100 score saturates on big boards). Verifier checks
+  counts, not scores. Daily: 85 arrows at launch, +1 per 10 days, +6 at
+  weekends, max 110, always 24x32. Wonders: 28 (ladybug) to ~80 arrows,
+  +25% per layer, capped by picture capacity. Boards with cells under
+  17 dp open zoomed out, then zoom in to ~25 dp cells (pinch out / Fit
+  to see all). "Halfway there 😄" cheer at 50% on 20+ arrow boards
+  (and "Almost there 🤩" at 90% on Hard levels). Store rating:
+  `ReviewPolicy` (3-star campaign win from L12, no interstitial that
+  win, 40 levels + 30 days apart, max 3 asks) via `in_app_review`; the
+  stores never reveal whether/what a player rated, and pre-asking to
+  filter happy players is forbidden, so that can't be targeted.
+  Settings has "Rate Arrow Escape" (store listing).
 - This dev container cannot reach dl.google.com (Android SDK), so APKs are
   built in CI, not locally.
 

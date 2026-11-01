@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:arrow_engine/arrow_engine.dart';
+import 'package:arrow_escape/features/review/data/review_service.dart';
 import 'package:arrow_escape/app/app.dart';
 import 'package:arrow_escape/core/services/analytics.dart';
 import 'package:arrow_escape/core/services/haptics.dart';
@@ -93,7 +94,10 @@ class FakeAdService implements AdService {
   }
 
   @override
-  Future<void> onLevelCompleted(int level) async => completedLevels.add(level);
+  Future<bool> onLevelCompleted(int level) async {
+    completedLevels.add(level);
+    return false;
+  }
 
   @override
   Widget buildBanner() => adsRemoved
@@ -174,8 +178,20 @@ class FakeLevelRepository implements LevelRepository {
 /// Fixed "now" for tests: Thursday 29 Oct 2026, 21:30.
 final testNow = DateTime(2026, 10, 29, 21, 30);
 
+class FakeReviewService implements ReviewService {
+  int requests = 0;
+  int listings = 0;
+
+  @override
+  Future<void> requestReview() async => requests++;
+
+  @override
+  Future<void> openStoreListing() async => listings++;
+}
+
 List<Override> testOverrides({
   RecordingHaptics? haptics,
+  FakeReviewService? review,
   RecordingSound? sound,
   List<Level>? levels,
   Level? daily,
@@ -190,6 +206,7 @@ List<Override> testOverrides({
   if (purchases != null) purchaseServiceProvider.overrideWithValue(purchases),
   if (save != null) initialSaveProvider.overrideWithValue(LoadedSave(save)),
   hapticsProvider.overrideWithValue(haptics ?? RecordingHaptics()),
+  reviewServiceProvider.overrideWithValue(review ?? FakeReviewService()),
   soundProvider.overrideWithValue(sound ?? RecordingSound()),
   clockProvider.overrideWithValue(() => now ?? testNow),
   // The real generator runs in an isolate, which fake-async tests can't

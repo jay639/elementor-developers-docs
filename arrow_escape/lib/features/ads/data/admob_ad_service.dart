@@ -163,12 +163,12 @@ class AdMobAdService implements AdService {
   }
 
   @override
-  Future<void> onLevelCompleted(int level) async {
-    if (!policy.onLevelCompleted(level, _clock())) return;
+  Future<bool> onLevelCompleted(int level) async {
+    if (!policy.onLevelCompleted(level, _clock())) return false;
     final ad = _interstitial;
     if (adsRemoved || ad == null) {
       _loadInterstitial();
-      return;
+      return false;
     }
     _interstitial = null;
     final closed = Completer<void>();
@@ -190,7 +190,8 @@ class AdMobAdService implements AdService {
       },
     );
     await ad.show();
-    return closed.future;
+    await closed.future;
+    return true;
   }
 
   @override

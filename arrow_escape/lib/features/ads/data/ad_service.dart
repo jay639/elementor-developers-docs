@@ -20,7 +20,8 @@ abstract interface class AdService {
   Future<bool> showRewarded(RewardKind kind);
 
   /// Call after a completed campaign level; the frequency policy decides.
-  Future<void> onLevelCompleted(int level);
+  /// True when an interstitial was shown.
+  Future<bool> onLevelCompleted(int level);
 
   /// Banner for the map screen, or an empty box.
   Widget buildBanner();
@@ -45,7 +46,7 @@ class NoAdService implements AdService {
   Future<bool> showRewarded(RewardKind kind) async => false;
 
   @override
-  Future<void> onLevelCompleted(int level) async {}
+  Future<bool> onLevelCompleted(int level) async => false;
 
   @override
   Widget buildBanner() => const SizedBox.shrink();

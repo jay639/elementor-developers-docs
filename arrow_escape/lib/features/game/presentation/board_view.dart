@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:arrow_engine/arrow_engine.dart';
@@ -47,6 +48,55 @@ class _BoardViewState extends ConsumerState<BoardView>
   List<FlashAnimation> _flashes = const [];
   final _lastTap = <int, Duration>{};
 
+  /// Big boards open zoomed out (the whole puzzle at a glance), then
+  /// zoom in to a comfortable tap size; pinch out to see everything.
+  late final AnimationController _intro = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  )..addListener(_onIntro);
+  Matrix4Tween? _introTween;
+  Level? _introFor;
+  Timer? _introDelay;
+
+  /// Cells smaller than this on screen get the zoom-in.
+  static const _zoomBelowCell = 17.0;
+
+  /// Cell size the zoom-in aims for.
+  static const _comfortCell = 25.0;
+
+  void _onIntro() {
+    final t = Curves.easeInOutCubic.transform(_intro.value);
+    final tween = _introTween;
+    if (tween != null) _zoom.value = tween.transform(t);
+  }
+
+  void _scheduleIntro(Level level, BoardLayout layout, Size size) {
+    if (identical(_introFor, level)) return;
+    _introFor = level;
+    _intro.stop();
+    _introDelay?.cancel();
+    _introTween = null;
+    if (_zoom.value.getMaxScaleOnAxis() != 1) _zoom.value = Matrix4.identity();
+    final tutorial =
+        ref.read(gameControllerProvider(widget.levelRef)).tutorial !=
+        TutorialStep.none;
+    if (tutorial || layout.cell >= _zoomBelowCell) return;
+    final scale = (_comfortCell / layout.cell).clamp(1.0, 2.4);
+    // Zoom about the board's centre.
+    final c = size.center(Offset.zero);
+    final end = Matrix4.identity()
+      ..translateByDouble(c.dx * (1 - scale), c.dy * (1 - scale), 0, 1)
+      ..scaleByDouble(scale, scale, 1, 1);
+    _introTween = Matrix4Tween(begin: Matrix4.identity(), end: end);
+    if (_fast) {
+      _zoom.value = end;
+      return;
+    }
+    _introDelay = Timer(const Duration(milliseconds: 1100), () {
+      if (mounted && _introTween != null) _intro.forward(from: 0);
+    });
+  }
+
   Level? _tracksFor;
   List<Track> _restTracks = const [];
 
@@ -61,6 +111,8 @@ class _BoardViewState extends ConsumerState<BoardView>
   @override
   void dispose() {
     _ticker.dispose();
+    _introDelay?.cancel();
+    _intro.dispose();
     _frame.dispose();
     _zoom.dispose();
     _zoomed.dispose();
@@ -250,6 +302,9 @@ class _BoardViewState extends ConsumerState<BoardView>
       builder: (context, constraints) {
         final size = constraints.biggest;
         final layout = BoardLayout(level, size);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _scheduleIntro(level, layout, size);
+        });
         final allowed = step.allowedPiece;
         // Small cells mean a dense board worth zooming into.
         final showPinch =
@@ -269,6 +324,10 @@ class _BoardViewState extends ConsumerState<BoardView>
                 maxScale: 3.5,
                 boundaryMargin: const EdgeInsets.all(48),
                 onInteractionStart: (_) {
+                  // The player took over: don't fight their zoom.
+                  _intro.stop();
+                  _introDelay?.cancel();
+                  _introTween = null;
                   if (showPinch) _dismissPinch();
                 },
                 child: GestureDetector(

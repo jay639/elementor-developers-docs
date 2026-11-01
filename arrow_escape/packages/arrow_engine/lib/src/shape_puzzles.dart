@@ -48,11 +48,12 @@ class PuzzleShape {
     ]).trimmed();
   }
 
-  /// Difficulty target of [layer] (1-based). Later shapes start higher.
-  double targetFor(int layer) {
+  /// Arrows in [layer] (1-based): later pictures are bigger (the ladybug
+  /// starts at 28 arrows, the galaxy at 82) and each layer has ~25% more.
+  int arrowsFor(int layer) {
     final index = ShapePuzzles.all.indexOf(this);
-    final base = 56 + index * 1.6;
-    return math.min(98.0, base + (layer - 1) * 12);
+    final base = 28 + index * 54 / (ShapePuzzles.all.length - 1);
+    return (base * (1 + (layer - 1) * 0.25)).round().clamp(10, 120);
   }
 }
 
@@ -70,59 +71,52 @@ abstract final class ShapePuzzles {
   /// Key of one layer, used in saves and analytics.
   static String key(String id, int layer) => '$id/$layer';
 
-  /// All layers of [shape], each strictly harder than the one before.
-  /// Generates a pool of boards across a range of targets and sizes, then
-  /// takes the easiest, the middle and the hardest; this works even for
-  /// small pictures whose difficulty can't be steered precisely.
+  /// All layers of [shape], each with more arrows than the one before.
   static List<Level> buildLayers(PuzzleShape shape) {
     final rng = Rng(seed ^ stableHash(shape.id));
     final mask = shape.mask;
-    final pool = <Level>[];
-    for (var i = 0; i < 9; i++) {
-      final layer = 1 + i % PuzzleShape.layerCount;
-      final level = generateForTarget(
-        id: 0,
-        target: math.min(99.0, shape.targetFor(layer) + (i ~/ 3) * 3),
-        seed: rng.nextUint32(),
-        shape: mask,
-        minCells: 100 + layer * 50,
-      );
-      // The mask's name, puzzle_<id>, is the level's shape.
-      if (level != null) pool.add(level);
-    }
-    pool.sort((a, b) => a.meta.difficulty.compareTo(b.meta.difficulty));
     final picks = <Level>[];
-    for (final want in [0, pool.length ~/ 2, pool.length - 1]) {
-      if (want < 0 || want >= pool.length) break;
-      // Next strictly harder board at or after the wanted rank.
-      final next = pool
-          .skip(want)
-          .firstWhere(
-            (l) =>
-                picks.isEmpty || l.meta.difficulty > picks.last.meta.difficulty,
-            orElse: () => pool.last,
-          );
-      if (picks.isNotEmpty &&
-          next.meta.difficulty <= picks.last.meta.difficulty) {
-        break;
-      }
-      picks.add(next);
-    }
-    if (picks.length < PuzzleShape.layerCount) {
-      throw StateError('Could not generate layers for ${shape.id}');
-    }
-    return [
-      for (var i = 0; i < picks.length; i++)
-        picks[i].copyWith(
-          meta: picks[i].meta.copyWith(
-            tier: switch (i) {
-              0 => LevelTier.normal,
-              1 => LevelTier.hard,
-              _ => LevelTier.superHard,
-            },
+    // Wide or thin pictures hold fewer arrows on the biggest board.
+    final capacity =
+        mask
+            .fitTo(
+              100000,
+              maxWidth: maxArrowBoardWidth,
+              maxHeight: maxArrowBoardHeight,
+            )
+            .area /
+        6.0;
+    for (var layer = 1; layer <= PuzzleShape.layerCount; layer++) {
+      Level? level;
+      for (var attempt = 0; attempt < 6 && level == null; attempt++) {
+        final l = generateForArrows(
+          id: 0,
+          arrows: math.min(
+            shape.arrowsFor(layer),
+            (capacity * (0.55 + 0.2 * layer)).round(),
           ),
-        ),
-    ];
+          seed: rng.nextUint32(),
+          // The mask's name, puzzle_<id>, is the level's shape.
+          shape: mask,
+          greed: 6 + layer * 2,
+          maxLength: 16,
+          tier: switch (layer) {
+            1 => LevelTier.normal,
+            2 => LevelTier.hard,
+            _ => LevelTier.superHard,
+          },
+        );
+        if (l != null &&
+            (picks.isEmpty || l.pieces.length > picks.last.pieces.length)) {
+          level = l;
+        }
+      }
+      if (level == null) {
+        throw StateError('Could not generate layer $layer of ${shape.id}');
+      }
+      picks.add(level);
+    }
+    return picks;
   }
 
   /// `{"mountain/1": level, …}` as JSON.

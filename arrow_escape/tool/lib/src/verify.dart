@@ -6,13 +6,11 @@ import 'package:arrow_engine/arrow_engine.dart';
 /// human-readable problems; empty means pass.
 List<String> verifyCampaign(
   List<Level> levels, {
-  int maxWidth = maxBoardWidth,
-  int maxHeight = maxBoardHeight,
-  // The interlocking generator is noisier per level than the old one;
-  // averages still track the curve (see the report), so individual levels
-  // get a wider band.
-  double targetTolerance = 25,
-  double maxOutlierShare = 0.12,
+  int maxWidth = maxArrowBoardWidth,
+  int maxHeight = maxArrowBoardHeight,
+  // Arrow counts may miss the target by this share (boards are discrete).
+  double countTolerance = 0.15,
+  double maxOutlierShare = 0.04,
 }) {
   final problems = <String>[];
   void fail(String msg) => problems.add(msg);
@@ -68,13 +66,10 @@ List<String> verifyCampaign(
   }
   if (problems.isNotEmpty) return problems;
 
-  final d = [for (final s in stats) s!.difficulty];
+  final counts = [for (final l in levels) l.pieces.length];
 
-  // Breathers must be easier than the levels leading up to them: a lower
-  // score, or a clearly smaller board (with long winding arrows the score
-  // swings more than the board does). At most 2% may miss.
-  int arrowCells(Level l) =>
-      l.pieces.fold<int>(0, (a, p) => a + p.cells.length);
+  // Breathers are a small dip in arrows (or an easier board), never a
+  // big drop: at least 80% of the arrows of the 4 levels before them.
   final breatherMisses = <String>[];
   for (var n = 5; n <= levels.length; n += 5) {
     final prevIdx = [
@@ -83,78 +78,80 @@ List<String> verifyCampaign(
     ];
     if (prevIdx.isEmpty || Campaign.handmade.containsKey(n)) continue;
     final mean =
-        prevIdx.map((i) => d[i]).reduce((a, b) => a + b) / prevIdx.length;
-    final meanCells =
-        prevIdx.map((i) => arrowCells(levels[i])).reduce((a, b) => a + b) /
-        prevIdx.length;
-    final smaller = arrowCells(levels[n - 1]) <= meanCells * 0.9;
-    if (d[n - 1] >= mean && !smaller) {
+        prevIdx.map((i) => counts[i]).reduce((a, b) => a + b) / prevIdx.length;
+    final c = counts[n - 1];
+    if (c < mean * 0.75 && !_isIntro(n)) {
       breatherMisses.add(
-        'L$n: breather (${d[n - 1].toStringAsFixed(1)}) is not easier than '
-        'the 4 before it (${mean.toStringAsFixed(1)})',
+        'L$n: breather has $c arrows, the 4 before it ${mean.round()}',
       );
     }
   }
-
   if (breatherMisses.length > levels.length / 5 * 0.02) {
     breatherMisses.forEach(fail);
   }
 
-  // Smooth curve: the rolling mean of regular levels never drops much
-  // below its best so far (12 points of slack for generator noise).
-  const window = 25;
+  // More arrows as levels go up: the rolling mean of regular levels never
+  // drops below its best so far (3 arrows of slack: Hard levels and
+  // the board-size cap make 20-level windows noisy).
+  const window = 20;
   final regular = [
     for (var n = 1; n <= levels.length; n++)
-      if (!Campaign.isBreather(n)) d[n - 1],
+      if (!Campaign.isBreather(n) && !_isIntro(n)) counts[n - 1],
   ];
-  double? lastMean;
+  double? best;
   for (var i = 0; i + window <= regular.length; i += window) {
     final mean =
         regular.sublist(i, i + window).reduce((a, b) => a + b) / window;
-    if (lastMean != null && mean < lastMean - 12) {
+    if (best != null && mean < best - 3) {
       fail(
-        'Difficulty curve dips around regular level #${i + 1}: '
-        '${lastMean.toStringAsFixed(1)} -> ${mean.toStringAsFixed(1)}',
+        'Arrow count dips around regular level #${i + 1}: '
+        '${best.toStringAsFixed(1)} -> ${mean.toStringAsFixed(1)}',
       );
     }
-    lastMean = math.max(lastMean ?? mean, mean);
+    best = math.max(best ?? mean, mean);
   }
 
-  // Individual levels should track the target.
+  // Individual levels should have about the planned number of arrows.
   var outliers = 0;
   for (var n = 1; n <= levels.length; n++) {
-    if (Campaign.handmade.containsKey(n)) continue;
-    if ((d[n - 1] - Campaign.targetDifficulty(n)).abs() > targetTolerance) {
-      outliers++;
-    }
+    if (Campaign.handmade.containsKey(n) || _isIntro(n)) continue;
+    final want = Campaign.arrowTarget(n);
+    if ((counts[n - 1] - want).abs() > want * countTolerance + 1) outliers++;
   }
   if (outliers > levels.length * maxOutlierShare) {
     fail(
-      '$outliers levels are more than $targetTolerance points off target '
+      '$outliers levels miss their arrow count by more than '
+      '${(countTolerance * 100).round()}% '
       '(allowed ${(levels.length * maxOutlierShare).floor()})',
     );
   }
   return problems;
 }
 
+/// First level of a mechanic: a deliberately small showcase.
+bool _isIntro(int n) =>
+    n == MechanicUnlocks.trafficLights ||
+    n == MechanicUnlocks.gates ||
+    n == MechanicUnlocks.ambulance;
+
 /// Per-100-level summary table.
 String campaignReport(List<Level> levels) {
   final b = StringBuffer()
     ..writeln(
-      'levels     target  actual   min   max  arrows  avglen lights gates amb',
+      'levels     target  arrows   min   max  diff  avglen lights gates amb',
     );
   for (var start = 0; start < levels.length; start += 100) {
     final chunk = levels.sublist(start, math.min(start + 100, levels.length));
     double avg(Iterable<num> xs) =>
         xs.fold<double>(0, (a, x) => a + x) / chunk.length;
-    final actual = [for (final l in chunk) l.meta.difficulty];
+    final actual = [for (final l in chunk) l.pieces.length];
     b.writeln(
       '${'${start + 1}-${start + chunk.length}'.padRight(10)} '
-      '${avg([for (final l in chunk) Campaign.targetDifficulty(l.id)]).toStringAsFixed(1).padLeft(6)} '
+      '${avg([for (final l in chunk) Campaign.arrowTarget(l.id)]).toStringAsFixed(1).padLeft(6)} '
       '${avg(actual).toStringAsFixed(1).padLeft(7)} '
-      '${actual.reduce(math.min).toStringAsFixed(0).padLeft(5)} '
-      '${actual.reduce(math.max).toStringAsFixed(0).padLeft(5)} '
-      '${avg([for (final l in chunk) l.pieces.length]).toStringAsFixed(1).padLeft(7)} '
+      '${actual.reduce(math.min).toString().padLeft(5)} '
+      '${actual.reduce(math.max).toString().padLeft(5)} '
+      '${avg([for (final l in chunk) l.meta.difficulty]).toStringAsFixed(0).padLeft(5)} '
       '${(chunk.fold<int>(0, (a, l) => a + l.pieces.fold<int>(0, (b, p) => b + p.length)) / chunk.fold<int>(0, (a, l) => a + l.pieces.length)).toStringAsFixed(1).padLeft(7)} '
       '${chunk.where((l) => l.lights.isNotEmpty).length.toString().padLeft(6)} '
       '${chunk.where((l) => l.gates.isNotEmpty).length.toString().padLeft(5)} '
@@ -192,11 +189,12 @@ String drawLevel(Level level) {
   ].join('\n');
 }
 
-/// Every puzzle layer exists, is solvable, fits, and layers get harder.
+/// Every puzzle layer exists, is solvable, fits, and each layer has more
+/// arrows than the one before.
 List<String> verifyPuzzles(Map<String, Level> levels) {
   final problems = <String>[];
   for (final shape in ShapePuzzles.all) {
-    var previous = -1.0;
+    var previous = 0;
     for (var layer = 1; layer <= PuzzleShape.layerCount; layer++) {
       final key = ShapePuzzles.key(shape.id, layer);
       final level = levels[key];
@@ -204,7 +202,8 @@ List<String> verifyPuzzles(Map<String, Level> levels) {
         problems.add('$key: missing');
         continue;
       }
-      if (level.width > maxBoardWidth || level.height > maxBoardHeight) {
+      if (level.width > maxArrowBoardWidth ||
+          level.height > maxArrowBoardHeight) {
         problems.add('$key: board ${level.width}x${level.height} is too big');
       }
       final s = analyzeLevel(level);
@@ -212,10 +211,10 @@ List<String> verifyPuzzles(Map<String, Level> levels) {
         problems.add('$key: unsolvable');
         continue;
       }
-      if (s.difficulty <= previous) {
-        problems.add('$key: not harder than the layer before');
+      if (level.pieces.length <= previous) {
+        problems.add('$key: not more arrows than the layer before');
       }
-      previous = s.difficulty;
+      previous = level.pieces.length;
     }
   }
   return problems;

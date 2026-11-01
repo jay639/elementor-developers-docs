@@ -25,7 +25,9 @@ mixin _$SaveData {
  List<String> get claimedBundles;/// Plays of each level not yet won (for the `attempt` analytics
 /// parameter); an entry is removed on the first win.
  Map<String, int> get levelAttempts;/// One-time tips already shown (tutorial, pinch hint, mechanic intros).
- List<String> get seenTips;/// Set once this install's save has been merged with the cloud copy.
+ List<String> get seenTips;/// When the store rating sheet was requested (ms since epoch) and at
+/// which campaign level, for `ReviewPolicy`.
+ List<int> get reviewAsks; int get lastReviewLevel;/// Set once this install's save has been merged with the cloud copy.
  bool get cloudSynced;/// Bumped on every change; used when merging with the cloud copy.
  int get revision;/// Milliseconds since epoch of the last change.
  int get updatedAt;
@@ -42,20 +44,20 @@ $SaveDataCopyWith<SaveData> get copyWith => _$SaveDataCopyWithImpl<SaveData>(thi
 @override
 bool operator ==(Object other) {
   final _this = this as SaveData;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SaveData&&(identical(other.progress, _this.progress) || other.progress == _this.progress)&&(identical(other.coins, _this.coins) || other.coins == _this.coins)&&const DeepCollectionEquality().equals(other.ownedSkins, _this.ownedSkins)&&(identical(other.selectedSkin, _this.selectedSkin) || other.selectedSkin == _this.selectedSkin)&&(identical(other.streak, _this.streak) || other.streak == _this.streak)&&(identical(other.lastWinDay, _this.lastWinDay) || other.lastWinDay == _this.lastWinDay)&&(identical(other.rewardStreak, _this.rewardStreak) || other.rewardStreak == _this.rewardStreak)&&(identical(other.lastRewardDay, _this.lastRewardDay) || other.lastRewardDay == _this.lastRewardDay)&&(identical(other.settings, _this.settings) || other.settings == _this.settings)&&const DeepCollectionEquality().equals(other.claimedBundles, _this.claimedBundles)&&const DeepCollectionEquality().equals(other.levelAttempts, _this.levelAttempts)&&const DeepCollectionEquality().equals(other.seenTips, _this.seenTips)&&(identical(other.cloudSynced, _this.cloudSynced) || other.cloudSynced == _this.cloudSynced)&&(identical(other.revision, _this.revision) || other.revision == _this.revision)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SaveData&&(identical(other.progress, _this.progress) || other.progress == _this.progress)&&(identical(other.coins, _this.coins) || other.coins == _this.coins)&&const DeepCollectionEquality().equals(other.ownedSkins, _this.ownedSkins)&&(identical(other.selectedSkin, _this.selectedSkin) || other.selectedSkin == _this.selectedSkin)&&(identical(other.streak, _this.streak) || other.streak == _this.streak)&&(identical(other.lastWinDay, _this.lastWinDay) || other.lastWinDay == _this.lastWinDay)&&(identical(other.rewardStreak, _this.rewardStreak) || other.rewardStreak == _this.rewardStreak)&&(identical(other.lastRewardDay, _this.lastRewardDay) || other.lastRewardDay == _this.lastRewardDay)&&(identical(other.settings, _this.settings) || other.settings == _this.settings)&&const DeepCollectionEquality().equals(other.claimedBundles, _this.claimedBundles)&&const DeepCollectionEquality().equals(other.levelAttempts, _this.levelAttempts)&&const DeepCollectionEquality().equals(other.seenTips, _this.seenTips)&&const DeepCollectionEquality().equals(other.reviewAsks, _this.reviewAsks)&&(identical(other.lastReviewLevel, _this.lastReviewLevel) || other.lastReviewLevel == _this.lastReviewLevel)&&(identical(other.cloudSynced, _this.cloudSynced) || other.cloudSynced == _this.cloudSynced)&&(identical(other.revision, _this.revision) || other.revision == _this.revision)&&(identical(other.updatedAt, _this.updatedAt) || other.updatedAt == _this.updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as SaveData;
-  return Object.hash(runtimeType,_this.progress,_this.coins,const DeepCollectionEquality().hash(_this.ownedSkins),_this.selectedSkin,_this.streak,_this.lastWinDay,_this.rewardStreak,_this.lastRewardDay,_this.settings,const DeepCollectionEquality().hash(_this.claimedBundles),const DeepCollectionEquality().hash(_this.levelAttempts),const DeepCollectionEquality().hash(_this.seenTips),_this.cloudSynced,_this.revision,_this.updatedAt);
+  return Object.hash(runtimeType,_this.progress,_this.coins,const DeepCollectionEquality().hash(_this.ownedSkins),_this.selectedSkin,_this.streak,_this.lastWinDay,_this.rewardStreak,_this.lastRewardDay,_this.settings,const DeepCollectionEquality().hash(_this.claimedBundles),const DeepCollectionEquality().hash(_this.levelAttempts),const DeepCollectionEquality().hash(_this.seenTips),const DeepCollectionEquality().hash(_this.reviewAsks),_this.lastReviewLevel,_this.cloudSynced,_this.revision,_this.updatedAt);
 }
 
 @override
 String toString() {
   final _this = this as SaveData;
-  return 'SaveData(progress: ${_this.progress}, coins: ${_this.coins}, ownedSkins: ${_this.ownedSkins}, selectedSkin: ${_this.selectedSkin}, streak: ${_this.streak}, lastWinDay: ${_this.lastWinDay}, rewardStreak: ${_this.rewardStreak}, lastRewardDay: ${_this.lastRewardDay}, settings: ${_this.settings}, claimedBundles: ${_this.claimedBundles}, levelAttempts: ${_this.levelAttempts}, seenTips: ${_this.seenTips}, cloudSynced: ${_this.cloudSynced}, revision: ${_this.revision}, updatedAt: ${_this.updatedAt})';
+  return 'SaveData(progress: ${_this.progress}, coins: ${_this.coins}, ownedSkins: ${_this.ownedSkins}, selectedSkin: ${_this.selectedSkin}, streak: ${_this.streak}, lastWinDay: ${_this.lastWinDay}, rewardStreak: ${_this.rewardStreak}, lastRewardDay: ${_this.lastRewardDay}, settings: ${_this.settings}, claimedBundles: ${_this.claimedBundles}, levelAttempts: ${_this.levelAttempts}, seenTips: ${_this.seenTips}, reviewAsks: ${_this.reviewAsks}, lastReviewLevel: ${_this.lastReviewLevel}, cloudSynced: ${_this.cloudSynced}, revision: ${_this.revision}, updatedAt: ${_this.updatedAt})';
 }
 
 
@@ -66,7 +68,7 @@ abstract mixin class $SaveDataCopyWith<$Res>  {
   factory $SaveDataCopyWith(SaveData value, $Res Function(SaveData) _then) = _$SaveDataCopyWithImpl;
 @useResult
 $Res call({
- Progress progress, int coins, List<String> ownedSkins, String selectedSkin, int streak, String? lastWinDay, int rewardStreak, String? lastRewardDay, AppSettings settings, List<String> claimedBundles, Map<String, int> levelAttempts, List<String> seenTips, bool cloudSynced, int revision, int updatedAt
+ Progress progress, int coins, List<String> ownedSkins, String selectedSkin, int streak, String? lastWinDay, int rewardStreak, String? lastRewardDay, AppSettings settings, List<String> claimedBundles, Map<String, int> levelAttempts, List<String> seenTips, List<int> reviewAsks, int lastReviewLevel, bool cloudSynced, int revision, int updatedAt
 });
 
 
@@ -83,7 +85,7 @@ class _$SaveDataCopyWithImpl<$Res>
 
 /// Create a copy of SaveData
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? progress = null,Object? coins = null,Object? ownedSkins = null,Object? selectedSkin = null,Object? streak = null,Object? lastWinDay = freezed,Object? rewardStreak = null,Object? lastRewardDay = freezed,Object? settings = null,Object? claimedBundles = null,Object? levelAttempts = null,Object? seenTips = null,Object? cloudSynced = null,Object? revision = null,Object? updatedAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? progress = null,Object? coins = null,Object? ownedSkins = null,Object? selectedSkin = null,Object? streak = null,Object? lastWinDay = freezed,Object? rewardStreak = null,Object? lastRewardDay = freezed,Object? settings = null,Object? claimedBundles = null,Object? levelAttempts = null,Object? seenTips = null,Object? reviewAsks = null,Object? lastReviewLevel = null,Object? cloudSynced = null,Object? revision = null,Object? updatedAt = null,}) {
   return _then(SaveData(
 progress: null == progress ? _self.progress : progress // ignore: cast_nullable_to_non_nullable
 as Progress,coins: null == coins ? _self.coins : coins // ignore: cast_nullable_to_non_nullable
@@ -97,7 +99,9 @@ as String?,settings: null == settings ? _self.settings : settings // ignore: cas
 as AppSettings,claimedBundles: null == claimedBundles ? _self.claimedBundles : claimedBundles // ignore: cast_nullable_to_non_nullable
 as List<String>,levelAttempts: null == levelAttempts ? _self.levelAttempts : levelAttempts // ignore: cast_nullable_to_non_nullable
 as Map<String, int>,seenTips: null == seenTips ? _self.seenTips : seenTips // ignore: cast_nullable_to_non_nullable
-as List<String>,cloudSynced: null == cloudSynced ? _self.cloudSynced : cloudSynced // ignore: cast_nullable_to_non_nullable
+as List<String>,reviewAsks: null == reviewAsks ? _self.reviewAsks : reviewAsks // ignore: cast_nullable_to_non_nullable
+as List<int>,lastReviewLevel: null == lastReviewLevel ? _self.lastReviewLevel : lastReviewLevel // ignore: cast_nullable_to_non_nullable
+as int,cloudSynced: null == cloudSynced ? _self.cloudSynced : cloudSynced // ignore: cast_nullable_to_non_nullable
 as bool,revision: null == revision ? _self.revision : revision // ignore: cast_nullable_to_non_nullable
 as int,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as int,
@@ -203,10 +207,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Progress progress,  int coins,  List<String> ownedSkins,  String selectedSkin,  int streak,  String? lastWinDay,  int rewardStreak,  String? lastRewardDay,  AppSettings settings,  List<String> claimedBundles,  Map<String, int> levelAttempts,  List<String> seenTips,  bool cloudSynced,  int revision,  int updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( Progress progress,  int coins,  List<String> ownedSkins,  String selectedSkin,  int streak,  String? lastWinDay,  int rewardStreak,  String? lastRewardDay,  AppSettings settings,  List<String> claimedBundles,  Map<String, int> levelAttempts,  List<String> seenTips,  List<int> reviewAsks,  int lastReviewLevel,  bool cloudSynced,  int revision,  int updatedAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SaveData() when $default != null:
-return $default(_that.progress,_that.coins,_that.ownedSkins,_that.selectedSkin,_that.streak,_that.lastWinDay,_that.rewardStreak,_that.lastRewardDay,_that.settings,_that.claimedBundles,_that.levelAttempts,_that.seenTips,_that.cloudSynced,_that.revision,_that.updatedAt);case _:
+return $default(_that.progress,_that.coins,_that.ownedSkins,_that.selectedSkin,_that.streak,_that.lastWinDay,_that.rewardStreak,_that.lastRewardDay,_that.settings,_that.claimedBundles,_that.levelAttempts,_that.seenTips,_that.reviewAsks,_that.lastReviewLevel,_that.cloudSynced,_that.revision,_that.updatedAt);case _:
   return orElse();
 
 }
@@ -224,10 +228,10 @@ return $default(_that.progress,_that.coins,_that.ownedSkins,_that.selectedSkin,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Progress progress,  int coins,  List<String> ownedSkins,  String selectedSkin,  int streak,  String? lastWinDay,  int rewardStreak,  String? lastRewardDay,  AppSettings settings,  List<String> claimedBundles,  Map<String, int> levelAttempts,  List<String> seenTips,  bool cloudSynced,  int revision,  int updatedAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( Progress progress,  int coins,  List<String> ownedSkins,  String selectedSkin,  int streak,  String? lastWinDay,  int rewardStreak,  String? lastRewardDay,  AppSettings settings,  List<String> claimedBundles,  Map<String, int> levelAttempts,  List<String> seenTips,  List<int> reviewAsks,  int lastReviewLevel,  bool cloudSynced,  int revision,  int updatedAt)  $default,) {final _that = this;
 switch (_that) {
 case _SaveData():
-return $default(_that.progress,_that.coins,_that.ownedSkins,_that.selectedSkin,_that.streak,_that.lastWinDay,_that.rewardStreak,_that.lastRewardDay,_that.settings,_that.claimedBundles,_that.levelAttempts,_that.seenTips,_that.cloudSynced,_that.revision,_that.updatedAt);case _:
+return $default(_that.progress,_that.coins,_that.ownedSkins,_that.selectedSkin,_that.streak,_that.lastWinDay,_that.rewardStreak,_that.lastRewardDay,_that.settings,_that.claimedBundles,_that.levelAttempts,_that.seenTips,_that.reviewAsks,_that.lastReviewLevel,_that.cloudSynced,_that.revision,_that.updatedAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -244,10 +248,10 @@ return $default(_that.progress,_that.coins,_that.ownedSkins,_that.selectedSkin,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Progress progress,  int coins,  List<String> ownedSkins,  String selectedSkin,  int streak,  String? lastWinDay,  int rewardStreak,  String? lastRewardDay,  AppSettings settings,  List<String> claimedBundles,  Map<String, int> levelAttempts,  List<String> seenTips,  bool cloudSynced,  int revision,  int updatedAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( Progress progress,  int coins,  List<String> ownedSkins,  String selectedSkin,  int streak,  String? lastWinDay,  int rewardStreak,  String? lastRewardDay,  AppSettings settings,  List<String> claimedBundles,  Map<String, int> levelAttempts,  List<String> seenTips,  List<int> reviewAsks,  int lastReviewLevel,  bool cloudSynced,  int revision,  int updatedAt)?  $default,) {final _that = this;
 switch (_that) {
 case _SaveData() when $default != null:
-return $default(_that.progress,_that.coins,_that.ownedSkins,_that.selectedSkin,_that.streak,_that.lastWinDay,_that.rewardStreak,_that.lastRewardDay,_that.settings,_that.claimedBundles,_that.levelAttempts,_that.seenTips,_that.cloudSynced,_that.revision,_that.updatedAt);case _:
+return $default(_that.progress,_that.coins,_that.ownedSkins,_that.selectedSkin,_that.streak,_that.lastWinDay,_that.rewardStreak,_that.lastRewardDay,_that.settings,_that.claimedBundles,_that.levelAttempts,_that.seenTips,_that.reviewAsks,_that.lastReviewLevel,_that.cloudSynced,_that.revision,_that.updatedAt);case _:
   return null;
 
 }
@@ -259,7 +263,7 @@ return $default(_that.progress,_that.coins,_that.ownedSkins,_that.selectedSkin,_
 @JsonSerializable()
 
 class _SaveData extends SaveData {
-  const _SaveData({this.progress = const Progress(), this.coins = 0,  List<String> ownedSkins = const <String>['classic'], this.selectedSkin = 'classic', this.streak = 0, this.lastWinDay, this.rewardStreak = 0, this.lastRewardDay, this.settings = const AppSettings(),  List<String> claimedBundles = const <String>[],  Map<String, int> levelAttempts = const <String, int>{},  List<String> seenTips = const <String>[], this.cloudSynced = false, this.revision = 0, this.updatedAt = 0}): _ownedSkins = ownedSkins,_claimedBundles = claimedBundles,_levelAttempts = levelAttempts,_seenTips = seenTips,super._();
+  const _SaveData({this.progress = const Progress(), this.coins = 0,  List<String> ownedSkins = const <String>['classic'], this.selectedSkin = 'classic', this.streak = 0, this.lastWinDay, this.rewardStreak = 0, this.lastRewardDay, this.settings = const AppSettings(),  List<String> claimedBundles = const <String>[],  Map<String, int> levelAttempts = const <String, int>{},  List<String> seenTips = const <String>[],  List<int> reviewAsks = const <int>[], this.lastReviewLevel = 0, this.cloudSynced = false, this.revision = 0, this.updatedAt = 0}): _ownedSkins = ownedSkins,_claimedBundles = claimedBundles,_levelAttempts = levelAttempts,_seenTips = seenTips,_reviewAsks = reviewAsks,super._();
   factory _SaveData.fromJson(Map<String, dynamic> json) => _$SaveDataFromJson(json);
 
 @override@JsonKey() final  Progress progress;
@@ -312,6 +316,18 @@ class _SaveData extends SaveData {
   return EqualUnmodifiableListView(_seenTips);
 }
 
+/// When the store rating sheet was requested (ms since epoch) and at
+/// which campaign level, for `ReviewPolicy`.
+ final  List<int> _reviewAsks;
+/// When the store rating sheet was requested (ms since epoch) and at
+/// which campaign level, for `ReviewPolicy`.
+@override@JsonKey() List<int> get reviewAsks {
+  if (_reviewAsks is EqualUnmodifiableListView) return _reviewAsks;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_reviewAsks);
+}
+
+@override@JsonKey() final  int lastReviewLevel;
 /// Set once this install's save has been merged with the cloud copy.
 @override@JsonKey() final  bool cloudSynced;
 /// Bumped on every change; used when merging with the cloud copy.
@@ -332,18 +348,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SaveData&&(identical(other.progress, progress) || other.progress == progress)&&(identical(other.coins, coins) || other.coins == coins)&&const DeepCollectionEquality().equals(other.ownedSkins, _ownedSkins)&&(identical(other.selectedSkin, selectedSkin) || other.selectedSkin == selectedSkin)&&(identical(other.streak, streak) || other.streak == streak)&&(identical(other.lastWinDay, lastWinDay) || other.lastWinDay == lastWinDay)&&(identical(other.rewardStreak, rewardStreak) || other.rewardStreak == rewardStreak)&&(identical(other.lastRewardDay, lastRewardDay) || other.lastRewardDay == lastRewardDay)&&(identical(other.settings, settings) || other.settings == settings)&&const DeepCollectionEquality().equals(other.claimedBundles, _claimedBundles)&&const DeepCollectionEquality().equals(other.levelAttempts, _levelAttempts)&&const DeepCollectionEquality().equals(other.seenTips, _seenTips)&&(identical(other.cloudSynced, cloudSynced) || other.cloudSynced == cloudSynced)&&(identical(other.revision, revision) || other.revision == revision)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SaveData&&(identical(other.progress, progress) || other.progress == progress)&&(identical(other.coins, coins) || other.coins == coins)&&const DeepCollectionEquality().equals(other.ownedSkins, _ownedSkins)&&(identical(other.selectedSkin, selectedSkin) || other.selectedSkin == selectedSkin)&&(identical(other.streak, streak) || other.streak == streak)&&(identical(other.lastWinDay, lastWinDay) || other.lastWinDay == lastWinDay)&&(identical(other.rewardStreak, rewardStreak) || other.rewardStreak == rewardStreak)&&(identical(other.lastRewardDay, lastRewardDay) || other.lastRewardDay == lastRewardDay)&&(identical(other.settings, settings) || other.settings == settings)&&const DeepCollectionEquality().equals(other.claimedBundles, _claimedBundles)&&const DeepCollectionEquality().equals(other.levelAttempts, _levelAttempts)&&const DeepCollectionEquality().equals(other.seenTips, _seenTips)&&const DeepCollectionEquality().equals(other.reviewAsks, _reviewAsks)&&(identical(other.lastReviewLevel, lastReviewLevel) || other.lastReviewLevel == lastReviewLevel)&&(identical(other.cloudSynced, cloudSynced) || other.cloudSynced == cloudSynced)&&(identical(other.revision, revision) || other.revision == revision)&&(identical(other.updatedAt, updatedAt) || other.updatedAt == updatedAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,progress,coins,const DeepCollectionEquality().hash(_ownedSkins),selectedSkin,streak,lastWinDay,rewardStreak,lastRewardDay,settings,const DeepCollectionEquality().hash(_claimedBundles),const DeepCollectionEquality().hash(_levelAttempts),const DeepCollectionEquality().hash(_seenTips),cloudSynced,revision,updatedAt);
+    return Object.hash(runtimeType,progress,coins,const DeepCollectionEquality().hash(_ownedSkins),selectedSkin,streak,lastWinDay,rewardStreak,lastRewardDay,settings,const DeepCollectionEquality().hash(_claimedBundles),const DeepCollectionEquality().hash(_levelAttempts),const DeepCollectionEquality().hash(_seenTips),const DeepCollectionEquality().hash(_reviewAsks),lastReviewLevel,cloudSynced,revision,updatedAt);
 }
 
 @override
 String toString() {
-    return 'SaveData(progress: $progress, coins: $coins, ownedSkins: $ownedSkins, selectedSkin: $selectedSkin, streak: $streak, lastWinDay: $lastWinDay, rewardStreak: $rewardStreak, lastRewardDay: $lastRewardDay, settings: $settings, claimedBundles: $claimedBundles, levelAttempts: $levelAttempts, seenTips: $seenTips, cloudSynced: $cloudSynced, revision: $revision, updatedAt: $updatedAt)';
+    return 'SaveData(progress: $progress, coins: $coins, ownedSkins: $ownedSkins, selectedSkin: $selectedSkin, streak: $streak, lastWinDay: $lastWinDay, rewardStreak: $rewardStreak, lastRewardDay: $lastRewardDay, settings: $settings, claimedBundles: $claimedBundles, levelAttempts: $levelAttempts, seenTips: $seenTips, reviewAsks: $reviewAsks, lastReviewLevel: $lastReviewLevel, cloudSynced: $cloudSynced, revision: $revision, updatedAt: $updatedAt)';
 }
 
 
@@ -354,7 +370,7 @@ abstract mixin class _$SaveDataCopyWith<$Res> implements $SaveDataCopyWith<$Res>
   factory _$SaveDataCopyWith(_SaveData value, $Res Function(_SaveData) _then) = __$SaveDataCopyWithImpl;
 @override @useResult
 $Res call({
- Progress progress, int coins, List<String> ownedSkins, String selectedSkin, int streak, String? lastWinDay, int rewardStreak, String? lastRewardDay, AppSettings settings, List<String> claimedBundles, Map<String, int> levelAttempts, List<String> seenTips, bool cloudSynced, int revision, int updatedAt
+ Progress progress, int coins, List<String> ownedSkins, String selectedSkin, int streak, String? lastWinDay, int rewardStreak, String? lastRewardDay, AppSettings settings, List<String> claimedBundles, Map<String, int> levelAttempts, List<String> seenTips, List<int> reviewAsks, int lastReviewLevel, bool cloudSynced, int revision, int updatedAt
 });
 
 
@@ -371,7 +387,7 @@ class __$SaveDataCopyWithImpl<$Res>
 
 /// Create a copy of SaveData
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? progress = null,Object? coins = null,Object? ownedSkins = null,Object? selectedSkin = null,Object? streak = null,Object? lastWinDay = freezed,Object? rewardStreak = null,Object? lastRewardDay = freezed,Object? settings = null,Object? claimedBundles = null,Object? levelAttempts = null,Object? seenTips = null,Object? cloudSynced = null,Object? revision = null,Object? updatedAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? progress = null,Object? coins = null,Object? ownedSkins = null,Object? selectedSkin = null,Object? streak = null,Object? lastWinDay = freezed,Object? rewardStreak = null,Object? lastRewardDay = freezed,Object? settings = null,Object? claimedBundles = null,Object? levelAttempts = null,Object? seenTips = null,Object? reviewAsks = null,Object? lastReviewLevel = null,Object? cloudSynced = null,Object? revision = null,Object? updatedAt = null,}) {
   return _then(_SaveData(
 progress: null == progress ? _self.progress : progress // ignore: cast_nullable_to_non_nullable
 as Progress,coins: null == coins ? _self.coins : coins // ignore: cast_nullable_to_non_nullable
@@ -385,7 +401,9 @@ as String?,settings: null == settings ? _self.settings : settings // ignore: cas
 as AppSettings,claimedBundles: null == claimedBundles ? _self._claimedBundles : claimedBundles // ignore: cast_nullable_to_non_nullable
 as List<String>,levelAttempts: null == levelAttempts ? _self._levelAttempts : levelAttempts // ignore: cast_nullable_to_non_nullable
 as Map<String, int>,seenTips: null == seenTips ? _self._seenTips : seenTips // ignore: cast_nullable_to_non_nullable
-as List<String>,cloudSynced: null == cloudSynced ? _self.cloudSynced : cloudSynced // ignore: cast_nullable_to_non_nullable
+as List<String>,reviewAsks: null == reviewAsks ? _self._reviewAsks : reviewAsks // ignore: cast_nullable_to_non_nullable
+as List<int>,lastReviewLevel: null == lastReviewLevel ? _self.lastReviewLevel : lastReviewLevel // ignore: cast_nullable_to_non_nullable
+as int,cloudSynced: null == cloudSynced ? _self.cloudSynced : cloudSynced // ignore: cast_nullable_to_non_nullable
 as bool,revision: null == revision ? _self.revision : revision // ignore: cast_nullable_to_non_nullable
 as int,updatedAt: null == updatedAt ? _self.updatedAt : updatedAt // ignore: cast_nullable_to_non_nullable
 as int,

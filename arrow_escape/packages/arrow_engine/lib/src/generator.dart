@@ -19,6 +19,9 @@ class GeneratorConfig {
     this.maxLength = 6,
     this.turnChance = 0.45,
     this.longShare = 0.12,
+    this.midShare = 0.3,
+    this.tinyShare = 0,
+    this.tailGrowth = 10,
     this.lights = 0,
     this.gates = 0,
     this.ambulance = false,
@@ -47,6 +50,19 @@ class GeneratorConfig {
   /// Share of arrows drawn from the long end of the length range (the rest
   /// are short or medium), so boards mix tiny arrows with long snakes.
   final double longShare;
+
+  /// Share of medium arrows (4-7 cells, or 5-9 when [tinyShare] > 0).
+  final double midShare;
+
+  /// Share of the shortest arrows (exactly [minLength] cells). When > 0
+  /// the mix has four bands: tiny, short (3-4), medium (5-9) and long
+  /// (10+ up to [maxLength]).
+  final double tinyShare;
+
+  /// Most cells a tail may grow into leftover space after placement.
+  /// Small values keep the length mix; large ones fill pockets with
+  /// long snakes.
+  final int tailGrowth;
   final int lights;
   final int gates;
   final bool ambulance;
@@ -183,7 +199,8 @@ class LevelGenerator {
       // Fill what is still empty with short arrows so the board reads as
       // one crowded knot, then let tails take any last single cells.
       _fillGaps(maskCells);
-      _extendTails();
+      // Last cells: tails may grow a bit further so no holes are left.
+      _extendTails(growth: math.max(config.tailGrowth, 8));
     }
 
     final gates = <OneWayGate>[
@@ -336,11 +353,15 @@ class LevelGenerator {
   /// has no holes. Only the tail moves, so an arrow's own path is
   /// unchanged; a cell is taken only if every arrow whose path crosses it
   /// leaves after this one (was placed before it).
-  void _extendTails() {
+  void _extendTails({int? growth}) {
     // Long enough to fill leftover pockets (crowded boards), short enough
     // that arrows stay lines rather than blobs.
     final cap = [
-      for (final p in _placed) math.min(p.cells.length + 10, config.maxLength),
+      for (final p in _placed)
+        math.min(
+          p.cells.length + (growth ?? config.tailGrowth),
+          config.maxLength,
+        ),
     ];
     var grown = true;
     while (grown) {
@@ -430,10 +451,20 @@ class LevelGenerator {
       return lo + _rng.nextInt(hi - lo + 1);
     }
 
+    if (config.tinyShare > 0) {
+      // Four bands, like a hand-drawn board: tiny stubs, short arrows,
+      // medium bends and a few very long snakes.
+      if (r < config.longShare) return between(10, maxLength);
+      if (r < config.longShare + config.midShare) return between(5, 9);
+      if (r < config.longShare + config.midShare + config.tinyShare) {
+        return minLength;
+      }
+      return between(3, 4);
+    }
     if (r < config.longShare) {
       return between(math.max(8, maxLength ~/ 2), maxLength);
     }
-    if (r < config.longShare + 0.3) return between(4, 7);
+    if (r < config.longShare + config.midShare) return between(4, 7);
     return between(minLength, 3);
   }
 

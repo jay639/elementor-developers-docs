@@ -15,15 +15,15 @@ void main() {
     }
   });
 
-  test('layers get strictly harder and stay solvable', () {
+  test('layers get more arrows and stay solvable', () {
     final layers = ShapePuzzles.buildLayers(ShapePuzzles.byId('mountain'));
     expect(layers, hasLength(PuzzleShape.layerCount));
     for (var i = 0; i < layers.length; i++) {
       expect(analyzeLevel(layers[i]), isNotNull);
       if (i > 0) {
         expect(
-          layers[i].meta.difficulty,
-          greaterThan(layers[i - 1].meta.difficulty),
+          layers[i].pieces.length,
+          greaterThan(layers[i - 1].pieces.length),
         );
       }
     }

@@ -2,6 +2,7 @@ import 'package:arrow_escape/app/routes.dart';
 import 'package:arrow_escape/core/theme/palette.dart';
 import 'package:arrow_escape/core/widgets/ui.dart';
 import 'package:arrow_escape/features/ads/data/ad_service.dart';
+import 'package:arrow_escape/features/review/data/review_service.dart';
 import 'package:arrow_escape/features/settings/application/settings_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -143,6 +144,15 @@ class SettingsScreen extends ConsumerWidget {
                   color: Palette.sky,
                   title: 'Shop & restore purchases',
                   onTap: () => context.push(Routes.shop),
+                ),
+                _LinkRow(
+                  key: const Key('rate-app'),
+                  icon: Icons.star_rounded,
+                  color: Palette.secondary,
+                  title: 'Rate Arrow Escape',
+                  subtitle: 'Enjoying it? A review helps a lot',
+                  onTap: () =>
+                      ref.read(reviewServiceProvider).openStoreListing(),
                 ),
               ],
             ),
