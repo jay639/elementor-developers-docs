@@ -15,6 +15,18 @@ adb logcat -v threadtime > logcat.txt 2>&1 &
 logcat_pid=$!
 timeout 60 adb shell monkey -p "$pkg" -c android.intent.category.LAUNCHER 1 >/dev/null
 
+# Give a just-booted emulator time to spawn the process before judging.
+started=0
+for i in $(seq 1 20); do
+  if timeout 10 adb shell pidof "$pkg" >/dev/null; then started=1; break; fi
+  sleep 1
+done
+if [ "$started" = 0 ]; then
+  echo "::error::App process never started"
+  grep -E "$pkg|ActivityTaskManager|AndroidRuntime|FATAL" logcat.txt | tail -n 60
+  exit 1
+fi
+
 alive=1
 for i in $(seq 1 30); do
   sleep 1
@@ -50,4 +62,5 @@ if [ "$alive" = 1 ]; then
   exit 1
 fi
 echo "::error::App process died after launch"
+grep -E "$pkg|ActivityManager: Process|AndroidRuntime|FATAL|libc  " logcat.txt | tail -n 60
 exit 1
