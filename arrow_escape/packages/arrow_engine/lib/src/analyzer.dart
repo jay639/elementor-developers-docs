@@ -16,6 +16,7 @@ class LevelStats {
     required this.avgBlockers,
     required this.solverStates,
     required this.difficulty,
+    this.effort = 0,
   });
 
   /// One optimal play order. Every vehicle leaves exactly once, so the
@@ -41,6 +42,13 @@ class LevelStats {
   /// 0..100.
   final double difficulty;
 
+  /// How long the board takes a person, in "looks": at every step the
+  /// player hunts for a free arrow among the ones left, which takes about
+  /// (left + 1) / (free + 1) looks. Summed over the solution. Unlike
+  /// [difficulty] it never saturates, and it tracks solve time: more
+  /// arrows and fewer free ones both make it grow.
+  final double effort;
+
   int get minMoves => solution.length;
 
   @override
@@ -48,7 +56,8 @@ class LevelStats {
       'pieces=$pieces depth=$depth branching=${avgBranching.toStringAsFixed(2)} '
       'blocked=${(blockedFraction * 100).round()}% '
       'blockers=${avgBlockers.toStringAsFixed(2)} states=$solverStates '
-      'difficulty=${difficulty.toStringAsFixed(1)}';
+      'difficulty=${difficulty.toStringAsFixed(1)} '
+      'effort=${effort.toStringAsFixed(0)}';
 }
 
 /// Solves [level] and scores it. Returns null when it is unsolvable (or
@@ -63,8 +72,13 @@ LevelStats? analyzeLevel(Level level, {int maxStates = 200000}) {
   // Branching along the found solution.
   var state = rules.initialState;
   var branchSum = 0;
+  var effort = 0.0;
+  var left = n;
   for (final move in solution) {
-    branchSum += rules.legalMoves(state).length;
+    final legal = rules.legalMoves(state).length;
+    branchSum += legal;
+    effort += (left + 1) / (legal + 1);
+    left--;
     state = state.without(move);
   }
   final avgBranching = n == 0 ? 1.0 : branchSum / n;
@@ -131,6 +145,7 @@ LevelStats? analyzeLevel(Level level, {int maxStates = 200000}) {
     avgBlockers: avgBlockers,
     solverStates: solver.visitedStates,
     difficulty: difficulty,
+    effort: effort,
   );
 }
 

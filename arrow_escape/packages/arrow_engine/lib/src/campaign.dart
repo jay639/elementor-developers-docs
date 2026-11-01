@@ -222,6 +222,92 @@ Level? generateForArrows({
   return best;
 }
 
+/// Generates a board whose solve effort ([LevelStats.effort], roughly the
+/// time a person needs) lands close to [effort]. The arrow count starts at
+/// [arrows] and is corrected after every candidate (effort grows a bit
+/// faster than linearly with arrows), the board size follows the count,
+/// and the candidate closest to the target wins; it stops early once one
+/// is within [band] (a share of the target). Plain arithmetic only (no
+/// `pow`/`log`), so dailies stay bit-identical on every device.
+Level? generateForEffort({
+  required int id,
+  required double effort,
+  required int arrows,
+  required int seed,
+  required ShapeMask shape,
+  MechanicSet mechanics = const MechanicSet(),
+  LevelTier tier = LevelTier.normal,
+  int candidates = 16,
+  int greed = 6,
+  double turnChance = 0.45,
+  double longShare = 0.08,
+  double midShare = 0.22,
+  double tinyShare = 0.32,
+  int maxLength = 18,
+  int maxWidth = maxArrowBoardWidth,
+  int maxHeight = maxArrowBoardHeight,
+  int maxArrows = 125,
+  double band = 0.06,
+  int analyzeStates = 60000,
+}) {
+  final rng = Rng(seed);
+  var want = arrows.toDouble();
+  var perArrow = 5.6;
+  var squeeze = 1.0;
+  Level? best;
+  var bestMiss = double.infinity;
+  for (var i = 0; i < candidates; i++) {
+    final count = want.round().clamp(4, maxArrows);
+    final cells = (count * perArrow).round();
+    final fitted = shape.fitTo(cells, maxWidth: maxWidth, maxHeight: maxHeight);
+    final level = LevelGenerator.generate(
+      GeneratorConfig(
+        seed: rng.nextUint32(),
+        shape: fitted,
+        id: id,
+        fill: 0.92,
+        greed: greed,
+        minLength: 2,
+        maxLength: maxLength,
+        tinyShare: tinyShare,
+        midShare: midShare * squeeze,
+        longShare: longShare * squeeze,
+        turnChance: turnChance,
+        tailGrowth: 3,
+        lights: mechanics.lights,
+        gates: mechanics.gates,
+        ambulance: mechanics.ambulance,
+      ),
+    );
+    if (level == null || !mechanics.satisfiedBy(level)) continue;
+    final got = level.pieces.length;
+    perArrow = (perArrow * count / got).clamp(3.0, 9.0);
+    final capped = fitted.width >= maxWidth || fitted.height >= maxHeight;
+    if (capped && got < count * 0.94) squeeze = math.max(0.3, squeeze * 0.7);
+    final stats = analyzeLevel(level, maxStates: analyzeStates);
+    if (stats == null) continue;
+    final e = math.max(1.0, stats.effort);
+    // Relative miss, symmetric for over and under (ratio-based).
+    final miss = e > effort ? e / effort - 1 : effort / e - 1;
+    if (miss < bestMiss) {
+      bestMiss = miss;
+      best = level.copyWith(
+        meta: level.meta.copyWith(
+          difficulty: double.parse(stats.difficulty.toStringAsFixed(1)),
+          tier: tier,
+        ),
+      );
+      if (miss <= band) break;
+    }
+    // Effort grows a little faster than the arrow count: correct the
+    // count by the square root of the miss.
+    final ratio = effort / e;
+    final step = math.sqrt(ratio.clamp(0.25, 4.0));
+    want = (got * step).clamp(4.0, maxArrows.toDouble());
+  }
+  return best;
+}
+
 /// How hard a board is to read, without the 0-100 cap: share of arrows
 /// blocked at the start, the longest waiting chain and how few moves are
 /// open on average.
@@ -240,6 +326,7 @@ class LevelSpec {
   const LevelSpec({
     required this.number,
     required this.arrows,
+    required this.effort,
     required this.breather,
     required this.tier,
     required this.shape,
@@ -249,6 +336,9 @@ class LevelSpec {
 
   final int number;
   final int arrows;
+
+  /// Solve effort the level is built to (see [Campaign.effortTarget]).
+  final double effort;
   final bool breather;
   final LevelTier tier;
   final ShapeMask shape;
@@ -269,8 +359,9 @@ abstract final class Campaign {
   static String packFile(int pack) =>
       'pack_${pack.toString().padLeft(2, '0')}.json.gz';
 
-  /// Every 5th level is noticeably easier.
-  static bool isBreather(int n) => n % 5 == 0;
+  /// No easier "breather" levels any more: every level takes at least as
+  /// long as the one before it (Hard / Super Hard levels spike above).
+  static bool isBreather(int n) => false;
 
   /// Levels ending in 9 are Hard and every 50th (49, 99, …) Super Hard,
   /// each followed by a breather.
@@ -293,11 +384,7 @@ abstract final class Campaign {
   /// offline tool, so platform `exp` is fine here.
   static int arrowTarget(int n) {
     if (n <= 1) return 6;
-    final base =
-        14 +
-        32 * (1 - math.exp(-(n - 2) / 2)) +
-        40 * (1 - math.exp(-n / 300)) +
-        0.025 * n;
+    final base = _baseArrows(n);
     final factor = isBreather(n)
         ? 0.92
         : switch (tierFor(n)) {
@@ -307,6 +394,29 @@ abstract final class Campaign {
           };
     // The biggest board holds about 120 arrows.
     return (base * factor).round().clamp(6, 120);
+  }
+
+  /// Arrow count before tier factors: rises with every level.
+  static double _baseArrows(int n) =>
+      14 +
+      32 * (1 - math.exp(-(n - 2) / 2)) +
+      40 * (1 - math.exp(-n / 300)) +
+      0.025 * n;
+
+  /// Solve effort level [n] is built to ([LevelStats.effort], roughly
+  /// solve time): rises with every level, ~120 at level 3, ~240 at level
+  /// 8, ~330 at level 100, ~570 at level 500, ~840 at level 1500. Hard
+  /// levels need 25% more, Super Hard 45% more (capped at 1000, about the
+  /// most the biggest board can hold). Offline tool only, so `pow` is fine.
+  static double effortTarget(int n) {
+    if (n <= 1) return 10;
+    final base = 1.69 * math.pow(_baseArrows(n), 1.29);
+    final factor = switch (tierFor(n)) {
+      LevelTier.normal => 1.0,
+      LevelTier.hard => 1.25,
+      LevelTier.superHard => 1.45,
+    };
+    return math.min(1000.0, base * factor);
   }
 
   /// Longest arrow at level [n]: short snakes early, very long later.
@@ -341,6 +451,7 @@ abstract final class Campaign {
         n == MechanicUnlocks.gates ||
         n == MechanicUnlocks.ambulance;
     final arrows = isIntro ? (arrowTarget(n) * 0.6).round() : arrowTarget(n);
+    final effort = isIntro ? effortTarget(n) * 0.5 : effortTarget(n);
     // Mostly plain rectangles of varied proportions (they read cleanly and
     // every edge cell is playable); sometimes a compact picture shape.
     final shapes = [
@@ -362,6 +473,7 @@ abstract final class Campaign {
     return LevelSpec(
       number: n,
       arrows: arrows,
+      effort: effort,
       breather: breather,
       tier: tierFor(n),
       shape: shape,
@@ -393,21 +505,23 @@ abstract final class Campaign {
     final s = spec(n);
     // Relax gradually if the spec turns out to be too demanding.
     for (var attempt = 0; attempt < 8; attempt++) {
-      final level = generateForArrows(
+      final level = generateForEffort(
         id: n,
+        effort: s.effort,
         arrows: s.arrows,
         seed: s.seed + attempt * 7919,
         shape: attempt < 3 ? s.shape : ShapeMask.rect(3, 4),
         // Last resort: drop the mechanics rather than fail the build.
         mechanics: attempt < 6 ? s.mechanics : const MechanicSet(),
-        breather: s.breather,
         tier: s.tier,
         greed: greedFor(n),
         maxLength: maxLengthFor(n),
         // Big late boards need more, shorter arrows to fit the screen.
         longShare: (0.1 - n / 30000).clamp(0.05, 0.1),
         midShare: (0.24 - n / 20000).clamp(0.16, 0.24),
-        candidates: attempt < 4 ? 8 : 16,
+        candidates: attempt < 4 ? 30 : 40,
+        // Tight: neighbouring levels differ by only a few percent.
+        band: 0.03,
       );
       if (level != null) return level;
     }

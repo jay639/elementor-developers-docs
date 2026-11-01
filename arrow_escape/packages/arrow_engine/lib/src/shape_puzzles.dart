@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math' as math;
 
+import 'analyzer.dart';
 import 'campaign.dart';
 import 'level.dart';
 import 'rng.dart';
@@ -55,6 +56,18 @@ class PuzzleShape {
     final base = 28 + index * 54 / (ShapePuzzles.all.length - 1);
     return (base * (1 + (layer - 1) * 0.25)).round().clamp(10, 120);
   }
+
+  /// Solve effort ([LevelStats.effort], roughly solve time) of [layer]
+  /// for a picture holding up to [capacity] arrows: later pictures start
+  /// higher (ladybug ~130, galaxy ~460) and each layer takes clearly
+  /// longer than the one before (x1.4, then x1.9 of layer 1).
+  double effortFor(int layer, {required double capacity}) {
+    final index = ShapePuzzles.all.indexOf(this);
+    // About the most effort a board of this picture can hold.
+    final most = 1.69 * math.pow(capacity, 1.29) * 1.1;
+    final base = math.min(130.0 + index * 15, most / 1.9);
+    return base * const [1.0, 1.4, 1.9][layer - 1];
+  }
 }
 
 /// Builds and stores the puzzle levels. Generated offline by the tool and
@@ -74,8 +87,19 @@ abstract final class ShapePuzzles {
   /// All layers of [shape], each with more arrows than the one before.
   static List<Level> buildLayers(PuzzleShape shape) {
     final rng = Rng(seed ^ stableHash(shape.id));
+    // Thin pictures may not hold the full ladder: scale it down until all
+    // three layers fit, keeping each clearly harder than the last.
+    for (final scale in const [1.0, 0.8, 0.65, 0.5, 0.4]) {
+      final layers = _tryLayers(shape, rng, scale);
+      if (layers != null) return layers;
+    }
+    throw StateError('Could not generate layers for ${shape.id}');
+  }
+
+  static List<Level>? _tryLayers(PuzzleShape shape, Rng rng, double scale) {
     final mask = shape.mask;
     final picks = <Level>[];
+    var picksEffort = 0.0;
     // Wide or thin pictures hold fewer arrows on the biggest board.
     final capacity =
         mask
@@ -87,34 +111,37 @@ abstract final class ShapePuzzles {
             .area /
         6.0;
     for (var layer = 1; layer <= PuzzleShape.layerCount; layer++) {
+      final target = shape.effortFor(layer, capacity: capacity) * scale;
       Level? level;
-      for (var attempt = 0; attempt < 6 && level == null; attempt++) {
-        final l = generateForArrows(
+      double? effort;
+      for (var attempt = 0; attempt < 8 && level == null; attempt++) {
+        final l = generateForEffort(
           id: 0,
-          arrows: math.min(
-            shape.arrowsFor(layer),
-            (capacity * (0.55 + 0.2 * layer)).round(),
-          ),
+          effort: target,
+          arrows: math.min(shape.arrowsFor(layer), capacity.round()),
           seed: rng.nextUint32(),
           // The mask's name, puzzle_<id>, is the level's shape.
           shape: mask,
           greed: 6 + layer * 2,
           maxLength: 16,
+          candidates: 16,
           tier: switch (layer) {
             1 => LevelTier.normal,
             2 => LevelTier.hard,
             _ => LevelTier.superHard,
           },
         );
-        if (l != null &&
-            (picks.isEmpty || l.pieces.length > picks.last.pieces.length)) {
+        if (l == null) continue;
+        final e = analyzeLevel(l, maxStates: 60000)?.effort;
+        // Each layer must take clearly longer than the one before.
+        if (e != null && (picks.isEmpty || e >= picksEffort * 1.2)) {
           level = l;
+          effort = e;
         }
       }
-      if (level == null) {
-        throw StateError('Could not generate layer $layer of ${shape.id}');
-      }
+      if (level == null || effort == null) return null;
       picks.add(level);
+      picksEffort = effort;
     }
     return picks;
   }

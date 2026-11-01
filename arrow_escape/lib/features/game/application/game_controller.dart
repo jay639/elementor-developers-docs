@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:arrow_engine/arrow_engine.dart';
+import 'package:arrow_escape/features/game/data/resume_store.dart';
 import 'package:arrow_escape/core/services/analytics.dart';
 import 'package:arrow_escape/core/services/haptics.dart';
 import 'package:arrow_escape/core/services/sound.dart';
@@ -58,11 +59,55 @@ class GameController extends Notifier<GameViewState> {
     if (tutorial != TutorialStep.none) {
       _analytics.log('tutorial_begin');
     }
-    final session = _session = PlaySession.start(level);
+    // Pick up where the player left this level (app closed, Settings,
+    // Home…), unless it is the guided tutorial.
+    final saved = tutorial == TutorialStep.none
+        ? ref.read(resumeStoreProvider).read(_label)
+        : null;
+    var session = PlaySession.start(level);
+    _exits = [];
+    if (saved != null) {
+      session = PlaySession.resume(
+        level,
+        exits: saved.exits,
+        hearts: saved.hearts,
+        mistakes: saved.mistakes,
+      );
+      _exits = session.board.remainingCount < level.pieces.length
+          ? [...saved.exits]
+          : [];
+      if (_exits.isNotEmpty || session.mistakes > 0) {
+        _analytics.log('level_resume', {
+          ..._info.params,
+          'progress_pct': _progressPctOf(session),
+        });
+      }
+    }
+    _session = session;
     return GameViewState(
       levelRef: levelRef,
       session: session,
       tutorial: tutorial,
+      stuck: _isDeadEnd(session),
+    );
+  }
+
+  /// Arrows that left so far this attempt, in order (for resuming).
+  List<int> _exits = [];
+
+  void _saveProgress(PlaySession session) {
+    final store = ref.read(resumeStoreProvider);
+    if (session.isOver || state.tutorial != TutorialStep.none) {
+      store.clear();
+      return;
+    }
+    store.write(
+      LevelProgress(
+        level: _label,
+        exits: _exits,
+        hearts: session.hearts,
+        mistakes: session.mistakes,
+      ),
     );
   }
 
@@ -95,6 +140,10 @@ class GameController extends Notifier<GameViewState> {
   int get _progressPct {
     final session = _session;
     if (session == null) return 0;
+    return _progressPctOf(session);
+  }
+
+  static int _progressPctOf(PlaySession session) {
     final total = session.rules.pieceCount;
     if (total == 0) return 0;
     return ((total - session.board.remainingCount) * 100 / total).round();
@@ -158,6 +207,8 @@ class GameController extends Notifier<GameViewState> {
     final outcome = result.outcome;
     if (outcome == null) return null;
     state = state.copyWith(session: result.session, hintPiece: null);
+    if (outcome is ExitMove) _exits = [..._exits, piece];
+    _saveProgress(result.session);
 
     final haptics = ref.read(hapticsProvider);
     final sound = ref.read(soundProvider);
@@ -244,6 +295,7 @@ class GameController extends Notifier<GameViewState> {
     final ref0 = levelRef;
     if (ref0 is! CampaignLevelRef || state.session.isOver) return false;
     if (!ref.read(saveProvider.notifier).skipLevel(ref0.number)) return false;
+    ref.read(resumeStoreProvider).clear();
     // A skip ends the attempt; it is logged as level_skip, not a quit.
     _ended = true;
     return true;
@@ -294,6 +346,7 @@ class GameController extends Notifier<GameViewState> {
   /// Rewarded "extra heart": continue after running out.
   void addHeart() {
     state = state.copyWith(session: state.session.addHeart());
+    _saveProgress(state.session);
     // The attempt goes on: a later win or quit is logged for it.
     _ended = false;
     _clock.start();
@@ -315,6 +368,8 @@ class GameController extends Notifier<GameViewState> {
   void restart() {
     // Restarting mid-level abandons that attempt.
     _logQuitIfUnfinished();
+    ref.read(resumeStoreProvider).clear();
+    _exits = [];
     _startAttempt(state.level);
     state = GameViewState(
       levelRef: levelRef,

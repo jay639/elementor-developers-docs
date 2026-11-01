@@ -210,41 +210,28 @@ v..
   });
 
   group('Campaign', () {
-    test('breather every 5th level', () {
-      expect(Campaign.isBreather(5), isTrue);
-      expect(Campaign.isBreather(1500), isTrue);
-      expect(Campaign.isBreather(7), isFalse);
+    test('no easier breather levels', () {
+      for (var n = 1; n <= 1500; n++) {
+        expect(Campaign.isBreather(n), isFalse);
+      }
     });
 
-    test('arrow count rises every level; breathers dip a little', () {
-      expect(Campaign.arrowTarget(2), lessThan(15));
-      expect(Campaign.arrowTarget(8), greaterThanOrEqualTo(30));
-      expect(Campaign.arrowTarget(101), greaterThan(45));
-      expect(Campaign.arrowTarget(1498), greaterThan(100));
-      bool special(int n) =>
-          Campaign.isBreather(n) || Campaign.tierFor(n) != LevelTier.normal;
-      var last = 0;
+    test('solve effort target rises every regular level', () {
+      expect(Campaign.effortTarget(3), greaterThan(100));
+      expect(Campaign.effortTarget(8), greaterThan(Campaign.effortTarget(5)));
+      expect(Campaign.effortTarget(1500), greaterThan(800));
+      var last = 0.0;
       for (var n = 2; n <= 1500; n++) {
-        if (special(n)) continue;
-        expect(
-          Campaign.arrowTarget(n),
-          greaterThanOrEqualTo(last),
-          reason: 'L$n',
-        );
-        last = Campaign.arrowTarget(n);
-      }
-      for (var n = 10; n <= 1500; n += 5) {
-        expect(
-          Campaign.arrowTarget(n),
-          lessThan(Campaign.arrowTarget(n - 1)),
-          reason: 'L$n',
-        );
-        // Never a big drop: about the count of 3 levels earlier.
-        expect(
-          Campaign.arrowTarget(n),
-          greaterThan(Campaign.arrowTarget(n - 3) * 0.85),
-          reason: 'L$n',
-        );
+        if (Campaign.tierFor(n) != LevelTier.normal) {
+          // Hard levels spike above their neighbours.
+          expect(
+            Campaign.effortTarget(n),
+            greaterThan(Campaign.effortTarget(n - 1)),
+          );
+          continue;
+        }
+        expect(Campaign.effortTarget(n), greaterThan(last), reason: 'L$n');
+        last = Campaign.effortTarget(n);
       }
     });
 
@@ -285,8 +272,8 @@ v..
       expect(Campaign.tierFor(49), LevelTier.superHard);
       expect(Campaign.tierFor(99), LevelTier.superHard);
       expect(Campaign.tierFor(20), LevelTier.normal);
-      expect(Campaign.arrowTarget(29), greaterThan(Campaign.arrowTarget(28)));
-      expect(Campaign.arrowTarget(49), greaterThan(Campaign.arrowTarget(39)));
+      expect(Campaign.effortTarget(29), greaterThan(Campaign.effortTarget(28)));
+      expect(Campaign.effortTarget(49), greaterThan(Campaign.effortTarget(39)));
       expect(Campaign.build(29).meta.tier, LevelTier.hard);
       expect(LevelTier.superHard.rewardMultiplier, 3);
     });
@@ -309,17 +296,14 @@ v..
       }
     });
 
-    test('build is deterministic and has about the planned arrows', () {
+    test('build is deterministic and takes about the planned effort', () {
       for (final n in [7, 33, 250, 900]) {
         final a = Campaign.build(n);
         expect(a.toJson(), Campaign.build(n).toJson());
         expect(a.id, n);
-        final want = Campaign.arrowTarget(n);
-        expect(
-          (a.pieces.length - want).abs(),
-          lessThanOrEqualTo(want * 0.15 + 1),
-          reason: 'L$n',
-        );
+        final want = Campaign.effortTarget(n);
+        final got = analyzeLevel(a, maxStates: 60000)!.effort;
+        expect(got, inInclusiveRange(want * 0.85, want * 1.15), reason: 'L$n');
         expect(a.width, lessThanOrEqualTo(maxArrowBoardWidth));
         expect(a.height, lessThanOrEqualTo(maxArrowBoardHeight));
       }
@@ -359,17 +343,15 @@ v..
       expect(a.id, 20261029);
     });
 
-    test('a year of dailies is solvable and huge', () {
+    test('a year of dailies is solvable and takes the planned effort', () {
       var day = DateTime(2027, 1, 1);
-      for (var i = 0; i < 30; i++) {
+      for (var i = 0; i < 20; i++) {
         final level = DailyChallenge.levelFor(day);
-        expect(Solver(level).solve(), isNotNull, reason: '$day');
-        expect(
-          level.pieces.length,
-          greaterThan(DailyChallenge.arrowsFor(day) * 0.75),
-          reason: '$day',
-        );
-        day = day.add(const Duration(days: 13)); // walk all weekdays
+        final want = DailyChallenge.effortFor(day);
+        final got = analyzeLevel(level, maxStates: 60000)?.effort;
+        expect(got, isNotNull, reason: '$day');
+        expect(got, inInclusiveRange(want * 0.8, want * 1.2), reason: '$day');
+        day = day.add(const Duration(days: 19)); // walk all weekdays
       }
     });
 
@@ -377,8 +359,8 @@ v..
         'here (bump DailyChallenge.version on purpose instead)', () {
       int hashOf(DateTime d) =>
           stableHash(jsonEncode(DailyChallenge.levelFor(d).toJson()));
-      expect(hashOf(DateTime(2026, 10, 29)), 891433173);
-      expect(hashOf(DateTime(2027, 3, 14)), 191394179);
+      expect(hashOf(DateTime(2026, 10, 29)), 2140128023);
+      expect(hashOf(DateTime(2027, 3, 14)), 344368754);
     });
 
     test('keys', () {
@@ -389,14 +371,20 @@ v..
       // Weekday Nov 2: 85 arrows; Sunday Nov 1: weekend bonus.
       expect(DailyChallenge.arrowsFor(DateTime(2026, 11, 2)), 85);
       expect(DailyChallenge.arrowsFor(DateTime(2026, 11, 1)), 91);
-      // More arrows over time, and far more than campaign level 100.
+      // Every day takes a little longer than the day before (weekdays),
+      // and far longer than campaign level 100.
+      var day = DateTime(2026, 11, 2);
+      for (var i = 0; i < 4; i++) {
+        final next = day.add(const Duration(days: 1));
+        expect(
+          DailyChallenge.effortFor(next),
+          greaterThan(DailyChallenge.effortFor(day)),
+        );
+        day = next;
+      }
       expect(
-        DailyChallenge.arrowsFor(DateTime(2027, 2, 2)),
-        greaterThan(DailyChallenge.arrowsFor(DateTime(2026, 11, 3))),
-      );
-      expect(
-        DailyChallenge.arrowsFor(DateTime(2026, 11, 2)),
-        greaterThan(Campaign.arrowTarget(100)),
+        DailyChallenge.effortFor(DateTime(2026, 11, 2)),
+        greaterThan(Campaign.effortTarget(100)),
       );
     });
   });

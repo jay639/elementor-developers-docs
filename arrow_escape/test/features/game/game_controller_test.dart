@@ -43,6 +43,47 @@ void main() {
   // autoDispose: keep the provider alive for the duration of a test.
   void keepAlive() => container.listen(gameControllerProvider(one), (_, _) {});
 
+  test(
+    'a level left part-way resumes where it was, restart clears it',
+    () async {
+      final sub = container.listen(gameControllerProvider(one), (_, _) {});
+      controller().tap(0); // exits
+      controller().tap(1); // blocked: costs a heart
+      sub.close();
+      // The controller is disposed (player left the level)…
+      await Future<void>.delayed(Duration.zero);
+      await container.read(levelProvider(one).future);
+      keepAlive();
+      // …and reopening the level restores the board and hearts.
+      var s = container.read(gameControllerProvider(one)).session;
+      expect(s.board.isOnBoard(0), isFalse);
+      expect(s.hearts, 2);
+      expect(s.mistakes, 1);
+      controller().restart();
+      s = container.read(gameControllerProvider(one)).session;
+      expect(s.board.isOnBoard(0), isTrue);
+      expect(s.hearts, 3);
+    },
+  );
+
+  test('a cleared level does not resume', () async {
+    final sub = container.listen(gameControllerProvider(one), (_, _) {});
+    controller()
+      ..tap(0)
+      ..tap(2)
+      ..tap(1);
+    expect(
+      container.read(gameControllerProvider(one)).status,
+      SessionStatus.won,
+    );
+    sub.close();
+    await Future<void>.delayed(Duration.zero);
+    await container.read(levelProvider(one).future);
+    keepAlive();
+    final s = container.read(gameControllerProvider(one)).session;
+    expect(s.board.remainingCount, 3);
+  });
+
   test('exit plays swoosh + light haptic', () {
     keepAlive();
     expect(controller().tap(0), isA<ExitMove>());

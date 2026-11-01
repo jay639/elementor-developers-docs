@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:arrow_escape/features/game/data/resume_store.dart';
 import 'package:arrow_escape/app/app.dart';
 import 'package:arrow_escape/app/flavor.dart';
 import 'package:arrow_escape/core/services/analytics.dart';
@@ -58,6 +59,13 @@ Future<void> bootstrap(FlavorConfig flavor) async {
     repository = InMemorySaveRepository();
     loaded = const LoadedSave(SaveData());
   }
+  ResumeStore resume;
+  try {
+    resume = await HiveResumeStore.open();
+  } catch (e) {
+    debugPrint('Resume store unavailable, using memory: $e');
+    resume = InMemoryResumeStore();
+  }
   if (loaded.tampered) unawaited(analytics.log('save_tamper'));
 
   final adIds = AdUnitIds.forPlatform(useTestAds: flavor.isDev);
@@ -80,6 +88,7 @@ Future<void> bootstrap(FlavorConfig flavor) async {
       remoteConfigProvider.overrideWithValue(remoteConfig),
       saveRepositoryProvider.overrideWithValue(repository),
       initialSaveProvider.overrideWithValue(loaded),
+      resumeStoreProvider.overrideWithValue(resume),
       adServiceProvider.overrideWithValue(ads),
       purchaseServiceProvider.overrideWithValue(purchases),
       if (firebase) ...[

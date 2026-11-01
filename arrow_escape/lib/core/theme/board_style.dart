@@ -47,7 +47,7 @@ class BoardStyle {
     return BoardStyle(
       tile: hc
           ? (dark ? const Color(0xFF111111) : const Color(0xFFF2F2F2))
-          : (dark ? Palette.tileDark : Palette.tileLight),
+          : (dark ? Palette.boardDark : Palette.boardLight),
       tileEdge: hc
           ? (dark ? Colors.white54 : Colors.black45)
           : (dark ? Palette.tileDarkEdge : Palette.tileLightEdge),
@@ -67,8 +67,8 @@ class BoardStyle {
           : Palette.lightGreen,
       ambulance: Palette.ambulance,
       ambulanceCross: Palette.ambulanceCross,
-      strokeFactor: settings.thickArrows ? 0.17 : 0.11,
-      maxStroke: settings.thickArrows ? 6.0 : 4.0,
+      strokeFactor: settings.thickArrows ? 0.2 : 0.11,
+      maxStroke: settings.thickArrows ? 7.5 : 4.0,
       // Colorblind and high-contrast modes add shape cues to colour cues.
       symbols: settings.colorblind || hc,
       // Accessibility palettes are drawn plain.

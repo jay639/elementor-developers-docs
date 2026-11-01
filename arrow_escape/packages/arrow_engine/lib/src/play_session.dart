@@ -46,6 +46,29 @@ class PlaySession {
     );
   }
 
+  /// Rebuilds a level the player left part-way: replays [exits] in order
+  /// and restores hearts and mistakes. Anything that doesn't replay
+  /// cleanly (a changed level, a corrupt record) starts the level fresh.
+  factory PlaySession.resume(
+    Level level, {
+    required List<int> exits,
+    required int hearts,
+    required int mistakes,
+    Rules? rules,
+  }) {
+    final fresh = PlaySession.start(level, rules: rules);
+    var s = fresh;
+    for (final p in exits) {
+      if (p < 0 || p >= s.rules.pieceCount || !s.board.isOnBoard(p)) {
+        return fresh;
+      }
+      if (s.rules.evaluate(s.board, p) is! ExitMove) return fresh;
+      s = s._copy(board: s.board.without(p), history: [...s._history, s.board]);
+    }
+    if (hearts <= 0 || mistakes < 0 || s.board.isCleared) return fresh;
+    return s._copy(hearts: hearts, mistakes: mistakes);
+  }
+
   static const defaultHearts = 3;
 
   final Rules rules;

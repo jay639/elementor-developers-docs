@@ -135,7 +135,7 @@ void main() {
     });
 
     testWidgets('a new mechanic is explained once before play', (tester) async {
-      final lights = parseAsciiLevel('>.r\n..^');
+      final lights = parseAsciiLevel('>.r\n...\n.^.');
       final c = await open(tester, [lights, lights]);
       expect(find.text('New: Traffic lights'), findsOneWidget);
       await tester.tap(find.byKey(const Key('mechanic-intro-ok')));

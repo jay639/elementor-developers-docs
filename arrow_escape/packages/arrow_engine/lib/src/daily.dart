@@ -8,7 +8,7 @@ import 'shapes.dart';
 abstract final class DailyChallenge {
   /// Part of the seed. Bump when generator changes would alter past dailies
   /// anyway, so the change is deliberate.
-  static const version = 6;
+  static const version = 7;
 
   /// First day of the current daily series.
   static final launch = DateTime.utc(2026, 11, 1);
@@ -16,6 +16,18 @@ abstract final class DailyChallenge {
   /// Arrow count: a huge board from day one (85 arrows, about campaign
   /// level 900), growing by one arrow every 10 days, with 6 extra at
   /// weekends, up to 110 (about what the biggest board holds).
+  /// Solve effort ([LevelStats.effort], roughly solve time): 500 at
+  /// launch (about campaign level 400), +1 every day, +60 at weekends, up
+  /// to 950. So each weekday's daily takes a little longer than the one
+  /// before. Plain arithmetic: identical on every device.
+  static double effortFor(DateTime date) {
+    final day = DateTime.utc(date.year, date.month, date.day);
+    final days = day.difference(launch).inDays.clamp(0, 100000);
+    final weekend = date.weekday >= DateTime.saturday ? 60.0 : 0.0;
+    return (500.0 + days + weekend).clamp(500.0, 950.0);
+  }
+
+  /// Starting guess for the arrow count (the effort target decides).
   static int arrowsFor(DateTime date) {
     final day = DateTime.utc(date.year, date.month, date.day);
     final days = day.difference(launch).inDays.clamp(0, 100000);
@@ -56,8 +68,9 @@ abstract final class DailyChallenge {
     );
     final seed = rng.nextUint32();
     for (var attempt = 0; attempt < 6; attempt++) {
-      final level = generateForArrows(
+      final level = generateForEffort(
         id: idFor(day),
+        effort: effortFor(day),
         arrows: arrowsFor(day),
         seed: seed + attempt * 7919,
         // Fall back to fewer constraints if a combination is too tight.
@@ -67,7 +80,7 @@ abstract final class DailyChallenge {
         maxLength: 22,
         longShare: 0.07,
         midShare: 0.2,
-        candidates: 6,
+        candidates: 10,
       );
       if (level != null) return level;
     }

@@ -278,7 +278,14 @@ class LevelGenerator {
         head = _neighbor(head, enter.opposite);
         if (head < 0) break;
         if (!_isFree(head)) continue;
-        final def = PieceDef(kind: PieceKind.car, dir: enter, cells: [head]);
+        // Give the feeder a body (a lone dot reads as no arrow at all).
+        final tail = _neighbor(head, enter.opposite);
+        if (tail < 0 || !_isFree(tail)) continue;
+        final def = PieceDef(
+          kind: PieceKind.car,
+          dir: enter,
+          cells: [head, tail],
+        );
         final trace = _trace(def);
         if (trace.cells.contains(gateCell) && _pathClear(def)) return def;
       }

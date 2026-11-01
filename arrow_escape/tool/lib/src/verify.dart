@@ -8,8 +8,8 @@ List<String> verifyCampaign(
   List<Level> levels, {
   int maxWidth = maxArrowBoardWidth,
   int maxHeight = maxArrowBoardHeight,
-  // Arrow counts may miss the target by this share (boards are discrete).
-  double countTolerance = 0.15,
+  // Solve effort may miss its target by this share.
+  double effortTolerance = 0.15,
   double maxOutlierShare = 0.04,
 }) {
   final problems = <String>[];
@@ -66,64 +66,73 @@ List<String> verifyCampaign(
   }
   if (problems.isNotEmpty) return problems;
 
-  final counts = [for (final l in levels) l.pieces.length];
+  final effort = [for (final st in stats) st!.effort];
+  bool regular(int n) =>
+      !Campaign.handmade.containsKey(n) &&
+      !_isIntro(n) &&
+      Campaign.tierFor(n) == LevelTier.normal;
 
-  // Breathers are a small dip in arrows (or an easier board), never a
-  // big drop: at least 80% of the arrows of the 4 levels before them.
-  final breatherMisses = <String>[];
-  for (var n = 5; n <= levels.length; n += 5) {
-    final prevIdx = [
-      for (var k = n - 4; k < n; k++)
-        if (!Campaign.handmade.containsKey(k)) k - 1,
-    ];
-    if (prevIdx.isEmpty || Campaign.handmade.containsKey(n)) continue;
-    final mean =
-        prevIdx.map((i) => counts[i]).reduce((a, b) => a + b) / prevIdx.length;
-    final c = counts[n - 1];
-    if (c < mean * 0.75 && !_isIntro(n)) {
-      breatherMisses.add(
-        'L$n: breather has $c arrows, the 4 before it ${mean.round()}',
-      );
-    }
-  }
-  if (breatherMisses.length > levels.length / 5 * 0.02) {
-    breatherMisses.forEach(fail);
-  }
-
-  // More arrows as levels go up: the rolling mean of regular levels never
-  // drops below its best so far (3 arrows or 5% of slack: Hard levels
-  // and the 120-arrow board cap make 20-level windows noisy).
-  const window = 20;
-  final regular = [
-    for (var n = 1; n <= levels.length; n++)
-      if (!Campaign.isBreather(n) && !_isIntro(n)) counts[n - 1],
-  ];
-  double? best;
-  for (var i = 0; i + window <= regular.length; i += window) {
-    final mean =
-        regular.sublist(i, i + window).reduce((a, b) => a + b) / window;
-    if (best != null && mean < best - math.max(3, best * 0.05)) {
-      fail(
-        'Arrow count dips around regular level #${i + 1}: '
-        '${best.toStringAsFixed(1)} -> ${mean.toStringAsFixed(1)}',
-      );
-    }
-    best = math.max(best ?? mean, mean);
-  }
-
-  // Individual levels should have about the planned number of arrows.
+  // Every level takes about as long as planned (solve effort, roughly
+  // solve time): within [effortTolerance] of its target.
   var outliers = 0;
-  for (var n = 1; n <= levels.length; n++) {
+  for (var n = 2; n <= levels.length; n++) {
     if (Campaign.handmade.containsKey(n) || _isIntro(n)) continue;
-    final want = Campaign.arrowTarget(n);
-    if ((counts[n - 1] - want).abs() > want * countTolerance + 1) outliers++;
+    final want = Campaign.effortTarget(n);
+    final e = effort[n - 1];
+    final miss = e > want ? e / want - 1 : want / e - 1;
+    if (miss > effortTolerance) outliers++;
   }
   if (outliers > levels.length * maxOutlierShare) {
     fail(
-      '$outliers levels miss their arrow count by more than '
-      '${(countTolerance * 100).round()}% '
+      '$outliers levels miss their solve effort by more than '
+      '${(effortTolerance * 100).round()}% '
       '(allowed ${(levels.length * maxOutlierShare).floor()})',
     );
+  }
+
+  // Each regular level is built to a longer solve time than the one
+  // before; boards land within a few percent of it, so a level may take
+  // up to 6% less than its neighbour in the first 60 (10% later), never
+  // more. Hard / Super Hard levels spike above.
+  int? prev;
+  var dips = 0;
+  for (var n = 2; n <= levels.length; n++) {
+    if (!regular(n)) continue;
+    final p = prev;
+    prev = n;
+    if (p == null) continue;
+    final slack = n <= 60 ? 0.94 : 0.9;
+    if (effort[n - 1] < effort[p - 1] * slack) {
+      dips++;
+      if (n <= 60) {
+        fail(
+          'L$n takes less effort (${effort[n - 1].round()}) than '
+          'L$p (${effort[p - 1].round()})',
+        );
+      }
+    }
+  }
+  if (dips > levels.length * 0.03) {
+    fail('$dips regular levels are clearly easier than the one before');
+  }
+
+  // The rolling mean of regular levels never drops below its best so far.
+  const window = 20;
+  final regularEffort = [
+    for (var n = 2; n <= levels.length; n++)
+      if (regular(n)) effort[n - 1],
+  ];
+  double? best;
+  for (var i = 0; i + window <= regularEffort.length; i += window) {
+    final mean =
+        regularEffort.sublist(i, i + window).reduce((a, b) => a + b) / window;
+    if (best != null && mean < best * 0.97) {
+      fail(
+        'Solve effort dips around regular level #${i + 1}: '
+        '${best.round()} -> ${mean.round()}',
+      );
+    }
+    best = math.max(best ?? mean, mean);
   }
   return problems;
 }
@@ -138,20 +147,23 @@ bool _isIntro(int n) =>
 String campaignReport(List<Level> levels) {
   final b = StringBuffer()
     ..writeln(
-      'levels     target  arrows   min   max  diff  avglen lights gates amb',
+      'levels     effort target  arrows   min   max  avglen lights gates amb',
     );
   for (var start = 0; start < levels.length; start += 100) {
     final chunk = levels.sublist(start, math.min(start + 100, levels.length));
     double avg(Iterable<num> xs) =>
         xs.fold<double>(0, (a, x) => a + x) / chunk.length;
     final actual = [for (final l in chunk) l.pieces.length];
+    final effort = [
+      for (final l in chunk) analyzeLevel(l, maxStates: 60000)?.effort ?? 0,
+    ];
     b.writeln(
       '${'${start + 1}-${start + chunk.length}'.padRight(10)} '
-      '${avg([for (final l in chunk) Campaign.arrowTarget(l.id)]).toStringAsFixed(1).padLeft(6)} '
+      '${avg(effort).toStringAsFixed(0).padLeft(6)} '
+      '${avg([for (final l in chunk) Campaign.effortTarget(l.id)]).toStringAsFixed(0).padLeft(6)} '
       '${avg(actual).toStringAsFixed(1).padLeft(7)} '
       '${actual.reduce(math.min).toString().padLeft(5)} '
       '${actual.reduce(math.max).toString().padLeft(5)} '
-      '${avg([for (final l in chunk) l.meta.difficulty]).toStringAsFixed(0).padLeft(5)} '
       '${(chunk.fold<int>(0, (a, l) => a + l.pieces.fold<int>(0, (b, p) => b + p.length)) / chunk.fold<int>(0, (a, l) => a + l.pieces.length)).toStringAsFixed(1).padLeft(7)} '
       '${chunk.where((l) => l.lights.isNotEmpty).length.toString().padLeft(6)} '
       '${chunk.where((l) => l.gates.isNotEmpty).length.toString().padLeft(5)} '
@@ -189,12 +201,12 @@ String drawLevel(Level level) {
   ].join('\n');
 }
 
-/// Every puzzle layer exists, is solvable, fits, and each layer has more
-/// arrows than the one before.
+/// Every puzzle layer exists, is solvable, fits, and each layer takes at
+/// least 20% more solve effort than the one before.
 List<String> verifyPuzzles(Map<String, Level> levels) {
   final problems = <String>[];
   for (final shape in ShapePuzzles.all) {
-    var previous = 0;
+    var previous = 0.0;
     for (var layer = 1; layer <= PuzzleShape.layerCount; layer++) {
       final key = ShapePuzzles.key(shape.id, layer);
       final level = levels[key];
@@ -211,10 +223,12 @@ List<String> verifyPuzzles(Map<String, Level> levels) {
         problems.add('$key: unsolvable');
         continue;
       }
-      if (level.pieces.length <= previous) {
-        problems.add('$key: not more arrows than the layer before');
+      if (s.effort < previous * 1.2) {
+        problems.add(
+          '$key: does not take clearly longer than the layer before',
+        );
       }
-      previous = level.pieces.length;
+      previous = s.effort;
     }
   }
   return problems;

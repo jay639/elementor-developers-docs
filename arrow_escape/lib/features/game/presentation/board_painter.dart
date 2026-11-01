@@ -190,7 +190,10 @@ class BoardPiecesPainter extends CustomPainter {
     // A crisp head, centred on the line (the last body segment always runs
     // straight into it), starting a little behind the head cell's centre
     // so the point reads clearly without crowding the next cell.
-    final headLength = math.max(stroke * 3.4, cell * 0.46).clamp(9.0, 17.0);
+    // Thick mode (bigger stroke) gets a proportionally bigger head.
+    final double headLength = math
+        .max(stroke * 3.4, cell * 0.46)
+        .clamp(9.0, math.max(17.0, stroke * 3.0));
     final halfWidth = headLength * 0.48;
     final headBase = base - tangent * (headLength * 0.3);
     final tip = headBase + tangent * headLength;
@@ -311,7 +314,6 @@ class BoardPiecesPainter extends CustomPainter {
       if (!board.isOnBoard(i) || animations.containsKey(i)) continue;
       final def = level.pieces[i];
       final path = rules.pathOf(i);
-      final clear = rules.canExit(board, i);
       final pts = <Offset>[layout.centerOf(def.head)];
       for (final c in path) {
         pts.add(layout.centerOf(c));
@@ -323,29 +325,14 @@ class BoardPiecesPainter extends CustomPainter {
             : last / last.distance;
         pts.add(pts.last + dir * (cell * 0.5));
       }
+      // Every road looks the same: it shows where an arrow would drive,
+      // never whether it is free (that would solve the puzzle).
       final paint = Paint()
-        ..color = (clear ? style.pathClear : style.pathBlocked).withValues(
-          alpha: clear ? 0.75 : 0.6,
-        )
+        ..color = style.pathBlocked.withValues(alpha: 0.6)
         ..strokeWidth = math.max(2, cell * 0.07)
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
-      if (clear) {
-        canvas.drawPoints(ui.PointMode.polygon, pts, paint);
-      } else {
-        _dashed(canvas, pts, paint, cell * 0.14, cell * 0.12);
-        final blocker = rules.evaluate(board, i);
-        if (style.symbols &&
-            blocker is BlockedMove &&
-            blocker.blockerCell != null) {
-          _cross(
-            canvas,
-            layout.centerOf(blocker.blockerCell!),
-            cell * 0.12,
-            paint,
-          );
-        }
-      }
+      _dashed(canvas, pts, paint, cell * 0.14, cell * 0.12);
     }
   }
 
@@ -388,12 +375,6 @@ class BoardPiecesPainter extends CustomPainter {
           ..strokeWidth = layout.cell * 0.08,
       );
     }
-  }
-
-  static void _cross(Canvas canvas, Offset c, double r, Paint paint) {
-    canvas
-      ..drawLine(c + Offset(-r, -r), c + Offset(r, r), paint)
-      ..drawLine(c + Offset(-r, r), c + Offset(r, -r), paint);
   }
 
   static void _dashed(

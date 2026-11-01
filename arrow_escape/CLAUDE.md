@@ -314,6 +314,23 @@ arrow_escape/
   instead of placement index) so they start blocked instead of being
   free edge stubs. The splash animation starts once the logo image is
   decoded (first launch after install showed it mid-zoom).
+- Sprint 7: solve TIME is the progression axis. `LevelStats.effort` =
+  sum over the solution of (arrows left + 1) / (free arrows + 1), a
+  model of how long a person hunts for the next free arrow; it never
+  saturates. `generateForEffort` adapts the arrow count to land within
+  3% of a target. Campaign: `Campaign.effortTarget` rises every level
+  (~120 at L3, ~240 at L8, ~330 at L100, ~570 at L500, ~840 at L1500;
+  Hard x1.25, Super Hard x1.45); no more breather levels. Daily:
+  `effortFor` 500 at launch +1/day, +60 at weekends, max 950. Wonders:
+  each layer >= 1.2x the effort of the previous (ladder 1 / 1.4 / 1.9,
+  scaled down for thin pictures). The verifier checks effort, not
+  counts. Show paths draws every road the same (grey dashes): it never
+  reveals which arrow is free. Board background is fainter
+  (`Palette.boardLight/Dark`). Thick arrows: stroke 0.2 cell up to 7.5
+  px with a proportionally bigger head. Unfinished levels resume
+  (`ResumeStore`, local Hive box, kept out of the cloud save because it
+  changes every move): exits in order + hearts + mistakes, replayed by
+  `PlaySession.resume`; cleared on win, loss, restart or skip.
 - This dev container cannot reach dl.google.com (Android SDK), so APKs are
   built in CI, not locally.
 

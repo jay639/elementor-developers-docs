@@ -18,6 +18,10 @@ abstract final class Palette {
   static const tileLight = Color(0xFFF2EEFC);
   static const tileLightEdge = Color(0xFFCFC5EE);
 
+  /// Board background: barely tinted so the arrows and roads stand out.
+  static const boardLight = Color(0xFFFAF9FE);
+  static const boardDark = Color(0xFF0B0B0E);
+
   // Dark surfaces: true black (OLED friendly) with charcoal cards.
   static const night = Color(0xFF000000);
   static const nightTop = Color(0xFF000000);
