@@ -15,7 +15,9 @@ Future<bool> watchRewarded(
     messenger?.hideCurrentSnackBar();
     messenger?.showSnackBar(
       const SnackBar(
-        content: Text('No video available right now. Please try again soon.'),
+        content: Text(
+          'Check your internet connection. No video available right now.',
+        ),
       ),
     );
   }

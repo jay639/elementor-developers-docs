@@ -347,6 +347,23 @@ arrow_escape/
   RevenueCat sync on Android start when nothing is active (auto-restore);
   iOS keeps the Restore button. CI prints the Meta key hash of the
   signing cert.
+- Sprint 9: generator calibrated on the genre leader's 1,055 levels
+  (research only; nothing copied into the app). Theirs: ~80 arrows on
+  ~27x32 boards, arrows 9.2 cells (36% are 10+), 12-20% free at start,
+  chain depth 26-44. Ours now: length mix 12% tiny / 18% short / 34%
+  medium / 36% long (`generateForEffort` defaults), turn chance 0.36,
+  tails grow up to 8, gap fill up to 10 cells, greed 8-16, candidates
+  scored on effort miss + a penalty above 18% free arrows; boards up to
+  32x40 (220 arrows). Effort targets: L3 ~280, L8 ~545, L100 ~770,
+  L500 ~1,175, L1500 ~1,330 (softer past 1,100, cap 1,500); campaign
+  boards are always portrait rectangles (3:4 or 4:5 once targets pass
+  900). Daily 1,100
+  +2/day, +150 weekends, max 1,350. Wonders 280 + 30 per picture. Wrong
+  move: tapped arrow turns red (`FlashAnimation.alert`), bump sound +
+  `error` buzzer, double buzz on the vibration motor (`vibration`
+  package; system haptics are silent when touch feedback is off). Show
+  paths: soft solid lines under the arrows (no dashes); no board fill,
+  only dots. Offline rewarded message mentions the connection.
 - This dev container cannot reach dl.google.com (Android SDK), so APKs are
   built in CI, not locally.
 

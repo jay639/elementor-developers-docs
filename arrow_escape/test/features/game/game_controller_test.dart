@@ -95,7 +95,7 @@ void main() {
     keepAlive();
     expect(controller().tap(1), isA<BlockedMove>());
     expect(container.read(gameControllerProvider(one)).session.hearts, 2);
-    expect(sound.played, [Sfx.error]);
+    expect(sound.played, [Sfx.bump, Sfx.error]);
     expect(haptics.played, [HapticKind.bump]);
   });
 

@@ -1,5 +1,6 @@
 import 'package:arrow_escape/features/settings/application/settings_controller.dart';
 import 'package:flutter/services.dart';
+import 'package:vibration/vibration.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum HapticKind { tap, exit, bump, win, lose }
@@ -20,11 +21,17 @@ class PlatformHaptics implements HapticsService {
     final Future<void> f = switch (kind) {
       HapticKind.tap => HapticFeedback.selectionClick(),
       HapticKind.exit => HapticFeedback.lightImpact(),
-      HapticKind.bump => HapticFeedback.heavyImpact(),
+      // Wrong move and losing use the vibration motor directly: system
+      // haptic feedback is silent when "touch feedback" is off, and these
+      // must be felt. Double buzz for a wrong move, longer for a loss.
+      HapticKind.bump => Vibration.vibrate(
+        pattern: const [0, 70, 70, 110],
+        intensities: const [0, 200, 0, 255],
+      ),
       HapticKind.win => HapticFeedback.mediumImpact(),
-      HapticKind.lose => HapticFeedback.vibrate(),
+      HapticKind.lose => Vibration.vibrate(duration: 350, amplitude: 255),
     };
-    f.ignore();
+    f.catchError((Object _) {}).ignore();
   }
 }
 

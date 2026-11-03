@@ -227,6 +227,11 @@ class _BoardViewState extends ConsumerState<BoardView>
           fast: _fast,
         );
         _animations = {..._animations, piece: bump};
+        // The tapped arrow itself turns red: "wrong move".
+        _flashes = [
+          ..._flashes,
+          FlashAnimation(piece: piece, start: _now, alert: true),
+        ];
         final blockerPiece = outcome.blockerPiece;
         final blockerCell = outcome.blockerCell;
         if (outcome.reason == BlockReason.ambulanceFirst) {

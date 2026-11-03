@@ -327,7 +327,7 @@ class LevelGenerator {
   void _fillGaps(List<int> maskCells) {
     final order = [...maskCells];
     _rng.shuffle(order);
-    final maxLength = math.min(6, config.maxLength);
+    final maxLength = math.min(10, config.maxLength);
     for (final c in order) {
       if (!_isFree(c) || _gateAt[c] != null) continue;
       PieceDef? best;

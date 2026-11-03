@@ -239,20 +239,22 @@ Level? generateForEffort({
   LevelTier tier = LevelTier.normal,
   int candidates = 16,
   int greed = 6,
-  double turnChance = 0.45,
-  double longShare = 0.08,
-  double midShare = 0.22,
-  double tinyShare = 0.32,
+  // Length mix measured on the genre leader's levels: 12% tiny (2),
+  // 18% short (3-4), 34% medium (5-9), 36% long (10+), ~0.32 turns/cell.
+  double turnChance = 0.36,
+  double longShare = 0.36,
+  double midShare = 0.34,
+  double tinyShare = 0.12,
   int maxLength = 18,
   int maxWidth = maxArrowBoardWidth,
   int maxHeight = maxArrowBoardHeight,
-  int maxArrows = 160,
+  int maxArrows = 220,
   double band = 0.06,
   int analyzeStates = 60000,
 }) {
   final rng = Rng(seed);
   var want = arrows.toDouble();
-  var perArrow = 5.6;
+  var perArrow = 9.0;
   var squeeze = 1.0;
   Level? best;
   var bestMiss = double.infinity;
@@ -273,7 +275,7 @@ Level? generateForEffort({
         midShare: midShare * squeeze,
         longShare: longShare * squeeze,
         turnChance: turnChance,
-        tailGrowth: 3,
+        tailGrowth: 8,
         lights: mechanics.lights,
         gates: mechanics.gates,
         ambulance: mechanics.ambulance,
@@ -281,14 +283,25 @@ Level? generateForEffort({
     );
     if (level == null || !mechanics.satisfiedBy(level)) continue;
     final got = level.pieces.length;
-    perArrow = (perArrow * count / got).clamp(3.0, 9.0);
+    perArrow = (perArrow * count / got).clamp(3.0, 14.0);
     final capped = fitted.width >= maxWidth || fitted.height >= maxHeight;
     if (capped && got < count * 0.94) squeeze = math.max(0.3, squeeze * 0.7);
     final stats = analyzeLevel(level, maxStates: analyzeStates);
     if (stats == null) continue;
     final e = math.max(1.0, stats.effort);
     // Relative miss, symmetric for over and under (ratio-based).
-    final miss = e > effort ? e / effort - 1 : effort / e - 1;
+    final effortMiss = e > effort ? e / effort - 1 : effort / e - 1;
+    // Few arrows free at the start, like the genre leader (12-20%): a
+    // board where a quarter of the arrows can go at once reads as easy.
+    final freeShare = 1 - stats.blockedFraction;
+    // Hitting the effort target comes first; among boards that do, prefer
+    // fewer free arrows.
+    // One-sided window (-1%..+band): never noticeably under the target, so
+    // a level can't take less time than the one before it.
+    final inBand = e >= effort * 0.99 && e <= effort * (1 + band);
+    final miss = inBand
+        ? 0.5 * math.max(0.0, freeShare - 0.18)
+        : 1 + effortMiss;
     if (miss < bestMiss) {
       bestMiss = miss;
       best = level.copyWith(
@@ -297,7 +310,7 @@ Level? generateForEffort({
           tier: tier,
         ),
       );
-      if (miss <= band) break;
+      if (inBand && freeShare <= 0.2) break;
     }
     // Effort grows a little faster than the arrow count: correct the
     // count by the square root of the miss.
@@ -318,8 +331,8 @@ double hardness(LevelStats s) =>
 
 /// Largest arrow-count board (cells ~15 dp wide when fully zoomed out on
 /// a phone; the game zooms in after showing the whole board).
-const maxArrowBoardWidth = 26;
-const maxArrowBoardHeight = 34;
+const maxArrowBoardWidth = 32;
+const maxArrowBoardHeight = 40;
 
 /// What the campaign wants at one level number.
 class LevelSpec {
@@ -404,29 +417,30 @@ abstract final class Campaign {
       0.025 * n;
 
   /// Solve effort level [n] is built to ([LevelStats.effort], roughly
-  /// solve time): rises with every level, ~180 at level 3, ~350 at level
-  /// 8, ~500 at level 100, ~880 at level 500, ~1045 at level 1500 (slower
-  /// past 900, as the biggest board fills up). Hard levels need 25% more,
-  /// Super Hard 45% more (capped at 1250). Offline tool only, so `pow` is fine.
+  /// solve time): rises with every level (see the curve below). Hard
+  /// levels need 25% more, Super Hard 45% more (capped at 1500). Offline tool only, so `pow` is fine.
   static double effortTarget(int n) {
     if (n <= 1) return 10;
-    // 1.5x the Sprint 7 curve: harder from level 3 on.
-    var base = 1.5 * 1.69 * math.pow(_baseArrows(n), 1.29);
-    // Past ~900 the biggest board runs out of room: keep rising, slower.
-    if (base > 900) base = 900 + (base - 900) * 0.4;
+    // Calibrated on the genre leader's 1,055 levels (their median board
+    // takes ~460, big ones 1,200-2,300): level 3 ~280, level 8 ~545,
+    // level 100 ~770, level 500 ~1,160, level 1500 ~1,310.
+    var base = 2.33 * 1.69 * math.pow(_baseArrows(n), 1.29);
+    // Past ~1,150 the biggest board runs out of room: keep rising, slower.
+    if (base > 1100) base = 1100 + (base - 1100) * 0.25;
     final factor = switch (tierFor(n)) {
       LevelTier.normal => 1.0,
       LevelTier.hard => 1.25,
       LevelTier.superHard => 1.45,
     };
-    return math.min(1250.0, base * factor);
+    // About the most the biggest board can hold.
+    return math.min(1500.0, base * factor);
   }
 
   /// Longest arrow at level [n]: short snakes early, very long later.
-  static int maxLengthFor(int n) => (6 + n * 0.8).round().clamp(6, 22);
+  static int maxLengthFor(int n) => (16 + n * 0.5).round().clamp(16, 28);
 
   /// Placement greed: later levels block more arrows per placement.
-  static int greedFor(int n) => (4 + n / 60).round().clamp(4, 12);
+  static int greedFor(int n) => (8 + n / 40).round().clamp(8, 16);
 
   static LevelSpec spec(int n) {
     final rng = Rng(seed ^ stableHash('campaign-$n'));
@@ -455,24 +469,16 @@ abstract final class Campaign {
         n == MechanicUnlocks.ambulance;
     final arrows = isIntro ? (arrowTarget(n) * 0.6).round() : arrowTarget(n);
     final effort = isIntro ? effortTarget(n) * 0.5 : effortTarget(n);
-    // Mostly plain rectangles of varied proportions (they read cleanly and
-    // every edge cell is playable); sometimes a compact picture shape.
-    final shapes = [
-      for (final s in [...Shapes.basics, ...Shapes.animals, ...Shapes.symbols])
-        if (s.name != 'rect') s,
-    ];
-    // Portrait-ish proportions (phones are tall).
-    final aspects = [(3, 4), (4, 5), (5, 7), (2, 3), (3, 5)];
+    // Always a full portrait rectangle (phones are tall): picture shapes
+    // leave too little room for the arrows these levels need. Pictures
+    // live in the Wonders collection.
+    // Big targets need the roomiest boards (32x40 / 30x40); narrow ones
+    // cap out around 1,000.
+    final aspects = effort > 900
+        ? [(3, 4), (4, 5)]
+        : [(3, 4), (4, 5), (5, 7), (2, 3), (3, 5)];
     final (aw, ah) = rng.pick(aspects);
-    final picture = rng.pick(shapes);
-    final plain = rng.nextBool(0.65);
-    // Pictures and squares waste the bottom of a tall screen, so big
-    // boards are always portrait rectangles.
-    final shape = arrows > 50
-        ? ShapeMask.rect(aw, ah)
-        : plain
-        ? ShapeMask.rect(aw, ah)
-        : picture;
+    final shape = ShapeMask.rect(aw, ah);
     return LevelSpec(
       number: n,
       arrows: arrows,
@@ -519,12 +525,9 @@ abstract final class Campaign {
         tier: s.tier,
         greed: greedFor(n),
         maxLength: maxLengthFor(n),
-        // Big late boards need more, shorter arrows to fit the screen.
-        longShare: (0.1 - n / 30000).clamp(0.05, 0.1),
-        midShare: (0.24 - n / 20000).clamp(0.16, 0.24),
         candidates: attempt < 4 ? 30 : 40,
         // Tight: neighbouring levels differ by only a few percent.
-        band: 0.03,
+        band: 0.04,
       );
       if (level != null) return level;
     }

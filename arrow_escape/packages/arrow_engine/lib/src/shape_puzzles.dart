@@ -65,7 +65,7 @@ class PuzzleShape {
     final index = ShapePuzzles.all.indexOf(this);
     // About the most effort a board of this picture can hold.
     final most = 1.69 * math.pow(capacity, 1.29) * 1.1;
-    final base = math.min(180.0 + index * 20, most / 1.9);
+    final base = math.min(280.0 + index * 30, most / 1.9);
     return base * const [1.0, 1.4, 1.9][layer - 1];
   }
 }
@@ -123,7 +123,7 @@ abstract final class ShapePuzzles {
           // The mask's name, puzzle_<id>, is the level's shape.
           shape: mask,
           greed: 6 + layer * 2,
-          maxLength: 16,
+          maxLength: 24,
           candidates: 16,
           tier: switch (layer) {
             1 => LevelTier.normal,

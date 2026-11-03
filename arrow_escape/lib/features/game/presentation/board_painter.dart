@@ -22,13 +22,8 @@ class BoardBackgroundPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final layout = BoardLayout(level, size);
     final cell = layout.cell;
-    // The shape reads as one soft silhouette; a dot marks each cell so
-    // paths can be followed by eye, like graph paper.
-    final silhouette = Path();
-    for (var i = 0; i < level.cellCount; i++) {
-      if (level.mask[i]) silhouette.addRect(layout.cellRect(i).inflate(0.5));
-    }
-    canvas.drawPath(silhouette, Paint()..color = style.tile);
+    // No board fill: arrows sit straight on the card. A faint dot marks
+    // each playable cell so paths can be followed by eye.
     final dot = Paint()..color = style.tileEdge;
     final dotRadius = (cell * 0.06).clamp(1.0, 2.2);
     for (var i = 0; i < level.cellCount; i++) {
@@ -123,6 +118,7 @@ class BoardPiecesPainter extends CustomPainter {
     final layout = BoardLayout(level, size);
     final t = now();
 
+    if (showPaths) _paintPaths(canvas, layout);
     final hint = hintPiece;
     if (hint != null &&
         board.isOnBoard(hint) &&
@@ -136,9 +132,6 @@ class BoardPiecesPainter extends CustomPainter {
       if (!board.isOnBoard(i) || animations.containsKey(i)) continue;
       _paintVehicle(canvas, layout, i, restTracks[i], 0, _flashFor(i, t));
     }
-    // Roads on top of resting arrows (each dash on a board-coloured
-    // halo), under the ones that are moving.
-    if (showPaths) _paintPaths(canvas, layout);
     for (final a in animations.values) {
       _paintVehicle(
         canvas,
@@ -155,7 +148,22 @@ class BoardPiecesPainter extends CustomPainter {
   double _flashFor(int piece, Duration t) {
     var v = 0.0;
     for (final f in flashes) {
-      if (f.piece == piece) v = math.max(v, f.intensity(t));
+      if (f.piece == piece && !f.alert) v = math.max(v, f.intensity(t));
+    }
+    return v;
+  }
+
+  /// Red wrong-move alert on the tapped arrow (0..1).
+  double _alertFor(int piece, Duration t) {
+    var v = 0.0;
+    for (final f in flashes) {
+      if (f.piece == piece && f.alert) {
+        // Snap to full red, then fade out over the second half.
+        final age =
+            (t - f.start).inMicroseconds /
+            FlashAnimation.alertDuration.inMicroseconds;
+        if (age >= 0 && age < 1) v = math.max(v, age < 0.5 ? 1 : 2 - age * 2);
+      }
     }
     return v;
   }
@@ -261,6 +269,14 @@ class BoardPiecesPainter extends CustomPainter {
       );
     }
 
+    final alert = _alertFor(piece, now());
+    if (alert > 0) {
+      final red = style.danger.withValues(alpha: alert);
+      canvas.drawPath(body, line(red, stroke * 1.15));
+      canvas.drawPath(head, fill(red));
+      canvas.drawPath(head, rimLine(red, stroke * 0.4));
+    }
+
     if (isAmbulance) {
       // Red cross on the roof, between tail and head.
       final mid = layout.toPixels(track.pointAt((from + to) / 2));
@@ -312,57 +328,33 @@ class BoardPiecesPainter extends CustomPainter {
 
   void _paintPaths(Canvas canvas, BoardLayout layout) {
     final cell = layout.cell;
-    // Keep every arrowhead clear of the dashes so heads stay readable.
-    final clip = Path()
-      ..fillType = PathFillType.evenOdd
-      ..addRect(layout.boardRect.inflate(cell * 2));
-    for (var i = 0; i < level.pieces.length; i++) {
-      if (!board.isOnBoard(i) || animations.containsKey(i)) continue;
-      final head = level.pieces[i].head;
-      clip.addOval(
-        Rect.fromCircle(center: layout.centerOf(head), radius: cell * 0.42),
-      );
-    }
-    canvas
-      ..save()
-      ..clipPath(clip);
+    // Soft, solid roads under the arrows (like a faint grid): visible on
+    // every skin without competing with the arrows themselves.
+    final paint = Paint()
+      ..color = style.pathBlocked
+      ..strokeWidth = (cell * style.strokeFactor).clamp(2.6, style.maxStroke)
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..style = PaintingStyle.stroke;
     for (var i = 0; i < level.pieces.length; i++) {
       if (!board.isOnBoard(i) || animations.containsKey(i)) continue;
       final def = level.pieces[i];
-      final path = rules.pathOf(i);
-      // Start just past the arrowhead so the head itself stays clean.
-      final pts = <Offset>[
-        layout.centerOf(def.head) + dirOffset(def.dir) * (cell * 0.6),
-      ];
-      for (final c in path) {
+      final pts = <Offset>[layout.centerOf(def.head)];
+      for (final c in rules.pathOf(i)) {
         pts.add(layout.centerOf(c));
       }
       if (rules.pathCanExit(i)) {
+        // Run on past the board edge, out of the puzzle.
         final last = pts.length > 1 ? pts.last - pts[pts.length - 2] : null;
         final dir = last == null || last.distance == 0
             ? dirOffset(def.dir)
             : last / last.distance;
-        pts.add(pts.last + dir * (cell * 0.5));
+        pts.add(pts.last + dir * (cell * 2.5));
       }
       // Every road looks the same: it shows where an arrow would drive,
       // never whether it is free (that would solve the puzzle).
-      // A board-coloured halo under each dash cuts through any arrow it
-      // crosses, so the road stays readable on every skin and colour.
-      final width = math.max(2.2, cell * 0.075);
-      final halo = Paint()
-        ..color = style.tile
-        ..strokeWidth = width + math.max(2.5, cell * 0.06)
-        ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke;
-      final paint = Paint()
-        ..color = style.pathBlocked
-        ..strokeWidth = width
-        ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke;
-      _dashed(canvas, pts, halo, cell * 0.2, cell * 0.14);
-      _dashed(canvas, pts, paint, cell * 0.2, cell * 0.14);
+      canvas.drawPoints(ui.PointMode.polygon, pts, paint);
     }
-    canvas.restore();
   }
 
   void _paintHint(Canvas canvas, BoardLayout layout, int piece) {
@@ -403,36 +395,6 @@ class BoardPiecesPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = layout.cell * 0.08,
       );
-    }
-  }
-
-  static void _dashed(
-    Canvas canvas,
-    List<Offset> pts,
-    Paint paint,
-    double dash,
-    double gap,
-  ) {
-    var drawing = true;
-    var remaining = dash;
-    for (var i = 0; i < pts.length - 1; i++) {
-      var a = pts[i];
-      final b = pts[i + 1];
-      var segLeft = (b - a).distance;
-      if (segLeft == 0) continue;
-      final dir = (b - a) / segLeft;
-      while (segLeft > 0) {
-        final step = math.min(remaining, segLeft);
-        final next = a + dir * step;
-        if (drawing) canvas.drawLine(a, next, paint);
-        a = next;
-        segLeft -= step;
-        remaining -= step;
-        if (remaining <= 0) {
-          drawing = !drawing;
-          remaining = drawing ? dash : gap;
-        }
-      }
     }
   }
 

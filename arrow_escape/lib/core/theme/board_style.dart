@@ -57,11 +57,10 @@ class BoardStyle {
       pathClear: settings.colorblind
           ? const Color(0xFF0072B2)
           : Palette.success,
-      // Road previews: a strong violet that no skin uses as its main
-      // colour, drawn over a board-coloured halo (see _paintPaths).
+      // Road previews: soft solid lines under the arrows.
       pathBlocked: hc
-          ? (dark ? Colors.white : Colors.black)
-          : (dark ? const Color(0xFFD7C9FF) : const Color(0xFF5A35E8)),
+          ? (dark ? Colors.white38 : Colors.black26)
+          : (dark ? const Color(0xFF2C3044) : const Color(0xFFD6DCEF)),
       danger: settings.colorblind ? const Color(0xFFD55E00) : Palette.danger,
       lightRed: settings.colorblind
           ? const Color(0xFFD55E00)

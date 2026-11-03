@@ -96,21 +96,33 @@ class BumpAnimation extends PieceAnimation {
 
 /// Red pulse on whatever stopped a vehicle.
 class FlashAnimation {
-  FlashAnimation({this.piece, this.cell, required this.start})
-    : assert(piece != null || cell != null);
+  FlashAnimation({
+    this.piece,
+    this.cell,
+    required this.start,
+    this.alert = false,
+  }) : assert(piece != null || cell != null);
 
   static const duration = Duration(milliseconds: 420);
+
+  /// The wrong-move alert stays red a little longer.
+  static const alertDuration = Duration(milliseconds: 700);
 
   final int? piece;
   final int? cell;
   final Duration start;
 
-  bool isDone(Duration now) => now - start >= duration;
+  /// True for the arrow the player tapped by mistake: it turns red.
+  final bool alert;
+
+  Duration get _length => alert ? alertDuration : duration;
+
+  bool isDone(Duration now) => now - start >= _length;
 
   /// 0 → 1 → 0 intensity; 0 before [start].
   double intensity(Duration now) {
     if (now < start) return 0;
-    final t = (now - start).inMicroseconds / duration.inMicroseconds;
+    final t = (now - start).inMicroseconds / _length.inMicroseconds;
     if (t >= 1) return 0;
     return math.sin(t * math.pi);
   }

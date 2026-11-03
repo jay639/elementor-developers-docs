@@ -218,6 +218,7 @@ class GameController extends Notifier<GameViewState> {
         sound.play(Sfx.swoosh);
       case BlockedMove():
         haptics.play(HapticKind.bump);
+        sound.play(Sfx.bump);
         sound.play(Sfx.error);
     }
 
