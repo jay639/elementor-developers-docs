@@ -7,7 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum Sfx {
   swoosh('sounds/swoosh.wav', 4),
-  bump('sounds/bump.wav', 2),
+
+  /// Wrong move: a clear two-tone buzz (a heart is lost).
+  error('sounds/error.wav', 2),
   tap('sounds/tap.wav', 2),
   win('sounds/win.wav', 1),
   lose('sounds/lose.wav', 1);

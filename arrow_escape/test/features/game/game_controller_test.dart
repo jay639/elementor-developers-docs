@@ -91,11 +91,11 @@ void main() {
     expect(haptics.played, [HapticKind.exit]);
   });
 
-  test('bump costs a heart and plays bump feedback', () {
+  test('bump costs a heart and plays the error sound', () {
     keepAlive();
     expect(controller().tap(1), isA<BlockedMove>());
     expect(container.read(gameControllerProvider(one)).session.hearts, 2);
-    expect(sound.played, [Sfx.bump]);
+    expect(sound.played, [Sfx.error]);
     expect(haptics.played, [HapticKind.bump]);
   });
 

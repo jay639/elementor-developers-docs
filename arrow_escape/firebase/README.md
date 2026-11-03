@@ -1,7 +1,7 @@
 # Firebase setup
 
-1. Create a Firebase project with an Android app (`com.arrowescape.arrow_escape`,
-   plus `com.arrowescape.arrow_escape.dev` for the dev flavor) and an iOS app.
+1. Create a Firebase project with an Android app (`com.riseivo.arrow.escape.game`,
+   plus `com.riseivo.arrow.escape.game.dev` for the dev flavor) and an iOS app.
 2. Download the config files (they are git-ignored):
    - `android/app/src/prod/google-services.json` and
      `android/app/src/dev/google-services.json`

@@ -65,7 +65,7 @@ class PuzzleShape {
     final index = ShapePuzzles.all.indexOf(this);
     // About the most effort a board of this picture can hold.
     final most = 1.69 * math.pow(capacity, 1.29) * 1.1;
-    final base = math.min(130.0 + index * 15, most / 1.9);
+    final base = math.min(180.0 + index * 20, most / 1.9);
     return base * const [1.0, 1.4, 1.9][layer - 1];
   }
 }

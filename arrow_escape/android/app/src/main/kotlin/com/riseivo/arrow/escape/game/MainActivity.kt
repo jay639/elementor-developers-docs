@@ -1,4 +1,4 @@
-package com.arrowescape.arrow_escape
+package com.riseivo.arrow.escape.game
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

@@ -331,6 +331,22 @@ arrow_escape/
   (`ResumeStore`, local Hive box, kept out of the cloud save because it
   changes every move): exits in order + hearts + mistakes, replayed by
   `PlaySession.resume`; cleared on win, loss, restart or skip.
+- Sprint 8: package `com.riseivo.arrow.escape.game` (Android
+  applicationId/namespace, Kotlin MainActivity path, iOS bundle id; dev
+  flavor adds `.dev`). Harder: effort targets 1.5x (L3 ~180, L8 ~350,
+  L100 ~500, L500 ~880, ~1045 at L1500, slower past 900), boards up to
+  26x34 and 160 arrows; daily 750 +1.5/day, +90 weekends, max 1250;
+  Wonders base 180 + 20 per picture. Wrong moves play `Sfx.error` (a
+  two-tone buzz; the old soft bump sound is gone). Show paths: violet
+  dashes on a board-coloured halo, drawn over resting arrows but clipped
+  around every arrowhead, so roads read on every skin. Normal arrows
+  0.145 cell up to 5.5 px (thick mode 0.2 / 7.5). Privacy policy:
+  `assets/legal/privacy_policy.html` in a WebView (Settings → Privacy
+  policy, `/privacy`), hosted copy `docs/privacy-policy.html` for
+  https://www.riseivo.com/arrow-escape/privacy-policy. Purchases: silent
+  RevenueCat sync on Android start when nothing is active (auto-restore);
+  iOS keeps the Restore button. CI prints the Meta key hash of the
+  signing cert.
 - This dev container cannot reach dl.google.com (Android SDK), so APKs are
   built in CI, not locally.
 

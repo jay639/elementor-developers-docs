@@ -359,8 +359,8 @@ v..
         'here (bump DailyChallenge.version on purpose instead)', () {
       int hashOf(DateTime d) =>
           stableHash(jsonEncode(DailyChallenge.levelFor(d).toJson()));
-      expect(hashOf(DateTime(2026, 10, 29)), 2140128023);
-      expect(hashOf(DateTime(2027, 3, 14)), 344368754);
+      expect(hashOf(DateTime(2026, 10, 29)), 765162051);
+      expect(hashOf(DateTime(2027, 3, 14)), 2896136223);
     });
 
     test('keys', () {

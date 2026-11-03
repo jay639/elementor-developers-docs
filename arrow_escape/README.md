@@ -180,7 +180,7 @@ Use Play App Signing. Release builds run R8 with resource shrinking
 ### 4.5 iOS
 
 1. Open `ios/Runner.xcworkspace`, set the bundle id
-   (`com.arrowescape.arrowEscape`), team and signing.
+   (`com.riseivo.arrow.escape.game`), team and signing.
 2. Capabilities: **In-App Purchase**; **App Attest** (for App Check).
 3. `pod install` runs automatically on `flutter build ios`.
 4. Optional flavor schemes: duplicate the Debug/Release configurations as
@@ -221,4 +221,7 @@ those symbols to Crashlytics to read stack traces.
 ## 6. Store listing
 
 Copy for the stores is in [`docs/store_listing.md`](docs/store_listing.md);
-a privacy policy template is in [`docs/privacy_policy.md`](docs/privacy_policy.md).
+the privacy policy is `assets/legal/privacy_policy.html` (shown in the app under
+Settings → Privacy policy); host the copy in `docs/privacy-policy.html` at
+https://www.riseivo.com/arrow-escape/privacy-policy and use that URL in both
+store listings.

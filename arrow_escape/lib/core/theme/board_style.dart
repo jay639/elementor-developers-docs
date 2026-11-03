@@ -57,7 +57,11 @@ class BoardStyle {
       pathClear: settings.colorblind
           ? const Color(0xFF0072B2)
           : Palette.success,
-      pathBlocked: dark ? Colors.white38 : Colors.black26,
+      // Road previews: a strong violet that no skin uses as its main
+      // colour, drawn over a board-coloured halo (see _paintPaths).
+      pathBlocked: hc
+          ? (dark ? Colors.white : Colors.black)
+          : (dark ? const Color(0xFFD7C9FF) : const Color(0xFF5A35E8)),
       danger: settings.colorblind ? const Color(0xFFD55E00) : Palette.danger,
       lightRed: settings.colorblind
           ? const Color(0xFFD55E00)
@@ -67,8 +71,8 @@ class BoardStyle {
           : Palette.lightGreen,
       ambulance: Palette.ambulance,
       ambulanceCross: Palette.ambulanceCross,
-      strokeFactor: settings.thickArrows ? 0.2 : 0.11,
-      maxStroke: settings.thickArrows ? 7.5 : 4.0,
+      strokeFactor: settings.thickArrows ? 0.2 : 0.145,
+      maxStroke: settings.thickArrows ? 7.5 : 5.5,
       // Colorblind and high-contrast modes add shape cues to colour cues.
       symbols: settings.colorblind || hc,
       // Accessibility palettes are drawn plain.

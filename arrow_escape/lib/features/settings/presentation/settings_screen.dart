@@ -108,8 +108,8 @@ class SettingsScreen extends ConsumerWidget {
             _Group(
               title: 'Privacy',
               footer:
-                  'Anonymous gameplay stats help us tune level '
-                  'difficulty. No personal data is collected.',
+                  'No account, name or email needed. Anonymous gameplay '
+                  'stats help us tune level difficulty.',
               children: [
                 _SwitchRow(
                   key: const Key('share-analytics'),
@@ -118,6 +118,14 @@ class SettingsScreen extends ConsumerWidget {
                   title: 'Share usage analytics',
                   value: s.shareAnalytics,
                   onChanged: c.setShareAnalytics,
+                ),
+                _LinkRow(
+                  key: const Key('privacy-policy'),
+                  icon: Icons.policy_rounded,
+                  color: Palette.sky,
+                  title: 'Privacy policy',
+                  subtitle: 'What we collect, ads, purchases, your rights',
+                  onTap: () => context.push(Routes.privacy),
                 ),
                 FutureBuilder<bool>(
                   future: ref.read(adServiceProvider).privacyOptionsRequired(),

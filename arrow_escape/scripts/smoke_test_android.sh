@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Installs a release APK on a running emulator/device, launches it, and
 # fails if the app process dies. Prints the crash log either way.
-#   scripts/smoke_test_android.sh path/to/app.apk com.arrowescape.arrow_escape.dev
+#   scripts/smoke_test_android.sh path/to/app.apk com.riseivo.arrow.escape.game.dev
 set -uo pipefail
 apk="$1"
 pkg="$2"

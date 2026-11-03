@@ -52,6 +52,19 @@ class RevenueCatPurchaseService implements PurchaseService {
     } on PlatformException catch (e) {
       debugPrint('RevenueCat customer info: ${e.message}');
     }
+    // Auto-restore: after a reinstall or on a new phone, Remove Ads comes
+    // back without the player tapping anything. On Android this sync is
+    // silent; on iOS it could ask for the Apple ID password, so iOS keeps
+    // the explicit "Restore purchases" button (which Apple requires).
+    if (Platform.isAndroid && _entitlements.active.isEmpty) {
+      unawaited(
+        Purchases.syncPurchasesForResult()
+            .then((r) => _apply(r.customerInfo))
+            .catchError((Object e) {
+              debugPrint('RevenueCat sync: $e');
+            }),
+      );
+    }
   }
 
   @override

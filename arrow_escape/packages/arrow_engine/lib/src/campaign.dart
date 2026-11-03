@@ -246,7 +246,7 @@ Level? generateForEffort({
   int maxLength = 18,
   int maxWidth = maxArrowBoardWidth,
   int maxHeight = maxArrowBoardHeight,
-  int maxArrows = 125,
+  int maxArrows = 160,
   double band = 0.06,
   int analyzeStates = 60000,
 }) {
@@ -318,8 +318,8 @@ double hardness(LevelStats s) =>
 
 /// Largest arrow-count board (cells ~15 dp wide when fully zoomed out on
 /// a phone; the game zooms in after showing the whole board).
-const maxArrowBoardWidth = 24;
-const maxArrowBoardHeight = 32;
+const maxArrowBoardWidth = 26;
+const maxArrowBoardHeight = 34;
 
 /// What the campaign wants at one level number.
 class LevelSpec {
@@ -404,19 +404,22 @@ abstract final class Campaign {
       0.025 * n;
 
   /// Solve effort level [n] is built to ([LevelStats.effort], roughly
-  /// solve time): rises with every level, ~120 at level 3, ~240 at level
-  /// 8, ~330 at level 100, ~570 at level 500, ~840 at level 1500. Hard
-  /// levels need 25% more, Super Hard 45% more (capped at 1000, about the
-  /// most the biggest board can hold). Offline tool only, so `pow` is fine.
+  /// solve time): rises with every level, ~180 at level 3, ~350 at level
+  /// 8, ~500 at level 100, ~880 at level 500, ~1045 at level 1500 (slower
+  /// past 900, as the biggest board fills up). Hard levels need 25% more,
+  /// Super Hard 45% more (capped at 1250). Offline tool only, so `pow` is fine.
   static double effortTarget(int n) {
     if (n <= 1) return 10;
-    final base = 1.69 * math.pow(_baseArrows(n), 1.29);
+    // 1.5x the Sprint 7 curve: harder from level 3 on.
+    var base = 1.5 * 1.69 * math.pow(_baseArrows(n), 1.29);
+    // Past ~900 the biggest board runs out of room: keep rising, slower.
+    if (base > 900) base = 900 + (base - 900) * 0.4;
     final factor = switch (tierFor(n)) {
       LevelTier.normal => 1.0,
       LevelTier.hard => 1.25,
       LevelTier.superHard => 1.45,
     };
-    return math.min(1000.0, base * factor);
+    return math.min(1250.0, base * factor);
   }
 
   /// Longest arrow at level [n]: short snakes early, very long later.

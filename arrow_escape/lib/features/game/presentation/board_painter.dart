@@ -123,7 +123,6 @@ class BoardPiecesPainter extends CustomPainter {
     final layout = BoardLayout(level, size);
     final t = now();
 
-    if (showPaths) _paintPaths(canvas, layout);
     final hint = hintPiece;
     if (hint != null &&
         board.isOnBoard(hint) &&
@@ -137,6 +136,9 @@ class BoardPiecesPainter extends CustomPainter {
       if (!board.isOnBoard(i) || animations.containsKey(i)) continue;
       _paintVehicle(canvas, layout, i, restTracks[i], 0, _flashFor(i, t));
     }
+    // Roads on top of resting arrows (each dash on a board-coloured
+    // halo), under the ones that are moving.
+    if (showPaths) _paintPaths(canvas, layout);
     for (final a in animations.values) {
       _paintVehicle(
         canvas,
@@ -310,11 +312,28 @@ class BoardPiecesPainter extends CustomPainter {
 
   void _paintPaths(Canvas canvas, BoardLayout layout) {
     final cell = layout.cell;
+    // Keep every arrowhead clear of the dashes so heads stay readable.
+    final clip = Path()
+      ..fillType = PathFillType.evenOdd
+      ..addRect(layout.boardRect.inflate(cell * 2));
+    for (var i = 0; i < level.pieces.length; i++) {
+      if (!board.isOnBoard(i) || animations.containsKey(i)) continue;
+      final head = level.pieces[i].head;
+      clip.addOval(
+        Rect.fromCircle(center: layout.centerOf(head), radius: cell * 0.42),
+      );
+    }
+    canvas
+      ..save()
+      ..clipPath(clip);
     for (var i = 0; i < level.pieces.length; i++) {
       if (!board.isOnBoard(i) || animations.containsKey(i)) continue;
       final def = level.pieces[i];
       final path = rules.pathOf(i);
-      final pts = <Offset>[layout.centerOf(def.head)];
+      // Start just past the arrowhead so the head itself stays clean.
+      final pts = <Offset>[
+        layout.centerOf(def.head) + dirOffset(def.dir) * (cell * 0.6),
+      ];
       for (final c in path) {
         pts.add(layout.centerOf(c));
       }
@@ -327,13 +346,23 @@ class BoardPiecesPainter extends CustomPainter {
       }
       // Every road looks the same: it shows where an arrow would drive,
       // never whether it is free (that would solve the puzzle).
-      final paint = Paint()
-        ..color = style.pathBlocked.withValues(alpha: 0.6)
-        ..strokeWidth = math.max(2, cell * 0.07)
+      // A board-coloured halo under each dash cuts through any arrow it
+      // crosses, so the road stays readable on every skin and colour.
+      final width = math.max(2.2, cell * 0.075);
+      final halo = Paint()
+        ..color = style.tile
+        ..strokeWidth = width + math.max(2.5, cell * 0.06)
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
-      _dashed(canvas, pts, paint, cell * 0.14, cell * 0.12);
+      final paint = Paint()
+        ..color = style.pathBlocked
+        ..strokeWidth = width
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
+      _dashed(canvas, pts, halo, cell * 0.2, cell * 0.14);
+      _dashed(canvas, pts, paint, cell * 0.2, cell * 0.14);
     }
+    canvas.restore();
   }
 
   void _paintHint(Canvas canvas, BoardLayout layout, int piece) {

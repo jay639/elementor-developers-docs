@@ -98,6 +98,30 @@ void main() {
   testWidgets('game 5', (t) => shot(t, 'game_5', Routes.game(5)));
   testWidgets('game 4', (t) => shot(t, 'game_4', Routes.game(4)));
   testWidgets('map', (t) => shot(t, 'map', Routes.map));
+  for (final skin in ['classic', 'candy', 'neon', 'gold']) {
+    testWidgets('paths $skin', (t) async {
+      final saved = save.copyWith(
+        ownedSkins: const ['classic', 'candy', 'neon', 'gold'],
+        selectedSkin: skin,
+      );
+      await pumpApp(t, levels: levels, save: saved);
+      final c = ProviderScope.containerOf(
+        t.element(find.byType(MaterialApp)),
+      );
+      c.read(routerProvider).go(Routes.game(11));
+      for (var i = 0; i < 30; i++) {
+        await t.pump(const Duration(milliseconds: 100));
+      }
+      await t.tap(find.byKey(const Key('paths')));
+      for (var i = 0; i < 5; i++) {
+        await t.pump(const Duration(milliseconds: 100));
+      }
+      await expectLater(
+        find.byType(MaterialApp),
+        matchesGoldenFile('out/paths_$skin.png'),
+      );
+    });
+  }
   testWidgets('collection', (t) => shot(t, 'collection', Routes.collection));
   testWidgets('skins', (t) {
     return shot(

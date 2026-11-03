@@ -29,7 +29,7 @@ if (hasGoogleServices) {
 }
 
 android {
-    namespace = "com.arrowescape.arrow_escape"
+    namespace = "com.riseivo.arrow.escape.game"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -45,7 +45,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.arrowescape.arrow_escape"
+        applicationId = "com.riseivo.arrow.escape.game"
         // Firebase, Google Mobile Ads and the mediation adapters need 23+.
         minSdk = maxOf(flutter.minSdkVersion, 24)
         targetSdk = flutter.targetSdkVersion

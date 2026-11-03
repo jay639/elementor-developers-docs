@@ -98,6 +98,12 @@ jobs:
             "$BT/apksigner" verify "$f"
             sha256sum "$f"
           done
+          # Facebook/Meta "key hash" = base64 of the signing cert's SHA-1
+          # (public, not a secret). Paste it in the Meta app's Android
+          # settings; it changes when the signing key changes.
+          SHA1=$("$BT/apksigner" verify --print-certs build/app/outputs/flutter-apk/app-arm64-v8a-dev-release.apk | grep -m1 'certificate SHA-1 digest' | awk '{print $NF}')
+          echo "Signing cert SHA-1: $SHA1"
+          echo "Meta key hash: $(echo "$SHA1" | xxd -r -p | base64)"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -145,7 +151,7 @@ jobs:
           arch: x86_64
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script: bash arrow_escape/scripts/smoke_test_android.sh apk/app-x86_64-dev-release.apk com.arrowescape.arrow_escape.dev
+          script: bash arrow_escape/scripts/smoke_test_android.sh apk/app-x86_64-dev-release.apk com.riseivo.arrow.escape.game.dev
 
       - uses: actions/upload-artifact@v4
         if: always()

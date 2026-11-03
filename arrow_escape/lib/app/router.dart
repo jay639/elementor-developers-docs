@@ -1,4 +1,5 @@
 import 'package:arrow_engine/arrow_engine.dart';
+import 'package:arrow_escape/features/legal/privacy_policy_screen.dart';
 import 'package:arrow_escape/app/routes.dart';
 import 'package:arrow_escape/features/collection/collection_screen.dart';
 import 'package:arrow_escape/features/daily/daily_screen.dart';
@@ -40,6 +41,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: Routes.privacy,
+        builder: (context, state) => const PrivacyPolicyScreen(),
       ),
       GoRoute(
         path: '/game/:level',
