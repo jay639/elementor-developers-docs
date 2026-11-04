@@ -49,7 +49,8 @@ grep -E " (I|W|E) flutter" logcat.txt | head -80
 
 # Meta (Facebook) SDK: dev builds turn on its debug logging (MainActivity).
 echo "===== Meta SDK ====="
-grep -iE "FacebookSDK|facebook|fb_mobile|graph\.facebook" logcat.txt | grep -v "^--" | head -60
+# Every event the SDK created, every request sent and Meta's answers.
+grep -E "Created app event|URL:|event:|responseCode" logcat.txt | grep -iE "facebook|app event|event:|responseCode" | cut -c1-260 | head -80
 if grep -qiE "FacebookSDK.*(Request|AppEvents|fb_mobile_activate_app|activities)" logcat.txt; then
   echo "META CHECK: SDK started and logged app events."
 else
