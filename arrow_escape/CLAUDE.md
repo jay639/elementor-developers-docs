@@ -364,6 +364,21 @@ arrow_escape/
   package; system haptics are silent when touch feedback is off). Show
   paths: soft solid lines under the arrows (no dashes); no board fill,
   only dots. Offline rewarded message mentions the connection.
+- Sprint 10: arrows 18% of a cell (3.2-6.8 dp), thick 22% (3.8-8.3 dp)
+  via `BoardStyle.minStroke/maxStroke`. One-time Fit-button coach mark
+  (`Tips.fitBoard`, `ProductTour` in the board) the first time the board
+  is zoomed in, never with the tutorial or pinch hint. Halfway / almost
+  cheer plays `Sfx.cheer` (rising chime). Win card: "Congratulations!",
+  a cheer line by stars, coin count-up and `ConfettiRain` falling top to
+  bottom (off with Reduce motion). Meta SDK (`facebook_app_events`):
+  `MetaForwardingAnalytics` wraps analytics and forwards level achieved,
+  tutorial completion, rewarded ads and AdImpression revenue; install,
+  app opens and purchases are logged by the SDK itself (auto-logging off
+  in the manifest/Info.plist until "Share usage analytics" is on AND ad
+  consent is granted). The Meta app id and client token are public
+  identifiers (defaults in build.gradle.kts / Info.plist, overridable via
+  META_APP_ID / META_CLIENT_TOKEN); the App Secret is never used. Dev
+  builds turn on Meta debug logs; the CI smoke test prints META CHECK.
 - This dev container cannot reach dl.google.com (Android SDK), so APKs are
   built in CI, not locally.
 

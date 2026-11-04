@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:arrow_engine/arrow_engine.dart';
+import 'package:arrow_escape/core/theme/palette.dart';
+import 'package:arrow_escape/features/onboarding/product_tour.dart';
 import 'package:arrow_escape/core/theme/board_style.dart';
 import 'package:arrow_escape/features/game/application/game_controller.dart';
 import 'package:arrow_escape/features/game/application/game_state.dart';
@@ -106,6 +108,37 @@ class _BoardViewState extends ConsumerState<BoardView>
     _zoom.addListener(() {
       _zoomed.value = _zoom.value.getMaxScaleOnAxis() > 1.01;
     });
+    _zoomed.addListener(_maybeShowFitTip);
+  }
+
+  /// The Fit button, spotlighted the first time it appears.
+  final _fitKey = GlobalKey();
+  bool _fitTip = false;
+  Timer? _fitTipDelay;
+
+  /// One-time coach mark for the Fit button: the first time the board is
+  /// zoomed in, unless the tutorial or the pinch hint is on screen (then it
+  /// waits for the next zoomed board).
+  void _maybeShowFitTip() {
+    if (!_zoomed.value || _fitTip || !mounted) return;
+    final save = ref.read(saveProvider);
+    if (save.hasSeen(Tips.fitBoard)) return;
+    final state = ref.read(gameControllerProvider(widget.levelRef));
+    if (state.tutorial != TutorialStep.none) return;
+    final pinchOnScreen = !save.hasSeen(Tips.pinch) && !_pinchDismissed;
+    if (pinchOnScreen) return;
+    // Let the button fade in (and any zoom animation settle) first.
+    _fitTipDelay?.cancel();
+    _fitTipDelay = Timer(const Duration(milliseconds: 1000), () {
+      if (!mounted || !_zoomed.value || _fitTip) return;
+      if (ref.read(saveProvider).hasSeen(Tips.fitBoard)) return;
+      setState(() => _fitTip = true);
+    });
+  }
+
+  void _closeFitTip() {
+    setState(() => _fitTip = false);
+    ref.read(saveProvider.notifier).markSeen(Tips.fitBoard);
   }
 
   @override
@@ -114,6 +147,7 @@ class _BoardViewState extends ConsumerState<BoardView>
     _introDelay?.cancel();
     _intro.dispose();
     _frame.dispose();
+    _fitTipDelay?.cancel();
     _zoom.dispose();
     _zoomed.dispose();
     super.dispose();
@@ -410,6 +444,7 @@ class _BoardViewState extends ConsumerState<BoardView>
                   child: IgnorePointer(
                     ignoring: !zoomed,
                     child: IconButton.filledTonal(
+                      key: _fitKey,
                       tooltip: 'Fit board',
                       onPressed: () => _zoom.value = Matrix4.identity(),
                       icon: const Icon(Icons.fit_screen_rounded),
@@ -418,6 +453,25 @@ class _BoardViewState extends ConsumerState<BoardView>
                 ),
               ),
             ),
+            if (_fitTip)
+              Positioned.fill(
+                child: ProductTour(
+                  key: const Key('fit-tip'),
+                  steps: [
+                    TourStep(
+                      target: _fitKey,
+                      icon: Icons.fit_screen_rounded,
+                      color: Palette.sky,
+                      title: 'See the whole board',
+                      body:
+                          'Big boards open zoomed in. Tap here any time to '
+                          'fit the whole puzzle on screen. Pinch to zoom in '
+                          'again.',
+                    ),
+                  ],
+                  onDone: (_) => _closeFitTip(),
+                ),
+              ),
           ],
         );
       },

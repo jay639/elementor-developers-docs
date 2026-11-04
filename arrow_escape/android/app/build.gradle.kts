@@ -17,6 +17,12 @@ fun secret(name: String): String? = keyProperties.getProperty(name) ?: System.ge
 // Google's public test app id; real ids come from key.properties / env.
 val testAdmobAppId = "ca-app-pub-3940256099942544~3347511713"
 
+// Meta (Facebook) app events. The app id and client token are public
+// identifiers that ship inside every APK (Meta designed the client token
+// for that); the App Secret is never used in the app.
+val metaAppId = secret("META_APP_ID") ?: "1108495851794971"
+val metaClientToken = secret("META_CLIENT_TOKEN") ?: "c2c67631672a90cb0ab1486f7a49d6aa"
+
 // Firebase is optional: without google-services.json the app runs offline.
 val hasGoogleServices = listOf(
     "google-services.json",
@@ -37,6 +43,8 @@ android {
     // resValue.
     buildFeatures {
         resValues = true
+        // BuildConfig.FLAVOR: MainActivity turns on Meta debug logs in dev.
+        buildConfig = true
     }
 
     compileOptions {
@@ -52,6 +60,8 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         manifestPlaceholders["admobAppId"] = testAdmobAppId
+        resValue("string", "facebook_app_id", metaAppId)
+        resValue("string", "facebook_client_token", metaClientToken)
     }
 
     signingConfigs {
@@ -110,4 +120,10 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Same SDK the facebook_app_events plugin uses; needed here only to
+    // turn on Meta debug logging in dev builds (MainActivity).
+    implementation("com.facebook.android:facebook-core:[19.0,20.0)")
 }

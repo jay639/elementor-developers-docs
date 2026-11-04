@@ -381,6 +381,7 @@ class _GameViewState extends ConsumerState<_GameView> {
                     reduceMotion: ref.watch(
                       settingsProvider.select((s) => s.reduceMotion),
                     ),
+                    onCheer: (_) => ref.read(soundProvider).play(Sfx.cheer),
                   ),
                 ),
               ),
@@ -410,6 +411,9 @@ class _GameViewState extends ConsumerState<_GameView> {
                     },
                     stars: state.session.stars,
                     coins: state.coinsEarned,
+                    celebrate: !ref.watch(
+                      settingsProvider.select((s) => s.reduceMotion),
+                    ),
                     onDoubleCoins: state.coinsDoubled || state.coinsEarned == 0
                         ? null
                         : _doubleCoins,

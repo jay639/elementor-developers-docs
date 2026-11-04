@@ -182,7 +182,7 @@ class BoardPiecesPainter extends CustomPainter {
     // Thin lines whatever the cell size: big cells (small boards) would
     // otherwise get bulky arrows.
     final stroke =
-        (cell * style.strokeFactor).clamp(2.6, style.maxStroke) *
+        (cell * style.strokeFactor).clamp(style.minStroke, style.maxStroke) *
         (def.kind == PieceKind.ambulance ? 1.7 : 1);
     // Thin line from just behind the tail to the head; the arrowhead sits
     // past the head centre so a 1-cell arrow still reads as an arrow.
@@ -332,7 +332,10 @@ class BoardPiecesPainter extends CustomPainter {
     // every skin without competing with the arrows themselves.
     final paint = Paint()
       ..color = style.pathBlocked
-      ..strokeWidth = (cell * style.strokeFactor).clamp(2.6, style.maxStroke)
+      ..strokeWidth = (cell * style.strokeFactor).clamp(
+        style.minStroke,
+        style.maxStroke,
+      )
       ..strokeCap = StrokeCap.round
       ..strokeJoin = StrokeJoin.round
       ..style = PaintingStyle.stroke;

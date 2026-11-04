@@ -13,12 +13,16 @@ class ProgressCheer extends StatefulWidget {
     required this.remaining,
     required this.tier,
     this.reduceMotion = false,
+    this.onCheer,
   });
 
   final int total;
   final int remaining;
   final LevelTier tier;
   final bool reduceMotion;
+
+  /// Called when a cheer appears (plays the achievement chime).
+  final ValueChanged<Cheer>? onCheer;
 
   /// Boards smaller than this are over too quickly for a cheer.
   static const minArrows = 20;
@@ -82,6 +86,7 @@ class _ProgressCheerState extends State<ProgressCheer> {
     _shown.add(cheer);
     if (cheer == Cheer.almost) _shown.add(Cheer.halfway);
     setState(() => _current = cheer);
+    widget.onCheer?.call(cheer);
     _hide?.cancel();
     _hide = Timer(const Duration(milliseconds: 1800), () {
       if (mounted) setState(() => _current = null);

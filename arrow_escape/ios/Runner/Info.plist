@@ -76,6 +76,16 @@
 	<false/>
 	<key>GOOGLE_ANALYTICS_DEFAULT_ALLOW_ANALYTICS_STORAGE</key>
 	<true/>
+	<key>FacebookAppID</key>
+	<string>1108495851794971</string>
+	<key>FacebookClientToken</key>
+	<string>c2c67631672a90cb0ab1486f7a49d6aa</string>
+	<key>FacebookDisplayName</key>
+	<string>Arrow Escape</string>
+	<key>FacebookAutoLogAppEventsEnabled</key>
+	<false/>
+	<key>FacebookAdvertiserIDCollectionEnabled</key>
+	<false/>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>Your data is used to show you more relevant ads. You can still play everything without allowing this.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

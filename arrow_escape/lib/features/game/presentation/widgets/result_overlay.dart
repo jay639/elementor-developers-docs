@@ -1,5 +1,6 @@
 import 'package:arrow_escape/core/theme/palette.dart';
 import 'package:arrow_escape/core/widgets/ui.dart';
+import 'package:arrow_escape/features/game/presentation/widgets/confetti_rain.dart';
 import 'package:flutter/material.dart';
 
 /// Win / lose card shown over the board.
@@ -15,6 +16,7 @@ class ResultOverlay extends StatelessWidget {
     this.onDoubleCoins,
     this.nextLabel = 'Next level',
     this.unlocked = const [],
+    this.celebrate = true,
   }) : won = true,
        onExtraHeart = null;
 
@@ -30,7 +32,8 @@ class ResultOverlay extends StatelessWidget {
        hasNext = false,
        onDoubleCoins = null,
        nextLabel = '',
-       unlocked = const [];
+       unlocked = const [],
+       celebrate = false;
 
   final bool won;
   final String? title;
@@ -43,6 +46,16 @@ class ResultOverlay extends StatelessWidget {
 
   /// Names of pictures this win unlocked.
   final List<String> unlocked;
+
+  /// Confetti and count-up animations (off with Reduce motion).
+  final bool celebrate;
+
+  /// A line that rewards the result and pulls toward the next level.
+  static String cheerFor(int stars) => switch (stars) {
+    3 => 'Perfect run! Not a single mistake.',
+    2 => 'Great job! Can you get all 3 stars next time?',
+    _ => 'You made it! Every level makes you sharper.',
+  };
 
   /// Next level when won, retry when lost.
   final VoidCallback onPrimary;
@@ -58,137 +71,191 @@ class ResultOverlay extends StatelessWidget {
     final scheme = theme.colorScheme;
     return ColoredBox(
       color: scheme.scrim.withValues(alpha: 0.35),
-      child: Center(
-        child: SingleChildScrollView(
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.85, end: 1),
-            duration: const Duration(milliseconds: 380),
-            curve: Curves.easeOutBack,
-            builder: (context, scale, child) =>
-                Transform.scale(scale: scale, child: child),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: SoftCard(
-                padding: const EdgeInsets.fromLTRB(22, 26, 22, 14),
-                radius: 32,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      won ? title! : 'Out of hearts',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        color: won ? Palette.primaryDeep : Palette.secondary,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 16),
-                    if (won)
-                      _Stars(stars: stars!)
-                    else
-                      const Icon(
-                        Icons.heart_broken_rounded,
-                        size: 64,
-                        color: Palette.heart,
-                        semanticLabel: 'No hearts left',
-                      ),
-                    const SizedBox(height: 8),
-                    if (won && coins > 0)
-                      Semantics(
-                        label: 'Earned $coins coins',
-                        excludeSemantics: true,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.monetization_on_rounded,
-                              color: Palette.star,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '+$coins',
-                              key: const Key('coins-earned'),
-                              style: theme.textTheme.titleLarge,
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      Text(
-                        won
-                            ? 'Traffic is flowing again.'
-                            : 'Take a breath and try a different order.',
-                        style: theme.textTheme.bodyLarge,
-                        textAlign: TextAlign.center,
-                      ),
-                    for (final name in unlocked) ...[
-                      const SizedBox(height: 14),
-                      SoftCard(
-                        key: Key('unlocked-$name'),
-                        gradient: const LinearGradient(
-                          colors: Palette.heroGradient,
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.auto_awesome_rounded,
-                              color: Palette.star,
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'New wonder unlocked: $name!',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w600,
+      child: Stack(
+        children: [
+          Center(
+            child: SingleChildScrollView(
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.85, end: 1),
+                duration: const Duration(milliseconds: 380),
+                curve: Curves.easeOutBack,
+                builder: (context, scale, child) =>
+                    Transform.scale(scale: scale, child: child),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: SoftCard(
+                    padding: const EdgeInsets.fromLTRB(22, 26, 22, 14),
+                    radius: 32,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (won) ...[
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.emoji_events_rounded,
+                                color: Palette.star,
+                                size: 30,
+                              ),
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    'Congratulations!',
+                                    key: const Key('result-congrats'),
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 24),
-                    if (onDoubleCoins != null || onExtraHeart != null) ...[
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton.tonalIcon(
-                          key: const Key('result-rewarded'),
-                          onPressed: onDoubleCoins ?? onExtraHeart,
-                          icon: const Icon(Icons.smart_display_rounded),
-                          label: Text(
-                            won ? 'Double coins' : 'Continue with +1 heart',
+                            ],
                           ),
+                          const SizedBox(height: 6),
+                        ],
+                        Text(
+                          won ? title! : 'Out of hearts',
+                          style: theme.textTheme.headlineSmall?.copyWith(
+                            color: won
+                                ? Palette.primaryDeep
+                                : Palette.secondary,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
-                      ),
-                      const SizedBox(height: 10),
-                    ],
-                    CandyButton(
-                      key: const Key('result-primary'),
-                      height: 58,
-                      fontSize: 20,
-                      colors: won ? Palette.playGradient : Palette.heroGradient,
-                      onPressed: onPrimary,
-                      label: won ? (hasNext ? nextLabel : 'Done') : 'Try again',
+                        const SizedBox(height: 16),
+                        if (won)
+                          _Stars(stars: stars!)
+                        else
+                          const Icon(
+                            Icons.heart_broken_rounded,
+                            size: 64,
+                            color: Palette.heart,
+                            semanticLabel: 'No hearts left',
+                          ),
+                        const SizedBox(height: 8),
+                        if (won && coins > 0)
+                          Semantics(
+                            label: 'Earned $coins coins',
+                            excludeSemantics: true,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.monetization_on_rounded,
+                                  color: Palette.star,
+                                ),
+                                const SizedBox(width: 6),
+                                TweenAnimationBuilder<double>(
+                                  tween: Tween(
+                                    begin: celebrate ? 0 : 1,
+                                    end: 1,
+                                  ),
+                                  duration: const Duration(milliseconds: 900),
+                                  curve: Curves.easeOutCubic,
+                                  builder: (context, v, _) => Text(
+                                    '+${(coins * v).round()}',
+                                    key: const Key('coins-earned'),
+                                    style: theme.textTheme.titleLarge,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Text(
+                            won
+                                ? 'Traffic is flowing again.'
+                                : 'Take a breath and try a different order.',
+                            style: theme.textTheme.bodyLarge,
+                            textAlign: TextAlign.center,
+                          ),
+                        if (won) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            cheerFor(stars!),
+                            key: const Key('result-cheer'),
+                            style: theme.textTheme.bodyLarge,
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                        for (final name in unlocked) ...[
+                          const SizedBox(height: 14),
+                          SoftCard(
+                            key: Key('unlocked-$name'),
+                            gradient: const LinearGradient(
+                              colors: Palette.heroGradient,
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 10,
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.auto_awesome_rounded,
+                                  color: Palette.star,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'New wonder unlocked: $name!',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 24),
+                        if (onDoubleCoins != null || onExtraHeart != null) ...[
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.tonalIcon(
+                              key: const Key('result-rewarded'),
+                              onPressed: onDoubleCoins ?? onExtraHeart,
+                              icon: const Icon(Icons.smart_display_rounded),
+                              label: Text(
+                                won ? 'Double coins' : 'Continue with +1 heart',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                        CandyButton(
+                          key: const Key('result-primary'),
+                          height: 58,
+                          fontSize: 20,
+                          colors: won
+                              ? Palette.playGradient
+                              : Palette.heroGradient,
+                          onPressed: onPrimary,
+                          label: won
+                              ? (hasNext ? nextLabel : 'Done')
+                              : 'Try again',
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          key: const Key('result-home'),
+                          onPressed: onHome,
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(120, 48),
+                          ),
+                          child: const Text('Home'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      key: const Key('result-home'),
-                      onPressed: onHome,
-                      style: TextButton.styleFrom(
-                        minimumSize: const Size(120, 48),
-                      ),
-                      child: const Text('Home'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
           ),
-        ),
+          if (won && celebrate) const Positioned.fill(child: ConfettiRain()),
+        ],
       ),
     );
   }

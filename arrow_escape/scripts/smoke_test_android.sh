@@ -47,6 +47,15 @@ grep -E "FATAL|AndroidRuntime|E flutter|Exception|Error|libc  |DEBUG   :|Activit
 echo "===== app log ====="
 grep -E " (I|W|E) flutter" logcat.txt | head -80
 
+# Meta (Facebook) SDK: dev builds turn on its debug logging (MainActivity).
+echo "===== Meta SDK ====="
+grep -iE "FacebookSDK|facebook|fb_mobile|graph\.facebook" logcat.txt | grep -v "^--" | head -60
+if grep -qiE "FacebookSDK.*(Request|AppEvents|fb_mobile_activate_app|activities)" logcat.txt; then
+  echo "META CHECK: SDK started and logged app events."
+else
+  echo "META CHECK: no Meta app-event log lines seen (consent may be pending or the emulator offline)."
+fi
+
 if [ "$alive" = 1 ]; then
   echo "App stayed up for 30s."
   timeout 30 adb exec-out screencap -p > screenshot.png

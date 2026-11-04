@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:arrow_escape/core/services/meta_events.dart';
 import 'package:arrow_escape/features/game/data/resume_store.dart';
 import 'package:arrow_escape/app/app.dart';
 import 'package:arrow_escape/app/flavor.dart';
@@ -36,9 +37,10 @@ Future<void> bootstrap(FlavorConfig flavor) async {
   );
 
   final firebase = await initFirebase();
-  final AnalyticsService analytics = firebase
-      ? FirebaseAnalyticsService()
-      : DebugAnalytics();
+  final AnalyticsService analytics = MetaForwardingAnalytics(
+    firebase ? FirebaseAnalyticsService() : DebugAnalytics(),
+    FacebookMetaEvents(),
+  );
   RemoteConfigService remoteConfig = const DefaultRemoteConfig();
   if (firebase) {
     try {

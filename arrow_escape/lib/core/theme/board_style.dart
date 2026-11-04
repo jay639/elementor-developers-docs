@@ -21,6 +21,7 @@ class BoardStyle {
     required this.ambulanceCross,
     required this.strokeFactor,
     required this.maxStroke,
+    required this.minStroke,
     required this.symbols,
     this.effect = SkinEffect.plain,
   });
@@ -70,8 +71,11 @@ class BoardStyle {
           : Palette.lightGreen,
       ambulance: Palette.ambulance,
       ambulanceCross: Palette.ambulanceCross,
-      strokeFactor: settings.thickArrows ? 0.2 : 0.145,
-      maxStroke: settings.thickArrows ? 7.5 : 5.5,
+      // Line width as a share of a cell, kept between a minimum (big,
+      // zoomed-out boards) and a maximum (small boards) in logical px.
+      strokeFactor: settings.thickArrows ? 0.22 : 0.18,
+      minStroke: settings.thickArrows ? 3.8 : 3.2,
+      maxStroke: settings.thickArrows ? 8.3 : 6.8,
       // Colorblind and high-contrast modes add shape cues to colour cues.
       symbols: settings.colorblind || hc,
       // Accessibility palettes are drawn plain.
@@ -100,6 +104,9 @@ class BoardStyle {
   /// Upper bound for the arrow line width, in logical pixels.
   final double maxStroke;
 
+  /// Thinnest line in logical px, whatever the cell size.
+  final double minStroke;
+
   /// Draw symbols (stop bar, go circle, blocked cross) besides colours.
   final bool symbols;
 
@@ -123,6 +130,7 @@ class BoardStyle {
       other.lightGreen == lightGreen &&
       other.strokeFactor == strokeFactor &&
       other.maxStroke == maxStroke &&
+      other.minStroke == minStroke &&
       other.symbols == symbols &&
       other.effect == effect;
 
@@ -140,6 +148,7 @@ class BoardStyle {
     lightGreen,
     strokeFactor,
     maxStroke,
+    minStroke,
     symbols,
     effect,
   );

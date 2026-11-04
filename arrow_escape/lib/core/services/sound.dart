@@ -13,6 +13,9 @@ enum Sfx {
   error('sounds/error.wav', 2),
   tap('sounds/tap.wav', 2),
   win('sounds/win.wav', 1),
+
+  /// Halfway / almost-there cheer: a bright rising chime.
+  cheer('sounds/cheer.wav', 1),
   lose('sounds/lose.wav', 1);
 
   const Sfx(this.asset, this.voices);

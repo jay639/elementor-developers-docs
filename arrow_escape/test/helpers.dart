@@ -263,7 +263,7 @@ Future<void> tapPiece(WidgetTester tester, Level level, int piece) async {
 
 /// Lets animations and the result-card delay finish.
 Future<void> settle(WidgetTester tester) async {
-  for (var i = 0; i < 12; i++) {
+  for (var i = 0; i < 25; i++) {
     await tester.pump(const Duration(milliseconds: 100));
   }
 }
