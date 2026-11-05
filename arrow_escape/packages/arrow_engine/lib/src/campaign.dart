@@ -421,6 +421,13 @@ abstract final class Campaign {
   /// levels need 25% more, Super Hard 45% more (capped at 1500). Offline tool only, so `pow` is fine.
   static double effortTarget(int n) {
     if (n <= 1) return 10;
+    // Gentle start: right after the tutorial each level is ~20-40% harder
+    // than the last, then ~3% a level, meeting the main curve at level 20.
+    // (Normal-level values; Hard levels still get their x1.25 below.)
+    final ramp = _gentleStart[n];
+    if (ramp != null) {
+      return tierFor(n) == LevelTier.hard ? ramp * 1.25 : ramp;
+    }
     // Calibrated on the genre leader's 1,055 levels (their median board
     // takes ~460, big ones 1,200-2,300): level 3 ~280, level 8 ~545,
     // level 100 ~770, level 500 ~1,160, level 1500 ~1,310.
@@ -435,6 +442,29 @@ abstract final class Campaign {
     // About the most the biggest board can hold.
     return math.min(1500.0, base * factor);
   }
+
+  /// Effort of levels 2-20 (normal value; level 9 and 19 are Hard).
+  static const _gentleStart = <int, double>{
+    2: 60,
+    3: 100,
+    4: 140,
+    5: 190,
+    6: 240,
+    7: 290,
+    8: 340,
+    9: 352,
+    10: 390,
+    11: 410,
+    12: 425,
+    13: 440,
+    14: 455,
+    15: 470,
+    16: 485,
+    17: 500,
+    18: 515,
+    19: 520,
+    20: 545,
+  };
 
   /// Longest arrow at level [n]: short snakes early, very long later.
   static int maxLengthFor(int n) => (16 + n * 0.5).round().clamp(16, 28);

@@ -217,7 +217,11 @@ v..
     });
 
     test('solve effort target rises every regular level', () {
-      expect(Campaign.effortTarget(3), greaterThan(100));
+      // Gentle start after the tutorial, then the main curve from L21.
+      expect(Campaign.effortTarget(2), 60);
+      expect(Campaign.effortTarget(3), 100);
+      expect(Campaign.effortTarget(9), 440); // Hard
+      expect(Campaign.effortTarget(21), greaterThan(Campaign.effortTarget(20)));
       expect(Campaign.effortTarget(8), greaterThan(Campaign.effortTarget(5)));
       expect(Campaign.effortTarget(1500), greaterThan(800));
       var last = 0.0;

@@ -379,6 +379,10 @@ arrow_escape/
   identifiers (defaults in build.gradle.kts / Info.plist, overridable via
   META_APP_ID / META_CLIENT_TOKEN); the App Secret is never used. Dev
   builds turn on Meta debug logs; the CI smoke test prints META CHECK.
+- Sprint 11: gentle start. Levels 2-20 use a fixed effort ramp
+  (`Campaign._gentleStart`: 60, 100, 140, 190, 240, 290, 340, 352 (x1.25
+  Hard = 440), 390 ... 545 at L20); the main curve continues from L21.
+  Push notifications are not implemented yet (no firebase_messaging).
 - This dev container cannot reach dl.google.com (Android SDK), so APKs are
   built in CI, not locally.
 
