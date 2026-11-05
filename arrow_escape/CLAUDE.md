@@ -382,7 +382,8 @@ arrow_escape/
 - Sprint 11: gentle start. Levels 2-20 use a fixed effort ramp
   (`Campaign._gentleStart`: 60, 100, 140, 190, 240, 290, 340, 352 (x1.25
   Hard = 440), 390 ... 545 at L20); the main curve continues from L21.
-- Sprint 12: sounds — Next level / home Play button `Sfx.nextLevel`
+- Sprint 12: sounds — win card Next level button `Sfx.nextLevel` (not
+  the home Play button)
   (next_level.mp3), halfway cheer `half_done.mp3`, successful IAP
   `Sfx.purchase` (purchase.mp3), level cleared `applause.mp3` (an
   original procedural crowd cheer + applause; no third-party audio

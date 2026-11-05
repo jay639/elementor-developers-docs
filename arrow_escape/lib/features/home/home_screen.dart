@@ -1,5 +1,4 @@
 import 'package:arrow_engine/arrow_engine.dart';
-import 'package:arrow_escape/core/services/sound.dart';
 import 'package:arrow_escape/app/routes.dart';
 import 'package:arrow_escape/core/theme/palette.dart';
 import 'package:arrow_escape/core/utils/clock.dart';
@@ -241,10 +240,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       key: const Key('play'),
                       icon: Icons.play_arrow_rounded,
                       label: 'Play  ·  Level $next',
-                      onPressed: () {
-                        ref.read(soundProvider).play(Sfx.nextLevel);
-                        context.push(Routes.game(next));
-                      },
+                      onPressed: () => context.push(Routes.game(next)),
                     ),
                     const SizedBox(height: 16),
                     Row(
