@@ -383,6 +383,15 @@ arrow_escape/
   (`Campaign._gentleStart`: 60, 100, 140, 190, 240, 290, 340, 352 (x1.25
   Hard = 440), 390 ... 545 at L20); the main curve continues from L21.
   Push notifications are not implemented yet (no firebase_messaging).
+- Sprint 12: sounds — Next level / home Play button `Sfx.nextLevel`
+  (next_level.mp3), halfway cheer `half_done.mp3`, successful IAP
+  `Sfx.purchase` (purchase.mp3), level cleared `applause.mp3` (an
+  original procedural crowd cheer + applause; no third-party audio
+  copied). Supplied mp3s are Pixabay-licensed. Escaping arrows turn
+  yellow (`BoardStyle.escape`); wrong moves stay red. Privacy policy:
+  riseivo.com links open in the browser and mailto in the mail app
+  (`PrivacyPolicyScreen.opensOutside`, url_launcher); other links stay in
+  the web view.
 - This dev container cannot reach dl.google.com (Android SDK), so APKs are
   built in CI, not locally.
 

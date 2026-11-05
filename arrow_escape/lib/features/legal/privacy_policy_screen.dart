@@ -1,5 +1,6 @@
 import 'package:arrow_escape/core/widgets/ui.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 /// The privacy policy, bundled with the app (works offline) and shown in a
@@ -9,6 +10,14 @@ class PrivacyPolicyScreen extends StatefulWidget {
 
   static const asset = 'assets/legal/privacy_policy.html';
   static const url = 'https://www.riseivo.com/arrow-escape/privacy-policy';
+
+  /// Our own website opens in the player's browser, and email links in
+  /// their mail app; every other link stays inside the app's web view.
+  static bool opensOutside(Uri uri) {
+    if (uri.scheme == 'mailto') return true;
+    final host = uri.host.toLowerCase();
+    return host == 'riseivo.com' || host.endsWith('.riseivo.com');
+  }
 
   @override
   State<PrivacyPolicyScreen> createState() => _PrivacyPolicyScreenState();
@@ -22,6 +31,15 @@ class _PrivacyPolicyScreenState extends State<PrivacyPolicyScreen> {
       NavigationDelegate(
         onPageFinished: (_) {
           if (mounted) setState(() => _loading = false);
+        },
+        onNavigationRequest: (request) {
+          final uri = Uri.tryParse(request.url);
+          if (uri != null && PrivacyPolicyScreen.opensOutside(uri)) {
+            launchUrl(uri, mode: LaunchMode.externalApplication).ignore();
+            return NavigationDecision.prevent;
+          }
+          // Partner policies (Google, Meta, …) open inside the web view.
+          return NavigationDecision.navigate;
         },
       ),
     )

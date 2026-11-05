@@ -21,6 +21,7 @@ class BoardStyle {
     required this.ambulanceCross,
     required this.strokeFactor,
     required this.maxStroke,
+    required this.escape,
     required this.minStroke,
     required this.symbols,
     this.effect = SkinEffect.plain,
@@ -70,6 +71,10 @@ class BoardStyle {
           ? const Color(0xFF0072B2)
           : Palette.lightGreen,
       ambulance: Palette.ambulance,
+      // Colour of an arrow driving out after a successful tap.
+      escape: settings.colorblind || hc
+          ? const Color(0xFFF0B400)
+          : const Color(0xFFFFC233),
       ambulanceCross: Palette.ambulanceCross,
       // Line width as a share of a cell, kept between a minimum (big,
       // zoomed-out boards) and a maximum (small boards) in logical px.
@@ -104,6 +109,9 @@ class BoardStyle {
   /// Upper bound for the arrow line width, in logical pixels.
   final double maxStroke;
 
+  /// Arrow colour while it escapes (successful move).
+  final Color escape;
+
   /// Thinnest line in logical px, whatever the cell size.
   final double minStroke;
 
@@ -130,6 +138,7 @@ class BoardStyle {
       other.lightGreen == lightGreen &&
       other.strokeFactor == strokeFactor &&
       other.maxStroke == maxStroke &&
+      other.escape == escape &&
       other.minStroke == minStroke &&
       other.symbols == symbols &&
       other.effect == effect;
@@ -148,6 +157,7 @@ class BoardStyle {
     lightGreen,
     strokeFactor,
     maxStroke,
+    escape,
     minStroke,
     symbols,
     effect,

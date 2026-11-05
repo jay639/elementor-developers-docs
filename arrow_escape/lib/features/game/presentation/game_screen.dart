@@ -425,8 +425,14 @@ class _GameViewState extends ConsumerState<_GameView> {
                       for (final id in state.unlockedPuzzles)
                         ShapePuzzles.byId(id).name,
                     ],
-                    onPrimary: () =>
-                        next != null ? _goTo(next) : context.go(doneRoute),
+                    onPrimary: () {
+                      if (next != null) {
+                        ref.read(soundProvider).play(Sfx.nextLevel);
+                        _goTo(next);
+                      } else {
+                        context.go(doneRoute);
+                      }
+                    },
                     onHome: () => context.go(Routes.home),
                   ),
                 ),

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:arrow_escape/core/services/sound.dart';
 import 'package:arrow_escape/core/services/analytics.dart';
 import 'package:arrow_escape/features/ads/data/ad_service.dart';
 import 'package:arrow_escape/features/purchases/data/purchase_service.dart';
@@ -74,6 +75,7 @@ class PurchaseController {
       success: outcome.ok,
       error: outcome.ok ? null : outcome.status.name,
     );
+    if (outcome.ok) _ref.read(soundProvider).play(Sfx.purchase);
     if (outcome.ok && product.kind == ProductKind.consumable) {
       _ref.read(saveProvider.notifier).addCoins(product.coins, reason: 'iap');
     }

@@ -12,10 +12,18 @@ enum Sfx {
   /// Wrong move: a short game-style "wrong" buzzer, played with [bump].
   error('sounds/error.wav', 2),
   tap('sounds/tap.wav', 2),
-  win('sounds/win.wav', 1),
 
-  /// Halfway / almost-there cheer: a bright rising chime.
-  cheer('sounds/cheer.wav', 1),
+  /// Level cleared: crowd cheer and applause.
+  win('sounds/applause.mp3', 1),
+
+  /// Halfway / almost-there cheer.
+  cheer('sounds/half_done.mp3', 1),
+
+  /// Tapping into a new level (Next level / Play).
+  nextLevel('sounds/next_level.mp3', 1),
+
+  /// An in-app purchase went through.
+  purchase('sounds/purchase.mp3', 1),
   lose('sounds/lose.wav', 1);
 
   const Sfx(this.asset, this.voices);

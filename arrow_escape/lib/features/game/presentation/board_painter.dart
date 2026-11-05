@@ -215,7 +215,13 @@ class BoardPiecesPainter extends CustomPainter {
       ..close();
 
     final isAmbulance = def.kind == PieceKind.ambulance;
-    final color = isAmbulance ? style.ambulance : style.vehicleColor(piece);
+    // A successful escape turns the arrow yellow while it drives out.
+    final escaping = !isAmbulance && animations[piece] is ExitAnimation;
+    final color = escaping
+        ? style.escape
+        : isAmbulance
+        ? style.ambulance
+        : style.vehicleColor(piece);
     final rim = isAmbulance ? style.ambulanceCross : style.outline;
 
     Paint line(Color c, double w) => Paint()
@@ -269,6 +275,10 @@ class BoardPiecesPainter extends CustomPainter {
       );
     }
 
+    if (escaping) {
+      canvas.drawPath(body, line(style.escape, stroke));
+      canvas.drawPath(head, fill(style.escape));
+    }
     final alert = _alertFor(piece, now());
     if (alert > 0) {
       final red = style.danger.withValues(alpha: alert);
