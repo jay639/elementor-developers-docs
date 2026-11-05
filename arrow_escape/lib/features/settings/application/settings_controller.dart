@@ -39,4 +39,5 @@ class SettingsController extends Notifier<AppSettings> {
   void setSound(bool v) => _update(state.copyWith(sound: v));
   void setReduceMotion(bool v) => _update(state.copyWith(reduceMotion: v));
   void setShareAnalytics(bool v) => _update(state.copyWith(shareAnalytics: v));
+  void setReminders(bool v) => _update(state.copyWith(reminders: v));
 }

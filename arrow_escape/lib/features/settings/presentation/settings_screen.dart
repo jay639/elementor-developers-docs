@@ -103,6 +103,15 @@ class SettingsScreen extends ConsumerWidget {
                   value: s.haptics,
                   onChanged: c.setHaptics,
                 ),
+                _SwitchRow(
+                  key: const Key('reminders'),
+                  icon: Icons.notifications_active_rounded,
+                  color: Palette.primary,
+                  title: 'Reminders',
+                  subtitle: 'Daily challenge and streak, 7:30 PM',
+                  value: s.reminders,
+                  onChanged: c.setReminders,
+                ),
               ],
             ),
             _Group(

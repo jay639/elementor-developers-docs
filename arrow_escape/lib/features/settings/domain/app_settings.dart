@@ -17,6 +17,9 @@ abstract class AppSettings with _$AppSettings {
 
     /// "Share usage analytics": anonymous gameplay stats.
     @Default(true) bool shareAnalytics,
+
+    /// Reminder notifications (7:30 PM local) and pushes from Firebase.
+    @Default(true) bool reminders,
   }) = _AppSettings;
 
   factory AppSettings.fromJson(Map<String, Object?> json) =>

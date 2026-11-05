@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:arrow_escape/features/notifications/application/reminder_sync.dart';
+import 'package:arrow_escape/features/notifications/data/notification_service.dart';
 import 'package:arrow_escape/core/services/meta_events.dart';
 import 'package:arrow_escape/features/game/data/resume_store.dart';
 import 'package:arrow_escape/app/app.dart';
@@ -83,8 +85,16 @@ Future<void> bootstrap(FlavorConfig flavor) async {
       ? UnavailablePurchaseService()
       : RevenueCatPurchaseService(rcKey);
 
+  final notifications = DeviceNotificationService(firebase: firebase);
+  try {
+    await notifications.init();
+  } catch (e) {
+    debugPrint('Notifications unavailable: $e');
+  }
+
   final container = ProviderContainer(
     overrides: [
+      notificationServiceProvider.overrideWithValue(notifications),
       flavorProvider.overrideWithValue(flavor),
       analyticsProvider.overrideWithValue(analytics),
       remoteConfigProvider.overrideWithValue(remoteConfig),
@@ -107,6 +117,9 @@ Future<void> bootstrap(FlavorConfig flavor) async {
   );
   // Before anything else is logged, so an opt-out applies from the start.
   AnalyticsSync(container).start();
+  final reminders = ReminderSync(container);
+  unawaited(reminders.start());
+  AppLifecycleListener(onPause: () => unawaited(reminders.reschedule()));
   unawaited(_startServices(container));
 }
 

@@ -382,7 +382,6 @@ arrow_escape/
 - Sprint 11: gentle start. Levels 2-20 use a fixed effort ramp
   (`Campaign._gentleStart`: 60, 100, 140, 190, 240, 290, 340, 352 (x1.25
   Hard = 440), 390 ... 545 at L20); the main curve continues from L21.
-  Push notifications are not implemented yet (no firebase_messaging).
 - Sprint 12: sounds — Next level / home Play button `Sfx.nextLevel`
   (next_level.mp3), halfway cheer `half_done.mp3`, successful IAP
   `Sfx.purchase` (purchase.mp3), level cleared `applause.mp3` (an
@@ -392,6 +391,18 @@ arrow_escape/
   riseivo.com links open in the browser and mailto in the mail app
   (`PrivacyPolicyScreen.opensOutside`, url_launcher); other links stay in
   the web view.
+- Sprint 13: notifications. `ReminderPlanner` (pure) plans local
+  reminders at 7:30 PM: tonight if the streak is at risk or the daily isn't
+  done, else tomorrow; plus comeback reminders 3 and 7 days out. Every app
+  start and every move to the background reschedules them (so comeback
+  ones only fire if the player stays away). `DeviceNotificationService`
+  (flutter_local_notifications + firebase_messaging): inexact alarms (no
+  exact-alarm permission), channel `reminders`, small icon
+  `ic_notification`, FCM topic `all`, foreground pushes shown locally,
+  custom data `route` opens a screen. Permission asked once after level
+  3 (`Tips.notifications`). Settings → Reminders turns both off
+  (cancels local, unregisters FCM). google-services.json stays out of git
+  (public repo); CI writes it from the `GOOGLE_SERVICES_JSON` secret.
 - This dev container cannot reach dl.google.com (Android SDK), so APKs are
   built in CI, not locally.
 

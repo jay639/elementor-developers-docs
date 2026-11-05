@@ -57,6 +57,9 @@ else
   echo "META CHECK: no Meta app-event log lines seen (consent may be pending or the emulator offline)."
 fi
 
+echo "===== Firebase / notifications ====="
+grep -iE "FirebaseApp|FirebaseMessaging|FirebaseInitProvider|FLTFireMsg|flutterlocalnotifications" logcat.txt | cut -c1-220 | head -20
+
 if [ "$alive" = 1 ]; then
   echo "App stayed up for 30s."
   timeout 30 adb exec-out screencap -p > screenshot.png

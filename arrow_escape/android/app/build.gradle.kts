@@ -48,6 +48,8 @@ android {
     }
 
     compileOptions {
+        // flutter_local_notifications (scheduled reminders) needs desugaring.
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -126,4 +128,5 @@ dependencies {
     // Same SDK the facebook_app_events plugin uses; needed here only to
     // turn on Meta debug logging in dev builds (MainActivity).
     implementation("com.facebook.android:facebook-core:[19.0,20.0)")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

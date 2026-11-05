@@ -17,7 +17,8 @@ T _$identity<T>(T value) => value;
 mixin _$AppSettings {
 
  ThemeMode get themeMode; bool get thickArrows; bool get highContrast; bool get colorblind; bool get haptics; bool get sound; bool get reduceMotion;/// "Share usage analytics": anonymous gameplay stats.
- bool get shareAnalytics;
+ bool get shareAnalytics;/// Reminder notifications (7:30 PM local) and pushes from Firebase.
+ bool get reminders;
 /// Create a copy of AppSettings
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -31,20 +32,20 @@ $AppSettingsCopyWith<AppSettings> get copyWith => _$AppSettingsCopyWithImpl<AppS
 @override
 bool operator ==(Object other) {
   final _this = this as AppSettings;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppSettings&&(identical(other.themeMode, _this.themeMode) || other.themeMode == _this.themeMode)&&(identical(other.thickArrows, _this.thickArrows) || other.thickArrows == _this.thickArrows)&&(identical(other.highContrast, _this.highContrast) || other.highContrast == _this.highContrast)&&(identical(other.colorblind, _this.colorblind) || other.colorblind == _this.colorblind)&&(identical(other.haptics, _this.haptics) || other.haptics == _this.haptics)&&(identical(other.sound, _this.sound) || other.sound == _this.sound)&&(identical(other.reduceMotion, _this.reduceMotion) || other.reduceMotion == _this.reduceMotion)&&(identical(other.shareAnalytics, _this.shareAnalytics) || other.shareAnalytics == _this.shareAnalytics));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AppSettings&&(identical(other.themeMode, _this.themeMode) || other.themeMode == _this.themeMode)&&(identical(other.thickArrows, _this.thickArrows) || other.thickArrows == _this.thickArrows)&&(identical(other.highContrast, _this.highContrast) || other.highContrast == _this.highContrast)&&(identical(other.colorblind, _this.colorblind) || other.colorblind == _this.colorblind)&&(identical(other.haptics, _this.haptics) || other.haptics == _this.haptics)&&(identical(other.sound, _this.sound) || other.sound == _this.sound)&&(identical(other.reduceMotion, _this.reduceMotion) || other.reduceMotion == _this.reduceMotion)&&(identical(other.shareAnalytics, _this.shareAnalytics) || other.shareAnalytics == _this.shareAnalytics)&&(identical(other.reminders, _this.reminders) || other.reminders == _this.reminders));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as AppSettings;
-  return Object.hash(runtimeType,_this.themeMode,_this.thickArrows,_this.highContrast,_this.colorblind,_this.haptics,_this.sound,_this.reduceMotion,_this.shareAnalytics);
+  return Object.hash(runtimeType,_this.themeMode,_this.thickArrows,_this.highContrast,_this.colorblind,_this.haptics,_this.sound,_this.reduceMotion,_this.shareAnalytics,_this.reminders);
 }
 
 @override
 String toString() {
   final _this = this as AppSettings;
-  return 'AppSettings(themeMode: ${_this.themeMode}, thickArrows: ${_this.thickArrows}, highContrast: ${_this.highContrast}, colorblind: ${_this.colorblind}, haptics: ${_this.haptics}, sound: ${_this.sound}, reduceMotion: ${_this.reduceMotion}, shareAnalytics: ${_this.shareAnalytics})';
+  return 'AppSettings(themeMode: ${_this.themeMode}, thickArrows: ${_this.thickArrows}, highContrast: ${_this.highContrast}, colorblind: ${_this.colorblind}, haptics: ${_this.haptics}, sound: ${_this.sound}, reduceMotion: ${_this.reduceMotion}, shareAnalytics: ${_this.shareAnalytics}, reminders: ${_this.reminders})';
 }
 
 
@@ -55,7 +56,7 @@ abstract mixin class $AppSettingsCopyWith<$Res>  {
   factory $AppSettingsCopyWith(AppSettings value, $Res Function(AppSettings) _then) = _$AppSettingsCopyWithImpl;
 @useResult
 $Res call({
- ThemeMode themeMode, bool thickArrows, bool highContrast, bool colorblind, bool haptics, bool sound, bool reduceMotion, bool shareAnalytics
+ ThemeMode themeMode, bool thickArrows, bool highContrast, bool colorblind, bool haptics, bool sound, bool reduceMotion, bool shareAnalytics, bool reminders
 });
 
 
@@ -72,7 +73,7 @@ class _$AppSettingsCopyWithImpl<$Res>
 
 /// Create a copy of AppSettings
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? themeMode = null,Object? thickArrows = null,Object? highContrast = null,Object? colorblind = null,Object? haptics = null,Object? sound = null,Object? reduceMotion = null,Object? shareAnalytics = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? themeMode = null,Object? thickArrows = null,Object? highContrast = null,Object? colorblind = null,Object? haptics = null,Object? sound = null,Object? reduceMotion = null,Object? shareAnalytics = null,Object? reminders = null,}) {
   return _then(AppSettings(
 themeMode: null == themeMode ? _self.themeMode : themeMode // ignore: cast_nullable_to_non_nullable
 as ThemeMode,thickArrows: null == thickArrows ? _self.thickArrows : thickArrows // ignore: cast_nullable_to_non_nullable
@@ -82,6 +83,7 @@ as bool,haptics: null == haptics ? _self.haptics : haptics // ignore: cast_nulla
 as bool,sound: null == sound ? _self.sound : sound // ignore: cast_nullable_to_non_nullable
 as bool,reduceMotion: null == reduceMotion ? _self.reduceMotion : reduceMotion // ignore: cast_nullable_to_non_nullable
 as bool,shareAnalytics: null == shareAnalytics ? _self.shareAnalytics : shareAnalytics // ignore: cast_nullable_to_non_nullable
+as bool,reminders: null == reminders ? _self.reminders : reminders // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }
@@ -167,10 +169,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ThemeMode themeMode,  bool thickArrows,  bool highContrast,  bool colorblind,  bool haptics,  bool sound,  bool reduceMotion,  bool shareAnalytics)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( ThemeMode themeMode,  bool thickArrows,  bool highContrast,  bool colorblind,  bool haptics,  bool sound,  bool reduceMotion,  bool shareAnalytics,  bool reminders)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _AppSettings() when $default != null:
-return $default(_that.themeMode,_that.thickArrows,_that.highContrast,_that.colorblind,_that.haptics,_that.sound,_that.reduceMotion,_that.shareAnalytics);case _:
+return $default(_that.themeMode,_that.thickArrows,_that.highContrast,_that.colorblind,_that.haptics,_that.sound,_that.reduceMotion,_that.shareAnalytics,_that.reminders);case _:
   return orElse();
 
 }
@@ -188,10 +190,10 @@ return $default(_that.themeMode,_that.thickArrows,_that.highContrast,_that.color
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ThemeMode themeMode,  bool thickArrows,  bool highContrast,  bool colorblind,  bool haptics,  bool sound,  bool reduceMotion,  bool shareAnalytics)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( ThemeMode themeMode,  bool thickArrows,  bool highContrast,  bool colorblind,  bool haptics,  bool sound,  bool reduceMotion,  bool shareAnalytics,  bool reminders)  $default,) {final _that = this;
 switch (_that) {
 case _AppSettings():
-return $default(_that.themeMode,_that.thickArrows,_that.highContrast,_that.colorblind,_that.haptics,_that.sound,_that.reduceMotion,_that.shareAnalytics);case _:
+return $default(_that.themeMode,_that.thickArrows,_that.highContrast,_that.colorblind,_that.haptics,_that.sound,_that.reduceMotion,_that.shareAnalytics,_that.reminders);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -208,10 +210,10 @@ return $default(_that.themeMode,_that.thickArrows,_that.highContrast,_that.color
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ThemeMode themeMode,  bool thickArrows,  bool highContrast,  bool colorblind,  bool haptics,  bool sound,  bool reduceMotion,  bool shareAnalytics)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( ThemeMode themeMode,  bool thickArrows,  bool highContrast,  bool colorblind,  bool haptics,  bool sound,  bool reduceMotion,  bool shareAnalytics,  bool reminders)?  $default,) {final _that = this;
 switch (_that) {
 case _AppSettings() when $default != null:
-return $default(_that.themeMode,_that.thickArrows,_that.highContrast,_that.colorblind,_that.haptics,_that.sound,_that.reduceMotion,_that.shareAnalytics);case _:
+return $default(_that.themeMode,_that.thickArrows,_that.highContrast,_that.colorblind,_that.haptics,_that.sound,_that.reduceMotion,_that.shareAnalytics,_that.reminders);case _:
   return null;
 
 }
@@ -223,7 +225,7 @@ return $default(_that.themeMode,_that.thickArrows,_that.highContrast,_that.color
 @JsonSerializable()
 
 class _AppSettings implements AppSettings {
-  const _AppSettings({this.themeMode = ThemeMode.system, this.thickArrows = false, this.highContrast = false, this.colorblind = false, this.haptics = true, this.sound = true, this.reduceMotion = false, this.shareAnalytics = true});
+  const _AppSettings({this.themeMode = ThemeMode.system, this.thickArrows = false, this.highContrast = false, this.colorblind = false, this.haptics = true, this.sound = true, this.reduceMotion = false, this.shareAnalytics = true, this.reminders = true});
   factory _AppSettings.fromJson(Map<String, dynamic> json) => _$AppSettingsFromJson(json);
 
 @override@JsonKey() final  ThemeMode themeMode;
@@ -235,6 +237,8 @@ class _AppSettings implements AppSettings {
 @override@JsonKey() final  bool reduceMotion;
 /// "Share usage analytics": anonymous gameplay stats.
 @override@JsonKey() final  bool shareAnalytics;
+/// Reminder notifications (7:30 PM local) and pushes from Firebase.
+@override@JsonKey() final  bool reminders;
 
 /// Create a copy of AppSettings
 /// with the given fields replaced by the non-null parameter values.
@@ -249,18 +253,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppSettings&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.thickArrows, thickArrows) || other.thickArrows == thickArrows)&&(identical(other.highContrast, highContrast) || other.highContrast == highContrast)&&(identical(other.colorblind, colorblind) || other.colorblind == colorblind)&&(identical(other.haptics, haptics) || other.haptics == haptics)&&(identical(other.sound, sound) || other.sound == sound)&&(identical(other.reduceMotion, reduceMotion) || other.reduceMotion == reduceMotion)&&(identical(other.shareAnalytics, shareAnalytics) || other.shareAnalytics == shareAnalytics));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _AppSettings&&(identical(other.themeMode, themeMode) || other.themeMode == themeMode)&&(identical(other.thickArrows, thickArrows) || other.thickArrows == thickArrows)&&(identical(other.highContrast, highContrast) || other.highContrast == highContrast)&&(identical(other.colorblind, colorblind) || other.colorblind == colorblind)&&(identical(other.haptics, haptics) || other.haptics == haptics)&&(identical(other.sound, sound) || other.sound == sound)&&(identical(other.reduceMotion, reduceMotion) || other.reduceMotion == reduceMotion)&&(identical(other.shareAnalytics, shareAnalytics) || other.shareAnalytics == shareAnalytics)&&(identical(other.reminders, reminders) || other.reminders == reminders));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,themeMode,thickArrows,highContrast,colorblind,haptics,sound,reduceMotion,shareAnalytics);
+    return Object.hash(runtimeType,themeMode,thickArrows,highContrast,colorblind,haptics,sound,reduceMotion,shareAnalytics,reminders);
 }
 
 @override
 String toString() {
-    return 'AppSettings(themeMode: $themeMode, thickArrows: $thickArrows, highContrast: $highContrast, colorblind: $colorblind, haptics: $haptics, sound: $sound, reduceMotion: $reduceMotion, shareAnalytics: $shareAnalytics)';
+    return 'AppSettings(themeMode: $themeMode, thickArrows: $thickArrows, highContrast: $highContrast, colorblind: $colorblind, haptics: $haptics, sound: $sound, reduceMotion: $reduceMotion, shareAnalytics: $shareAnalytics, reminders: $reminders)';
 }
 
 
@@ -271,7 +275,7 @@ abstract mixin class _$AppSettingsCopyWith<$Res> implements $AppSettingsCopyWith
   factory _$AppSettingsCopyWith(_AppSettings value, $Res Function(_AppSettings) _then) = __$AppSettingsCopyWithImpl;
 @override @useResult
 $Res call({
- ThemeMode themeMode, bool thickArrows, bool highContrast, bool colorblind, bool haptics, bool sound, bool reduceMotion, bool shareAnalytics
+ ThemeMode themeMode, bool thickArrows, bool highContrast, bool colorblind, bool haptics, bool sound, bool reduceMotion, bool shareAnalytics, bool reminders
 });
 
 
@@ -288,7 +292,7 @@ class __$AppSettingsCopyWithImpl<$Res>
 
 /// Create a copy of AppSettings
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? themeMode = null,Object? thickArrows = null,Object? highContrast = null,Object? colorblind = null,Object? haptics = null,Object? sound = null,Object? reduceMotion = null,Object? shareAnalytics = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? themeMode = null,Object? thickArrows = null,Object? highContrast = null,Object? colorblind = null,Object? haptics = null,Object? sound = null,Object? reduceMotion = null,Object? shareAnalytics = null,Object? reminders = null,}) {
   return _then(_AppSettings(
 themeMode: null == themeMode ? _self.themeMode : themeMode // ignore: cast_nullable_to_non_nullable
 as ThemeMode,thickArrows: null == thickArrows ? _self.thickArrows : thickArrows // ignore: cast_nullable_to_non_nullable
@@ -298,6 +302,7 @@ as bool,haptics: null == haptics ? _self.haptics : haptics // ignore: cast_nulla
 as bool,sound: null == sound ? _self.sound : sound // ignore: cast_nullable_to_non_nullable
 as bool,reduceMotion: null == reduceMotion ? _self.reduceMotion : reduceMotion // ignore: cast_nullable_to_non_nullable
 as bool,shareAnalytics: null == shareAnalytics ? _self.shareAnalytics : shareAnalytics // ignore: cast_nullable_to_non_nullable
+as bool,reminders: null == reminders ? _self.reminders : reminders // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
 }

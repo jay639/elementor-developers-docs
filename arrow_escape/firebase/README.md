@@ -2,7 +2,11 @@
 
 1. Create a Firebase project with an Android app (`com.riseivo.arrow.escape.game`,
    plus `com.riseivo.arrow.escape.game.dev` for the dev flavor) and an iOS app.
-2. Download the config files (they are git-ignored):
+2. CI: add the Android `google-services.json` (one file listing both
+   packages) as the repository secret `GOOGLE_SERVICES_JSON` (GitHub →
+   Settings → Secrets and variables → Actions). The workflow writes it to
+   `android/app/google-services.json` before building.
+   Locally, download the config files (they are git-ignored):
    - `android/app/src/prod/google-services.json` and
      `android/app/src/dev/google-services.json`
    - `ios/Runner/GoogleService-Info.plist`
@@ -18,3 +22,14 @@
 
 Without the config files the app still runs, fully offline (local save,
 no analytics, default ad frequency).
+
+## Push notifications
+
+- Automatic reminders are local notifications scheduled on the device
+  (7:30 PM local time; `ReminderPlanner`), so they need no server.
+- Console pushes: Firebase → **Messaging → New campaign → Notifications**.
+  Target the app (`com.riseivo.arrow.escape.game` / `.dev`) or the topic
+  `all`. Optional: under *Additional options → Custom data* add the key
+  `route` with `/daily`, `/collection`, `/shop` or `/map` to open that
+  screen when tapped.
+- Players can turn both off in Settings → Reminders.

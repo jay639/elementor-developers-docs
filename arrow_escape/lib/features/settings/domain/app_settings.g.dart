@@ -17,6 +17,7 @@ _AppSettings _$AppSettingsFromJson(Map<String, dynamic> json) => _AppSettings(
   sound: json['sound'] as bool? ?? true,
   reduceMotion: json['reduceMotion'] as bool? ?? false,
   shareAnalytics: json['shareAnalytics'] as bool? ?? true,
+  reminders: json['reminders'] as bool? ?? true,
 );
 
 Map<String, dynamic> _$AppSettingsToJson(_AppSettings instance) =>
@@ -29,6 +30,7 @@ Map<String, dynamic> _$AppSettingsToJson(_AppSettings instance) =>
       'sound': instance.sound,
       'reduceMotion': instance.reduceMotion,
       'shareAnalytics': instance.shareAnalytics,
+      'reminders': instance.reminders,
     };
 
 const _$ThemeModeEnumMap = {

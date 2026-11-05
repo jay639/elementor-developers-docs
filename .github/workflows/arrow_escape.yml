@@ -68,6 +68,20 @@ jobs:
 
       # 64-bit only: current phones refuse 32-bit apps, and Play serves
       # 32-bit devices from the app bundle anyway.
+      # google-services.json is git-ignored (public repo): CI writes it from
+      # the GOOGLE_SERVICES_JSON repository secret. Without it the app
+      # builds and runs without Firebase (local reminders still work).
+      - name: Firebase config from repository secret
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+            python3 -c "import json;d=json.load(open('android/app/google-services.json'));print('Firebase config for', [c['client_info']['android_client_info']['package_name'] for c in d['client']])"
+          else
+            echo "::warning::GOOGLE_SERVICES_JSON secret not set: building without Firebase (no push, analytics or cloud save)"
+          fi
+
       - name: Build release APKs (dev flavor, Google test ads)
         run: >
           flutter build apk --release --flavor dev -t lib/main_dev.dart

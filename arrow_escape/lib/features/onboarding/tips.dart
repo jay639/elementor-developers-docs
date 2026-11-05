@@ -7,6 +7,7 @@ abstract final class Tips {
   static const pinch = 'pinch';
   static const homeTour = 'home_tour';
   static const fitBoard = 'fit_board';
+  static const notifications = 'notifications_asked';
   static String mechanic(Mechanic m) => 'mechanic_${m.name}';
 }
 
