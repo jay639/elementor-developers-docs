@@ -384,10 +384,10 @@ arrow_escape/
   Hard = 440), 390 ... 545 at L20); the main curve continues from L21.
 - Sprint 12: sounds — win card Next level button `Sfx.nextLevel` (not
   the home Play button)
-  (next_level.mp3), halfway cheer `half_done.mp3`, successful IAP
-  `Sfx.purchase` (purchase.mp3), level cleared `applause.mp3` (an
-  original procedural crowd cheer + applause; no third-party audio
-  copied). Supplied mp3s are Pixabay-licensed. Escaping arrows turn
+  (next_level.mp3 = the supplied "Transition SFX 2 Whoosh", 1.2 s),
+  halfway cheer `half_done.mp3`, successful IAP `Sfx.purchase`
+  (purchase.mp3), level cleared `applause.mp3` (the supplied
+  level_applause.mp3, 3.1 s). Supplied mp3s are Pixabay-licensed. Escaping arrows turn
   yellow (`BoardStyle.escape`); wrong moves stay red. Privacy policy:
   riseivo.com links open in the browser and mailto in the mail app
   (`PrivacyPolicyScreen.opensOutside`, url_launcher); other links stay in
